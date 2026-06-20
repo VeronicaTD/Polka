@@ -304,6 +304,12 @@ main,footer{position:relative;z-index:1}
     </div>
   </section>
 
+  <section id="stickerSection">
+    <div class="section-head"><h2>Мои стикеры</h2></div>
+    <p class="sticker-hint">Нажмите на стикер, чтобы прикрепить его к профилю (можно несколько).</p>
+    <div class="sticker-pick" id="stickerPick"></div>
+  </section>
+
   <section class="tabs" id="tabs"></section>
 
   <section id="caseWrap">
@@ -327,12 +333,6 @@ main,footer{position:relative;z-index:1}
     <button class="case-nav next" id="caseNext" aria-label="Следующий шкаф">›</button>
     <div class="bookcase" id="bookcase"></div>
     <div class="case-ind" id="caseInd"></div>
-  </section>
-
-  <section id="stickerSection">
-    <div class="section-head"><h2>Мои стикеры</h2></div>
-    <p class="sticker-hint">Нажмите на стикер, чтобы прикрепить его к профилю (можно несколько).</p>
-    <div class="sticker-pick" id="stickerPick"></div>
   </section>
 
 
@@ -406,18 +406,28 @@ main,footer{position:relative;z-index:1}
 </div>
 
 <!-- регистрация при первом входе -->
-<div class="modal" id="welModal" role="dialog" aria-modal="true" aria-label="Регистрация">
-  <h3>Заведём вашу полку 🌿</h3>
-  <div id="welStep1">
+<div class="modal" id="welModal" role="dialog" aria-modal="true" aria-label="Вход">
+  <h3>Добро пожаловать в Polka 🌿</h3>
+  <div id="welChoose">
+    <p class="mp">Вы здесь впервые или у вас уже есть полка?</p>
+    <button class="btn" id="welNew" style="width:100%;display:flex;justify-content:center">Создать новую полку</button>
+    <button class="btn ghost" id="welHaveBtn" style="width:100%;display:flex;justify-content:center;margin-top:10px">Войти по коду</button>
+  </div>
+  <div id="welStep1" style="display:none">
     <p class="mp">Как вас зовут? Имя будет на вашем профиле (потом можно поменять).</p>
     <div class="field"><input id="welName" placeholder="ваше имя" maxlength="40" /></div>
-    <button class="btn" id="welGo" style="width:100%;display:flex;justify-content:center">Создать полку</button>
+    <div class="modal-foot"><button class="btn ghost" id="welBack1" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welGo" style="justify-content:center;display:flex">Создать полку</button></div>
   </div>
   <div id="welStep2" style="display:none">
     <p class="mp">Готово! Вот код вашей полки. Сохраните его и делитесь с друзьями — по нему откроется ваша полка.</p>
     <textarea class="codebox" id="welCode" readonly></textarea>
     <button class="linklike" id="welCopy" type="button">📋 Скопировать код</button>
     <div class="modal-foot"><button class="btn" id="welDone" style="width:100%;display:flex;justify-content:center">Открыть мою полку</button></div>
+  </div>
+  <div id="welLogin" style="display:none">
+    <p class="mp">Введите код вашей полки, чтобы войти в свой профиль.</p>
+    <textarea class="codebox" id="welLoginInput" placeholder="ваш код"></textarea>
+    <div class="modal-foot"><button class="btn ghost" id="welBack2" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welLoginGo" style="justify-content:center;display:flex">Войти</button></div>
   </div>
 </div>
 
@@ -840,22 +850,45 @@ main,footer{position:relative;z-index:1}
 
   /* регистрация при первом входе */
   const welModal = $("#welModal");
-  function openWelcome(){
-    $("#welStep1").style.display=""; $("#welStep2").style.display="none";
-    $("#welName").value = (myName && myName!=="Моя полка") ? myName : "";
-    overlay.classList.add("open"); welModal.classList.add("open"); setTimeout(()=>$("#welName").focus(),80);
-  }
-  $("#welGo").addEventListener("click", async ()=>{
+  function welShow(id){ ["welChoose","welStep1","welStep2","welLogin"].forEach(s=>{ $("#"+s).style.display = (s===id?"":"none"); }); }
+  function openWelcome(){ welShow("welChoose"); overlay.classList.add("open"); welModal.classList.add("open"); }
+  $("#welNew").addEventListener("click", ()=>{ welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
+  $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
+  $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
+  $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
+  $("#welGo").addEventListener("click", ()=>{
     myName = $("#welName").value.trim() || "Моя полка";
     if(CLOUD() && !myCode) myCode = genCode();
     try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_registered","1"); if(myCode) localStorage.setItem("polka_code",myCode); }catch(e){}
-    await syncUp();
+    syncUp();                       // в фоне, не ждём ответа облака
     $("#welCode").value = myShareCode();
-    $("#welStep1").style.display="none"; $("#welStep2").style.display=""; renderAll();
+    welShow("welStep2"); renderAll();
   });
   $("#welCopy").addEventListener("click", ()=>{ const v=$("#welCode").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код скопирован!"), ()=>$("#welCode").select()); else $("#welCode").select(); });
   $("#welDone").addEventListener("click", closeModals);
+  $("#welLoginGo").addEventListener("click", ()=>doLogin($("#welLoginInput").value));
+  async function doLogin(code){
+    code=(code||"").trim(); if(!code) return;
+    let p=null, used="";
+    if(/^PLK/i.test(code)){ try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); } }
+    else if(CLOUD()){
+      let row; try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Нет связи с облаком"); }
+      if(!row || !row.data) return toast("Полка с таким кодом не найдена");
+      try{ p=decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
+      used=code.toUpperCase();
+    } else { return toast("Короткие коды работают только с облаком"); }
+    const books = Array.isArray(p)?p:(p&&p.b);
+    if(!Array.isArray(books)) return toast("Это не похоже на полку");
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s&&p.s.length)?p.s:["cat"]; myBooks=books; myCode=used;
+    try{
+      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote);
+      localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
+      localStorage.setItem("polka_registered","1");
+      if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
+    }catch(e){}
+    view="me"; closeModals(); renderAll(); toast("С возвращением, "+myName.split(" ")[0]+"!");
+  }
   if(!localStorage.getItem("polka_registered")) openWelcome();
 
   /* ---- импорт из ссылки #shelf= ---- */
