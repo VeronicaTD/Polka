@@ -42,6 +42,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .bw{font-family:var(--display);font-size:28px;line-height:1;color:var(--accent-deep)}
 .bar .sp{flex:1}
 .bar .tagline{color:var(--ink-soft);font-size:14px}
+.bell{position:relative;border:1px solid var(--line);background:var(--paper);border-radius:50%;width:42px;height:42px;font-size:18px;display:grid;place-items:center;margin-left:12px}
+.bell:hover{border-color:var(--ink);background:var(--paper-2)}
+.bell-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
+@media(max-width:640px){ .bar .tagline{display:none} }
 .btn{border:none;background:var(--accent);color:#fff;border-radius:999px;padding:12px 20px;font-weight:700;font-size:14px;transition:.2s}
 .btn:hover{background:var(--accent-deep);transform:translateY(-1px)}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
@@ -53,8 +57,9 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   transform:rotate(-3deg);position:relative;flex:0 0 auto}
 .polaroid::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-5deg);
   width:48px;height:18px;background:rgba(184,137,63,.45);box-shadow:0 1px 2px rgba(0,0,0,.1)}
-.ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;
+.ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;position:relative;overflow:hidden;
   font-family:"Fredoka",sans-serif;font-weight:600;font-size:44px;color:#fff;background-size:cover;background-position:center}
+.ava-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .pname-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0}
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
@@ -307,6 +312,7 @@ main,footer{position:relative;z-index:1}
     </span>
     <span class="sp"></span>
     <span class="tagline">уютная полка прочитанного</span>
+    <button class="bell" id="reqBtn" title="Запросы в друзья" aria-label="Запросы">🔔<span class="bell-count" id="reqCount" style="display:none">0</span></button>
   </div>
 </header>
 
@@ -318,6 +324,7 @@ main,footer{position:relative;z-index:1}
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
+        <button class="edit-profile" id="removeFriend" title="Убрать из друзей" aria-label="Убрать из друзей" style="display:none">✕</button>
       </div>
       <div class="sub" id="pSub"></div>
     </div>
@@ -355,7 +362,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · демо-прототип · версия 9 · книги и профиль сохраняются в этом браузере.</div></footer>
+<footer><div class="wrap">Polka · демо-прототип · версия 10 · книги и профиль сохраняются в этом браузере.</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -683,22 +690,27 @@ main,footer{position:relative;z-index:1}
   });
 
   /* профиль */
+  function setAva(photo, color, initial){
+    const ava = $("#ava");
+    ava.style.background = color || "var(--accent)";
+    ava.style.backgroundImage = "none";
+    ava.innerHTML = `<span>${esc(initial||"")}</span>` + (photo ? `<img class="ava-img" src="${photo}" alt="" onerror="this.remove()">` : "");
+  }
   function renderProfile(){
     const books = currentBooks();
-    const ava = $("#ava");
     if(isMe()){
       $("#pName").textContent = myName;
       $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
       $("#editProfile").style.display = "";
-      if(myPhoto){ ava.style.backgroundImage = `url(${myPhoto})`; ava.textContent=""; ava.style.background=""; ava.style.backgroundImage=`url(${myPhoto})`; }
-      else { ava.style.backgroundImage="none"; ava.style.background="var(--accent)"; ava.textContent="М"; }
+      $("#removeFriend").style.display = "none";
+      setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
       $("#pName").textContent = f.name;
       $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
       $("#editProfile").style.display = "none";
-      if(f.photo){ ava.style.backgroundImage=`url(${f.photo})`; ava.textContent=""; ava.style.background=""; }
-      else { ava.style.backgroundImage="none"; ava.style.background=f.color; ava.textContent=f.name[0]; }
+      $("#removeFriend").style.display = "";
+      setAva(f.photo, f.color, (f.name[0]||"?"));
     }
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
@@ -895,6 +907,14 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); profileModal.classList.add("open");
   }
   $("#editProfile").addEventListener("click", openProfile);
+  $("#removeFriend").addEventListener("click", ()=>{
+    if(isMe()) return;
+    const id = view;
+    savedFriends = savedFriends.filter(f=>f.id!==id);
+    delete DEMO_FRIENDS[id];
+    try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
+    view="me"; casePage=0; renderAll(); toast("Полка убрана из друзей");
+  });
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 256, url=>{ tempPhoto=url; paintPhoto(); });
@@ -1018,7 +1038,7 @@ main,footer{position:relative;z-index:1}
   if(CLOUD() && localStorage.getItem("polka_registered")){
     if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} }
     syncUp().then(ok=>{ if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase"); });
-    setTimeout(checkRequests, 800);
+    setTimeout(refreshReqBadge, 800);
     refreshFriends();
   }
   /* подтянуть свежие данные друзей из облака (фото, книги, цитата) */
@@ -1044,13 +1064,16 @@ main,footer{position:relative;z-index:1}
     return photo ? `<div class="req-face" style="background-image:url(${photo})"></div>`
                  : `<div class="req-face" style="background:${color||'#7B5B4B'}">${ini}</div>`;
   }
-  async function checkRequests(){
-    if(!CLOUD() || !myCode) return;
-    let rows; try{ rows = await sbFetchRequests(myCode); }catch(e){ return; }
-    if(rows && rows.length) showRequests(rows);
+  let pendingReqs = [];
+  function updateReqBadge(){ const b=$("#reqCount"); if(pendingReqs.length){ b.textContent=pendingReqs.length; b.style.display=""; } else b.style.display="none"; }
+  async function refreshReqBadge(){
+    if(!CLOUD() || !myCode){ pendingReqs=[]; updateReqBadge(); return; }
+    try{ pendingReqs = await sbFetchRequests(myCode) || []; }catch(e){ pendingReqs=[]; }
+    updateReqBadge();
   }
-  function showRequests(rows){
-    $("#reqList").innerHTML = rows.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
+  function showRequests(){
+    if(!pendingReqs.length){ toast("Пока никто вас не добавил"); return; }
+    $("#reqList").innerHTML = pendingReqs.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
         ${faceFor(r.from_name, r.from_photo, '#b8493a')}
         <span class="req-who">${esc(r.from_name||'Кто-то')}</span>
         <button class="btn ghost req-dismiss">Скрыть</button>
@@ -1058,21 +1081,16 @@ main,footer{position:relative;z-index:1}
       </div>`).join("");
     overlay.classList.add("open"); reqModal.classList.add("open");
   }
+  $("#reqBtn").addEventListener("click", async ()=>{ await refreshReqBadge(); showRequests(); });
   $("#reqList").addEventListener("click", async (e)=>{
     const item = e.target.closest(".req-item"); if(!item) return;
+    const accept = e.target.closest(".req-accept"), dismiss = e.target.closest(".req-dismiss");
+    if(!accept && !dismiss) return;
     const id = item.dataset.id, from = item.dataset.from;
-    if(e.target.closest(".req-accept")){
-      if(id) sbDeleteRequest(id).catch(()=>{});
-      item.remove();
-      if(from) await addFriendByCode(from);
-      if(!$("#reqList").children.length) closeModals();
-      return;
-    }
-    if(e.target.closest(".req-dismiss")){
-      if(id) sbDeleteRequest(id).catch(()=>{});
-      item.remove();
-      if(!$("#reqList").children.length) closeModals();
-    }
+    if(id){ sbDeleteRequest(id).catch(()=>{}); pendingReqs = pendingReqs.filter(r=>String(r.id)!==String(id)); }
+    item.remove(); updateReqBadge();
+    if(accept && from) await addFriendByCode(from);
+    if(!$("#reqList").children.length) closeModals();
   });
 
   /* ---- импорт из ссылки #shelf= ---- */
