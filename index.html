@@ -227,6 +227,11 @@ main,footer{position:relative;z-index:1}
 .rate button{border:none;background:none;font-size:26px;color:var(--line);cursor:pointer;line-height:1;padding:0}
 .rate button.on{color:var(--gold)}
 .bookinfo .stars{color:var(--gold);font-size:20px;letter-spacing:2px;margin-bottom:8px}
+.req-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.req-face{width:40px;height:40px;border-radius:50%;flex:0 0 auto;background-size:cover;background-position:center;
+  display:grid;place-items:center;color:#fff;font-weight:700;font-family:"Fredoka",sans-serif}
+.req-who{flex:1;font-weight:600;min-width:0}
+.req-item .btn{padding:8px 14px;font-size:13px}
 .preview{display:flex;align-items:flex-end;gap:14px;background:var(--paper-2);border-radius:10px;padding:14px;margin-bottom:16px}
 .preview .pl{font-size:13px;color:var(--ink-soft)}
 .photo-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
@@ -443,6 +448,14 @@ main,footer{position:relative;z-index:1}
   <input type="file" id="stickerFile" accept="image/*" hidden>
 </div>
 
+<!-- запросы «добавили вас» -->
+<div class="modal" id="reqModal" role="dialog" aria-modal="true" aria-label="Запросы">
+  <button class="close" data-close>×</button>
+  <h3>Вас добавили 👋</h3>
+  <p class="mp">Эти люди добавили вашу полку. Добавить их в ответ?</p>
+  <div id="reqList"></div>
+</div>
+
 <!-- регистрация при первом входе -->
 <div class="modal" id="welModal" role="dialog" aria-modal="true" aria-label="Вход">
   <h3>Добро пожаловать в Polka 📖</h3>
@@ -492,6 +505,18 @@ main,footer{position:relative;z-index:1}
     const r = await fetch(SUPABASE_URL+"/rest/v1/shelves?select=*&code=eq."+encodeURIComponent(code),{headers:SB_H()});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
     const a = await r.json(); return Array.isArray(a)?a[0]:null;
+  }
+  async function sbInsertRequest(row){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/requests",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
+  }
+  async function sbFetchRequests(code){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/requests?select=*&to_code=eq."+encodeURIComponent(code),{headers:SB_H()});
+    if(!r.ok) return [];
+    const a = await r.json(); return Array.isArray(a)?a:[];
+  }
+  async function sbDeleteRequest(id){
+    await fetch(SUPABASE_URL+"/rest/v1/requests?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:SB_H()});
   }
   function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 
@@ -601,13 +626,13 @@ main,footer{position:relative;z-index:1}
       return a;
     });
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb]));
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||""]));
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"",
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||"") }; }) };
@@ -621,11 +646,11 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto});
   }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
-    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers})}); return true; }
+    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto})}); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
@@ -672,7 +697,8 @@ main,footer{position:relative;z-index:1}
       $("#pName").textContent = f.name;
       $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
       $("#editProfile").style.display = "none";
-      ava.style.backgroundImage="none"; ava.style.background=f.color; ava.textContent=f.name[0];
+      if(f.photo){ ava.style.backgroundImage=`url(${f.photo})`; ava.textContent=""; ava.style.background=""; }
+      else { ava.style.backgroundImage="none"; ava.style.background=f.color; ava.textContent=f.name[0]; }
     }
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
@@ -871,7 +897,7 @@ main,footer{position:relative;z-index:1}
   $("#editProfile").addEventListener("click", openProfile);
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
-    const r=new FileReader(); r.onload=()=>{ tempPhoto=r.result; paintPhoto(); }; r.readAsDataURL(f);
+    imgToDataURL(f, 256, url=>{ tempPhoto=url; paintPhoto(); });
   });
   $("#photoRemove").addEventListener("click", ()=>{ tempPhoto=""; paintPhoto(); });
   $("#copyCode").addEventListener("click", ()=>{
@@ -895,11 +921,12 @@ main,footer{position:relative;z-index:1}
   async function addFriendByCode(code){
     if(!code || !code.trim()) return;
     code = code.trim();
-    let p = null;
+    let p = null, used = "";
     if(/^PLK/i.test(code)){
       try{ p = decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); }
     } else if(CLOUD()){
-      let row; try{ row = await sbFetch(code.toUpperCase()); }catch(e){ return toast("Нет связи с облаком"); }
+      used = code.toUpperCase();
+      let row; try{ row = await sbFetch(used); }catch(e){ return toast("Облако: "+(e.message||e)); }
       if(!row || !row.data) return toast("Полка с таким кодом не найдена");
       try{ p = decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
     } else {
@@ -907,13 +934,18 @@ main,footer{position:relative;z-index:1}
     }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books) || !books.length) return toast("Код не похож на полку");
+    if(used && savedFriends.some(f=>f.code===used)){ const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id="fr"+Date.now().toString(36);
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[]};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||""};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj;
     view=id; casePage=0; closeModals(); renderAll(); toast("Полка «"+name+"» добавлена!");
+    // уведомить друга, что его добавили (запрос «добавить в ответ»)
+    if(CLOUD() && used && myCode && used!==myCode){
+      sbInsertRequest({to_code:used, from_code:myCode, from_name:myName, from_photo:myPhoto}).catch(()=>{});
+    }
   }
 
   /* ---- тост ---- */
@@ -970,11 +1002,12 @@ main,footer{position:relative;z-index:1}
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used;
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||"";
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote);
       localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
       localStorage.setItem("polka_registered","1");
+      if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
     view="me"; closeModals(); renderAll(); toast("С возвращением, "+myName.split(" ")[0]+"!");
@@ -985,7 +1018,46 @@ main,footer{position:relative;z-index:1}
   if(CLOUD() && localStorage.getItem("polka_registered")){
     if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} }
     syncUp().then(ok=>{ if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase"); });
+    setTimeout(checkRequests, 800);
   }
+
+  /* запросы «вас добавили» */
+  const reqModal = $("#reqModal");
+  function faceFor(name, photo, color){
+    const ini = (name && name[0]) ? esc(name[0]) : "?";
+    return photo ? `<div class="req-face" style="background-image:url(${photo})"></div>`
+                 : `<div class="req-face" style="background:${color||'#7B5B4B'}">${ini}</div>`;
+  }
+  async function checkRequests(){
+    if(!CLOUD() || !myCode) return;
+    let rows; try{ rows = await sbFetchRequests(myCode); }catch(e){ return; }
+    if(rows && rows.length) showRequests(rows);
+  }
+  function showRequests(rows){
+    $("#reqList").innerHTML = rows.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
+        ${faceFor(r.from_name, r.from_photo, '#b8493a')}
+        <span class="req-who">${esc(r.from_name||'Кто-то')}</span>
+        <button class="btn ghost req-dismiss">Скрыть</button>
+        <button class="btn req-accept">Добавить</button>
+      </div>`).join("");
+    overlay.classList.add("open"); reqModal.classList.add("open");
+  }
+  $("#reqList").addEventListener("click", async (e)=>{
+    const item = e.target.closest(".req-item"); if(!item) return;
+    const id = item.dataset.id, from = item.dataset.from;
+    if(e.target.closest(".req-accept")){
+      if(id) sbDeleteRequest(id).catch(()=>{});
+      item.remove();
+      if(from) await addFriendByCode(from);
+      if(!$("#reqList").children.length) closeModals();
+      return;
+    }
+    if(e.target.closest(".req-dismiss")){
+      if(id) sbDeleteRequest(id).catch(()=>{});
+      item.remove();
+      if(!$("#reqList").children.length) closeModals();
+    }
+  });
 
   /* ---- импорт из ссылки #shelf= ---- */
   if(location.hash.startsWith("#shelf=")){
