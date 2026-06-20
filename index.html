@@ -355,7 +355,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · демо-прототип · версия 8 · книги и профиль сохраняются в этом браузере.</div></footer>
+<footer><div class="wrap">Polka · демо-прототип · версия 9 · книги и профиль сохраняются в этом браузере.</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1019,6 +1019,22 @@ main,footer{position:relative;z-index:1}
     if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} }
     syncUp().then(ok=>{ if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase"); });
     setTimeout(checkRequests, 800);
+    refreshFriends();
+  }
+  /* подтянуть свежие данные друзей из облака (фото, книги, цитата) */
+  async function refreshFriends(){
+    if(!CLOUD()) return;
+    let changed = false;
+    for(const f of savedFriends){
+      if(!f.code) continue;
+      try{
+        const row = await sbFetch(f.code);
+        if(row && row.data){ const p = decodeCode(row.data);
+          f.name = p.n || f.name; f.quote = p.q || ""; f.stickers = p.s || [];
+          f.photo = p.ph || ""; if(Array.isArray(p.b)) f.books = p.b; changed = true; }
+      }catch(e){}
+    }
+    if(changed){ try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){} renderAll(); }
   }
 
   /* запросы «вас добавили» */
