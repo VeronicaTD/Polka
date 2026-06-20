@@ -66,9 +66,15 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
 
 /* вкладки */
-.tabs{display:flex;gap:10px;flex-wrap:wrap;padding:22px 0 10px;align-items:center}
-.tab{border:1px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:999px;
+.tabs{display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;padding:22px 0 10px;align-items:center;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:1px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:999px;flex:0 0 auto;white-space:nowrap;
   padding:9px 16px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:9px;transition:.2s}
+@media(max-width:640px){
+  .tabs .lbl{display:none}
+  .tab{padding:6px 11px;font-size:12.5px;gap:6px}
+  .tab .face{width:18px;height:18px;font-size:10px}
+}
 .tab:hover{border-color:var(--ink);color:var(--ink)}
 .tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .tab .face{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;background-size:cover;background-position:center}
@@ -96,9 +102,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
-  font-size:10px;line-height:1.04;max-height:72%;overflow:hidden;text-align:left}
-.spine .s-band{width:100%;text-align:center;font-size:6.5px;letter-spacing:.02em;opacity:.85;
+  font-size:13px;line-height:1.05;max-height:74%;overflow:hidden;text-align:left}
+.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.02em;opacity:.85;
   border-top:1px solid rgba(255,255,255,.25);padding-top:4px}
+@media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} }
 .s-heart{position:absolute;top:-8px;left:50%;transform:translateX(-50%);z-index:6;
   filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 .spine:hover{transform:translateY(-16px) rotateZ(-1.5deg);box-shadow:4px 14px 22px -8px rgba(0,0,0,.6);z-index:5}
@@ -121,7 +128,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 
 /* скрапбук-детали */
 #caseWrap{position:relative;margin-top:4px}
-.tape{position:absolute;z-index:4;width:80px;height:26px;top:4px;
+.tape{position:absolute;z-index:4;width:74px;height:22px;top:-12px;
   background:repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 6px,transparent 6px 12px),var(--tcol,rgba(184,137,63,.5));
   box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .tape-l{left:-14px;transform:rotate(-7deg)}
@@ -143,6 +150,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .my-stickers{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .my-stickers:empty{display:none}
 .my-stickers .badge{width:48px;height:48px;filter:drop-shadow(0 3px 5px rgba(0,0,0,.18))}
+.my-stickers.editable{cursor:pointer}
+.sticker-ph{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--line);color:var(--ink-soft);
+  border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:600}
+.my-stickers.editable:hover .sticker-ph{border-color:var(--accent);color:var(--accent)}
 .sticker-hint{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
 .sticker-pick{display:flex;gap:14px;flex-wrap:wrap;padding-bottom:8px}
 .sticker-opt{border:none;background:transparent;padding:5px;border-radius:14px;line-height:0;position:relative;transition:.2s;opacity:.55;filter:grayscale(.45)}
@@ -151,6 +162,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .sticker-opt .badge{width:74px;height:74px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
 .sticker-opt.on::after{content:"✓";position:absolute;top:-2px;right:-2px;width:22px;height:22px;
   background:var(--accent);color:#fff;border-radius:50%;font-size:13px;display:grid;place-items:center;box-shadow:var(--shadow)}
+.badge.cust{border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.add-sticker{width:84px;height:84px;border:2px dashed var(--line);border-radius:50%;color:var(--accent);
+  font-size:30px;display:grid;place-items:center;opacity:1;filter:none;background:transparent}
+.add-sticker:hover{border-color:var(--accent);background:var(--paper-2);transform:translateY(-2px)}
 
 /* инфо-полоса */
 .howto{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin:24px 0 48px;display:flex;gap:18px;align-items:flex-start}
@@ -304,12 +319,6 @@ main,footer{position:relative;z-index:1}
     </div>
   </section>
 
-  <section id="stickerSection">
-    <div class="section-head"><h2>Мои стикеры</h2></div>
-    <p class="sticker-hint">Нажмите на стикер, чтобы прикрепить его к профилю (можно несколько).</p>
-    <div class="sticker-pick" id="stickerPick"></div>
-  </section>
-
   <section class="tabs" id="tabs"></section>
 
   <section id="caseWrap">
@@ -405,9 +414,18 @@ main,footer{position:relative;z-index:1}
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="joinAdd">Добавить полку</button></div>
 </div>
 
+<!-- библиотека стикеров -->
+<div class="modal" id="stickerModal" role="dialog" aria-modal="true" aria-label="Стикеры">
+  <button class="close" data-close>×</button>
+  <h3>Мои стикеры</h3>
+  <p class="mp">Нажмите, чтобы прикрепить к профилю (можно несколько). Кнопкой «+» загрузите свои картинки.</p>
+  <div class="sticker-pick" id="stickerPick"></div>
+  <input type="file" id="stickerFile" accept="image/*" hidden>
+</div>
+
 <!-- регистрация при первом входе -->
 <div class="modal" id="welModal" role="dialog" aria-modal="true" aria-label="Вход">
-  <h3>Добро пожаловать в Polka 🌿</h3>
+  <h3>Добро пожаловать в Polka 📖</h3>
   <div id="welChoose">
     <p class="mp">Вы здесь впервые или у вас уже есть полка?</p>
     <button class="btn" id="welNew" style="width:100%;display:flex;justify-content:center">Создать новую полку</button>
@@ -485,26 +503,32 @@ main,footer{position:relative;z-index:1}
   ];
   const STK = Object.fromEntries(STICKERS.map(s=>[s.id,s]));
 
-  /* пиксельное сердечко-облачко над любимыми книгами */
-  const HEART_PX = [
-    "..CCCCCCCC..",
-    ".CCCCCCCCCC.",
-    ".CCRRCCRRCC.",
-    ".CRPRRRRPRC.",
-    ".CRRRRRRRRC.",
-    ".CCRRRRRRCC.",
-    ".CCCRRRRCCC.",
-    ".CCCCRRCCCC.",
-    ".CCCCCCCCCCs",
-    "..CCCCCCCCs.",
-    "...CCCCs....",
-    "...CCs......"
-  ];
+  /* отрисовка стикера: встроенный (рисуем) или свой (картинка) */
+  function renderSticker(id, size){
+    if(STK[id]) return badgeSVG(STK[id], size);
+    const c = customStickers.find(x=>x.id===id);
+    if(c) return `<img class="badge cust" src="${c.img}" width="${size}" height="${size}" alt="">`;
+    return "";
+  }
+  /* уменьшить картинку до квадрата size×size */
+  function imgToDataURL(file, size, cb){
+    const r = new FileReader();
+    r.onload = () => { const im = new Image(); im.onload = () => {
+      const cv = document.createElement("canvas"); cv.width=size; cv.height=size;
+      const ctx = cv.getContext("2d");
+      const s = Math.min(im.width, im.height), sx=(im.width-s)/2, sy=(im.height-s)/2;
+      ctx.drawImage(im, sx, sy, s, s, 0, 0, size, size);
+      cb(cv.toDataURL("image/png"));
+    }; im.src = r.result; };
+    r.readAsDataURL(file);
+  }
+
+  /* сердечко над любимыми книгами (сплошное с белой обводкой) */
   function pixelHeartSVG(size){
-    const map={C:"#e7ded0",R:"#7e3a31",P:"#c98f8b",s:"#b3a794"};
-    let r="";
-    HEART_PX.forEach((row,y)=>{ for(let x=0;x<row.length;x++){ const c=map[row[x]]; if(c) r+=`<rect x="${x}" y="${y}" width="1.03" height="1.03" fill="${c}"/>`; } });
-    return `<svg class="s-heart" viewBox="0 0 12 12" width="${size}" height="${size}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+    return `<svg class="s-heart" viewBox="0 0 32 30" width="${size}" height="${size}" aria-hidden="true">
+      <path d="M16 28 C16 28 2 19.5 2 9.8 C2 5.2 5.6 2 9.6 2 C12.6 2 15 4 16 6 C17 4 19.4 2 22.4 2 C26.4 2 30 5.2 30 9.8 C30 19.5 16 28 16 28 Z"
+        fill="#7a1f2b" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>
+    </svg>`;
   }
   function badgeSVG(s, size){
     if(!s) return "";
@@ -517,27 +541,11 @@ main,footer{position:relative;z-index:1}
     </svg>`;
   }
 
-  /* демо-друзья */
-  const DEMO_FRIENDS = {
-    anya:{ name:"Аня Дроздова", color:"#b1432a", quote:"чай, плед и толстый роман", stickers:["romance","cry"],
-      books:[
-        {t:"Анна Каренина",a:"Л. Толстой",g:"Классика",fav:true,note:"перечитываю каждую осень"},
-        {t:"Тоннель",a:"Я. Вишневский",g:"Проза"},
-        {t:"Солярис",a:"С. Лем",g:"Фантастика",fav:true},
-        {t:"Маленькая жизнь",a:"Х. Янагихара",g:"Проза",fav:true,note:"плакала, но не жалею"},
-        {t:"Шантарам",a:"Г. Робертс",g:"Проза"},
-        {t:"Норвежский лес",a:"Х. Мураками",g:"Проза",fav:true},
-        {t:"Идиот",a:"Ф. Достоевский",g:"Классика"}
-      ]},
-    mark:{ name:"Марк Орлов", color:"#6f6a4e", quote:"сначала факты, потом кофе", stickers:["coffee","star"],
-      books:[
-        {t:"Sapiens",a:"Ю. Харари",g:"Нон-фикшн",fav:true,note:"меняет оптику"},
-        {t:"Думай медленно",a:"Д. Канеман",g:"Нон-фикшн"},
-        {t:"Девушка с татуировкой",a:"С. Ларссон",g:"Детектив"},
-        {t:"Чистый код",a:"Р. Мартин",g:"Нон-фикшн",fav:true},
-        {t:"И не осталось никого",a:"А. Кристи",g:"Детектив",fav:true}
-      ]}
-  };
+  /* друзья появляются только когда добавишь их по коду */
+  const DEMO_FRIENDS = {};
+
+  /* одноразовая очистка старых демо-данных (книги/друзья) */
+  try{ if(!localStorage.getItem("polka_reset2")){ localStorage.removeItem("polka_books"); localStorage.removeItem("polka_friends"); localStorage.setItem("polka_reset2","1"); } }catch(e){}
 
   /* добавленные по коду */
   const FRIEND_COLORS = ["#b8493a","#7B5B4B","#c98a3c","#7a3b52","#956a39","#6f6a4e"];
@@ -550,20 +558,15 @@ main,footer{position:relative;z-index:1}
   let myQuote = localStorage.getItem("polka_quote") || "";
   let myPhoto = localStorage.getItem("polka_photo") || "";
   let myStickers = [];
-  try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || ["cat"]; } catch(e){ myStickers = ["cat"]; }
+  try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || []; } catch(e){ myStickers = []; }
   let myCode = localStorage.getItem("polka_code") || "";
+  /* свои загруженные стикеры (картинки) */
+  let customStickers = [];
+  try { customStickers = JSON.parse(localStorage.getItem("polka_custom") || "[]"); } catch(e){ customStickers = []; }
 
-  /* мои книги */
+  /* мои книги — новый профиль начинается пустым */
   let myBooks = [];
-  try { myBooks = JSON.parse(localStorage.getItem("polka_books") || "null") || seed(); }
-  catch(e){ myBooks = seed(); }
-  function seed(){ return [
-    {t:"Мастер и Маргарита",a:"М. Булгаков",g:"Классика",fav:true,note:"моя любимая, перечитывала трижды",c:COLORS[8]},
-    {t:"Цветы для Элджернона",a:"Д. Киз",g:"Фантастика",fav:true,c:COLORS[6]},
-    {t:"Маленький принц",a:"А. де Сент-Экзюпери",g:"Проза",c:COLORS[3]},
-    {t:"Дюна",a:"Ф. Герберт",g:"Фантастика",c:COLORS[2]},
-    {t:"Тонкое искусство пофигизма",a:"М. Мэнсон",g:"Нон-фикшн",c:COLORS[10]}
-  ]; }
+  try { myBooks = JSON.parse(localStorage.getItem("polka_books") || "[]"); } catch(e){ myBooks = []; }
   const saveMine = () => { try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} };
 
   /* коды (компактный формат PLK2) */
@@ -578,7 +581,8 @@ main,footer{position:relative;z-index:1}
       if(bk.note) a.push(bk.note);
       return a;
     });
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", p.s||[], cb]));
+    const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb]));
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
@@ -651,29 +655,59 @@ main,footer{position:relative;z-index:1}
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
-    $("#myStickers").innerHTML = currentStickers().map(id=>badgeSVG(STK[id],48)).join("");
-    $("#stickerSection").style.display = isMe() ? "" : "none";
+    renderMyStickers();
   }
+  function renderMyStickers(){
+    const el = $("#myStickers");
+    if(isMe()){
+      el.classList.add("editable");
+      el.innerHTML = myStickers.length ? myStickers.map(id=>renderSticker(id,48)).join("")
+        : `<span class="sticker-ph">＋ выбрать стикеры</span>`;
+    } else {
+      el.classList.remove("editable");
+      el.innerHTML = currentStickers().map(id=>renderSticker(id,48)).join("");
+    }
+  }
+  $("#myStickers").addEventListener("click", ()=>{ if(isMe()) openStickerModal(); });
+  function openStickerModal(){ renderPicker(); overlay.classList.add("open"); $("#stickerModal").classList.add("open"); }
 
   /* выбор стикеров */
   function renderPicker(){
-    $("#stickerPick").innerHTML = STICKERS.map(s=>
-      `<button class="sticker-opt ${myStickers.includes(s.id)?'on':''}" data-s="${s.id}">${badgeSVG(s,74)}</button>`).join("");
+    const built = STICKERS.map(s=>`<button class="sticker-opt ${myStickers.includes(s.id)?'on':''}" data-s="${s.id}">${badgeSVG(s,74)}</button>`).join("");
+    const cust = customStickers.map(c=>`<button class="sticker-opt ${myStickers.includes(c.id)?'on':''}" data-s="${c.id}"><img class="badge cust" src="${c.img}" width="74" height="74" alt=""></button>`).join("");
+    const add = `<button class="sticker-opt add-sticker" id="addSticker" title="Загрузить свой стикер">+</button>`;
+    $("#stickerPick").innerHTML = built + cust + add;
   }
   $("#stickerPick").addEventListener("click", e=>{
     const b = e.target.closest(".sticker-opt"); if(!b) return;
+    if(b.id==="addSticker"){ $("#stickerFile").click(); return; }
     const id = b.dataset.s; const i = myStickers.indexOf(id);
     if(i>-1) myStickers.splice(i,1); else myStickers.push(id);
     try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){}
-    syncUp(); renderPicker(); $("#myStickers").innerHTML = currentStickers().map(x=>badgeSVG(STK[x],48)).join("");
+    syncUp(); renderPicker(); renderMyStickers();
+  });
+  $("#stickerFile").addEventListener("change", e=>{
+    const f = e.target.files && e.target.files[0]; e.target.value="";
+    if(!f) return;
+    imgToDataURL(f, 128, (url)=>{
+      const id = "cu"+Date.now().toString(36);
+      customStickers.push({id, img:url});
+      try{ localStorage.setItem("polka_custom", JSON.stringify(customStickers)); }
+      catch(err){ customStickers.pop(); return toast("Не хватило памяти браузера для стикера"); }
+      myStickers.push(id);
+      try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(err){}
+      renderPicker(); renderMyStickers();
+    });
   });
 
   /* размеры корешка */
+  const phone = () => window.innerWidth <= 640;
   function spineDims(b){
     const seedN = (b.t.length*7 + b.a.length*3) % 5;
-    return { w: 22 + seedN*2, h: 92 + ((b.t.length*4) % 38) };
+    if(phone()) return { w: 22 + seedN*2, h: 92 + ((b.t.length*4) % 38) };
+    return { w: 32 + seedN*3, h: 134 + ((b.t.length*5) % 52) };
   }
-  function perShelf(){ const w = bookcase.clientWidth - 36; return Math.max(5, Math.floor(w / 30)); }
+  function perShelf(){ const w = bookcase.clientWidth - 36; const unit = phone()?30:48; return Math.max(5, Math.floor(w / unit)); }
 
   function spineHTML(b, i){
     const {w,h} = spineDims(b);
@@ -858,8 +892,14 @@ main,footer{position:relative;z-index:1}
   $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
   $("#welGo").addEventListener("click", ()=>{
     myName = $("#welName").value.trim() || "Моя полка";
-    if(CLOUD() && !myCode) myCode = genCode();
-    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_registered","1"); if(myCode) localStorage.setItem("polka_code",myCode); }catch(e){}
+    myBooks = []; myQuote = ""; myStickers = [];          // новая полка — пустая
+    myCode = CLOUD() ? genCode() : "";
+    try{
+      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote","");
+      localStorage.setItem("polka_books","[]"); localStorage.setItem("polka_stickers","[]");
+      localStorage.setItem("polka_registered","1");
+      if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
+    }catch(e){}
     syncUp();                       // в фоне, не ждём ответа облака
     $("#welCode").value = myShareCode();
     welShow("welStep2"); renderAll();
@@ -880,7 +920,7 @@ main,footer{position:relative;z-index:1}
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s&&p.s.length)?p.s:["cat"]; myBooks=books; myCode=used;
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used;
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote);
       localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
