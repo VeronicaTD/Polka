@@ -7,7 +7,7 @@
 <meta name="description" content="Личная библиотека прочитанных книг в виде уютных книжных шкафов. Заполняйте полки и ходите в гости к друзьям по коду." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Crafty+Girls&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* =========================================================
    Palette: крем #FFF8F1 + кофейный #7B5B4B. Один акцент.
@@ -21,15 +21,15 @@
   --accent:#7B5B4B; --accent-deep:#5e4538;
   --gold:#b8893f;
   --radius:14px;
-  --display:"Crafty Girls",cursive;
+  --display:"Fredoka",sans-serif;
   --shadow:0 16px 34px -22px rgba(40,25,10,.6);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);
-  font-family:"Manrope",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  font-family:"Fredoka",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
   background-image:radial-gradient(circle at 15% 0%, rgba(184,73,58,.05), transparent 38%),
                    radial-gradient(circle at 100% 100%, rgba(184,137,63,.06), transparent 42%);}
-h1,h2,h3,.serif{font-family:"Fraunces",Georgia,serif;font-weight:500;letter-spacing:-.01em;line-height:1.08}
+h1,h2,h3,.serif{font-family:"Fredoka",sans-serif;font-weight:600;letter-spacing:0;line-height:1.1}
 button{font-family:inherit;cursor:pointer}
 .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
 
@@ -54,7 +54,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .polaroid::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-5deg);
   width:48px;height:18px;background:rgba(184,137,63,.45);box-shadow:0 1px 2px rgba(0,0,0,.1)}
 .ava{width:72px;height:72px;border-radius:2px;display:grid;place-items:center;
-  font-family:"Fraunces",serif;font-size:32px;color:#fff;background-size:cover;background-position:center}
+  font-family:"Fredoka",sans-serif;font-weight:600;font-size:32px;color:#fff;background-size:cover;background-position:center}
 .pname-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0}
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
@@ -62,7 +62,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
 .profile .sub{color:var(--ink-soft);font-size:15px;margin-top:2px;max-width:46ch}
 .stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap}
-.stats div b{font-family:"Fraunces",serif;font-size:26px;font-weight:600;display:block;line-height:1}
+.stats div b{font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;display:block;line-height:1}
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
 
 /* вкладки */
@@ -78,10 +78,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 
 /* книжный шкаф */
 .bookcase{background:linear-gradient(180deg,var(--wood-1),var(--wood-2));border-radius:var(--radius);
-  padding:20px 22px 8px;margin:14px 0 14px;
+  padding:14px 16px 4px;margin:14px 0 14px;
   box-shadow:var(--shadow), inset 0 0 0 3px rgba(0,0,0,.12), inset 0 0 60px rgba(0,0,0,.25);
   position:relative;perspective:1400px;overflow:hidden}
-.shelf{position:relative;display:flex;align-items:flex-end;gap:7px;min-height:188px;padding:0 6px 14px;margin-bottom:16px}
+.shelf{position:relative;display:flex;align-items:flex-end;gap:5px;min-height:122px;padding:0 5px 11px;margin-bottom:11px}
 .shelf::after{content:"";position:absolute;left:-12px;right:-12px;bottom:0;height:16px;
   background:linear-gradient(180deg,#3c2614,#2a1a0c);border-radius:3px;
   box-shadow:0 8px 14px -6px rgba(0,0,0,.6), inset 0 2px 0 rgba(255,255,255,.06)}
@@ -94,18 +94,19 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   transform-origin:bottom center}
 .spine::after{content:"";position:absolute;inset:0;background:
   linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
+.spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
-  font-size:13px;line-height:1.05;max-height:74%;overflow:hidden;text-align:left}
-.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.04em;opacity:.85;
-  border-top:1px solid rgba(255,255,255,.25);padding-top:5px}
-.s-heart{position:absolute;top:7px;left:50%;transform:translateX(-50%);z-index:4;font-size:12px;
-  color:#f4dca6;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  font-size:10px;line-height:1.04;max-height:72%;overflow:hidden;text-align:left}
+.spine .s-band{width:100%;text-align:center;font-size:6.5px;letter-spacing:.02em;opacity:.85;
+  border-top:1px solid rgba(255,255,255,.25);padding-top:4px}
+.s-heart{position:absolute;top:-8px;left:50%;transform:translateX(-50%);z-index:6;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 .spine:hover{transform:translateY(-16px) rotateZ(-1.5deg);box-shadow:4px 14px 22px -8px rgba(0,0,0,.6);z-index:5}
 
 .shelf .placeholder{position:relative;z-index:1;color:rgba(255,255,255,.7);font-size:14px;font-style:italic;padding:10px 4px;align-self:center}
-.add-slot{position:relative;z-index:1;flex:0 0 auto;width:40px;align-self:flex-end;height:120px;
+.add-slot{position:relative;z-index:1;flex:0 0 auto;width:28px;align-self:flex-end;height:78px;
   border:2px dashed rgba(255,255,255,.4);border-radius:4px;background:transparent;color:rgba(255,255,255,.75);
-  font-size:26px;display:grid;place-items:center;transition:.2s}
+  font-size:20px;display:grid;place-items:center;transition:.2s}
 .add-slot:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.08)}
 
 /* листание шкафов */
@@ -138,6 +139,19 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .chip:hover{border-color:var(--ink);color:var(--ink)}
 .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 
+/* стикеры профиля */
+.my-stickers{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.my-stickers:empty{display:none}
+.my-stickers .badge{width:48px;height:48px;filter:drop-shadow(0 3px 5px rgba(0,0,0,.18))}
+.sticker-hint{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
+.sticker-pick{display:flex;gap:14px;flex-wrap:wrap;padding-bottom:8px}
+.sticker-opt{border:none;background:transparent;padding:5px;border-radius:14px;line-height:0;position:relative;transition:.2s;opacity:.55;filter:grayscale(.45)}
+.sticker-opt:hover{opacity:.9;transform:translateY(-2px)}
+.sticker-opt.on{opacity:1;filter:none;background:var(--paper-2)}
+.sticker-opt .badge{width:74px;height:74px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
+.sticker-opt.on::after{content:"✓";position:absolute;top:-2px;right:-2px;width:22px;height:22px;
+  background:var(--accent);color:#fff;border-radius:50%;font-size:13px;display:grid;place-items:center;box-shadow:var(--shadow)}
+
 /* инфо-полоса */
 .howto{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin:24px 0 48px;display:flex;gap:18px;align-items:flex-start}
 .howto .ic{font-size:24px;flex-shrink:0}
@@ -155,8 +169,20 @@ footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--ink-soft
 .s3{bottom:-34px;left:-28px;color:#c98a3c;--r:10deg;width:146px;height:146px}
 .s4{bottom:90px;right:34px;color:#b8493a;--r:-8deg;width:96px;height:96px;opacity:.5}
 .s5{top:44%;left:-44px;color:#8a6a57;--r:18deg;width:110px;height:110px;opacity:.42}
+.s6{top:30%;right:5%;color:#c98a3c;--r:-14deg;width:92px;height:92px;opacity:.4}
+.s7{bottom:22%;left:9%;color:#b8493a;--r:12deg;width:84px;height:84px;opacity:.36}
+.d-spark{width:32px;height:32px;opacity:.6}
+.k1{top:17%;left:13%;color:#b8893f}
+.k2{top:68%;right:16%;color:#b8493a;width:24px;height:24px}
+.k3{top:39%;left:45%;color:#c98a3c;width:22px;height:22px;opacity:.45}
+.k4{bottom:13%;right:38%;color:#b8893f}
+.k5{top:11%;right:28%;color:#b8493a;width:20px;height:20px;opacity:.5}
 .decor svg:nth-of-type(2){animation-delay:-2s}.decor svg:nth-of-type(3){animation-delay:-4s}
 .decor svg:nth-of-type(4){animation-delay:-1s}.decor svg:nth-of-type(5){animation-delay:-3s}
+.decor svg:nth-of-type(6){animation-delay:-5s}.decor svg:nth-of-type(7){animation-delay:-1.5s}
+.decor svg:nth-of-type(8){animation-delay:-3.5s}.decor svg:nth-of-type(9){animation-delay:-2.2s}
+.decor svg:nth-of-type(10){animation-delay:-4.4s}.decor svg:nth-of-type(11){animation-delay:-.8s}
+.decor svg:nth-of-type(12){animation-delay:-2.8s}
 @keyframes bob{0%,100%{transform:rotate(var(--r)) translateY(0)}50%{transform:rotate(var(--r)) translateY(-12px)}}
 main,footer{position:relative;z-index:1}
 
@@ -186,7 +212,7 @@ main,footer{position:relative;z-index:1}
 .preview .pl{font-size:13px;color:var(--ink-soft)}
 .photo-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
 .photo-prev{width:64px;height:64px;border-radius:6px;background:var(--paper-2);background-size:cover;background-position:center;
-  display:grid;place-items:center;color:var(--ink-soft);font-size:24px;font-family:"Fraunces",serif;border:1px solid var(--line);flex:0 0 auto}
+  display:grid;place-items:center;color:var(--ink-soft);font-size:24px;font-family:"Fredoka",sans-serif;border:1px solid var(--line);flex:0 0 auto}
 .photo-row .fbtns{display:flex;flex-direction:column;gap:6px}
 .linklike{background:none;border:none;color:var(--accent);font-weight:600;font-size:13px;padding:0;text-align:left}
 .linklike:hover{color:var(--accent-deep);text-decoration:underline}
@@ -222,6 +248,7 @@ main,footer{position:relative;z-index:1}
     <path d="M100 10 L118 68.8 L177.9 55 L136 100 L177.9 145 L118 131.2 L100 190 L82 131.2 L22.1 145 L64 100 L22.1 55 L82 68.8 Z" fill="url(#news)" transform="translate(26,26) scale(0.74)"/>
     <path d="M100 10 L118 68.8 L177.9 55 L136 100 L177.9 145 L118 131.2 L100 190 L82 131.2 L22.1 145 L64 100 L22.1 55 L82 68.8 Z" fill="currentColor" opacity="0.92" transform="translate(60,60) scale(0.4)"/>
   </g></symbol>
+  <symbol id="spark" viewBox="0 0 100 100"><path d="M50 6 C55 38 62 45 94 50 C62 55 55 62 50 94 C45 62 38 55 6 50 C38 45 45 38 50 6 Z" fill="currentColor"/></symbol>
 </svg>
 <div class="decor" aria-hidden="true">
   <svg class="d-star s1" viewBox="0 0 200 200"><use href="#pstar"/></svg>
@@ -229,6 +256,13 @@ main,footer{position:relative;z-index:1}
   <svg class="d-star s3" viewBox="0 0 200 200"><use href="#pstar"/></svg>
   <svg class="d-star s4" viewBox="0 0 200 200"><use href="#pstar"/></svg>
   <svg class="d-star s5" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="d-star s6" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="d-star s7" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="d-spark k1" viewBox="0 0 100 100"><use href="#spark"/></svg>
+  <svg class="d-spark k2" viewBox="0 0 100 100"><use href="#spark"/></svg>
+  <svg class="d-spark k3" viewBox="0 0 100 100"><use href="#spark"/></svg>
+  <svg class="d-spark k4" viewBox="0 0 100 100"><use href="#spark"/></svg>
+  <svg class="d-spark k5" viewBox="0 0 100 100"><use href="#spark"/></svg>
 </div>
 
 <header>
@@ -262,6 +296,7 @@ main,footer{position:relative;z-index:1}
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
       </div>
       <div class="sub" id="pSub"></div>
+      <div class="my-stickers" id="myStickers"></div>
     </div>
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
@@ -273,13 +308,19 @@ main,footer{position:relative;z-index:1}
 
   <section id="caseWrap">
     <span class="tape tape-l"></span>
-    <svg class="bow" viewBox="0 0 100 80" width="64" aria-hidden="true">
-      <g fill="#b8493a" stroke="#8a3325" stroke-width="2" stroke-linejoin="round">
-        <path d="M50 40 C30 16 6 22 11 40 C6 58 30 64 50 40 Z"/>
-        <path d="M50 40 C70 16 94 22 89 40 C94 58 70 64 50 40 Z"/>
-        <path d="M47 43 L33 76 L46 69 Z"/><path d="M53 43 L67 76 L54 69 Z"/>
-        <rect x="43" y="32" width="14" height="17" rx="4"/>
+    <svg class="bow" viewBox="0 0 120 140" width="80" aria-hidden="true">
+      <defs><linearGradient id="bowg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#d65a4e"/><stop offset="1" stop-color="#a3302a"/>
+      </linearGradient></defs>
+      <g stroke="#7e2a20" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M56 50 C50 74 43 98 37 122 L46 111 L55 124 C59 98 61 74 63 52 Z" fill="#9a2c24"/>
+        <path d="M64 50 C70 74 77 98 83 122 L74 111 L65 124 C61 98 59 74 57 52 Z" fill="#9a2c24"/>
+        <path d="M60 44 C40 16 8 20 13 42 C9 62 42 60 60 48 Z" fill="url(#bowg)"/>
+        <path d="M60 44 C80 16 112 20 107 42 C111 62 78 60 60 48 Z" fill="url(#bowg)"/>
+        <ellipse cx="60" cy="44" rx="9" ry="11" fill="#b23c30"/>
       </g>
+      <path d="M26 30 C20 36 20 46 26 50" stroke="#ef9d92" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M94 30 C100 36 100 46 94 50" stroke="#ef9d92" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
     </svg>
     <span class="hand-note" id="handNote">★ моя полка ★</span>
     <button class="case-nav prev" id="casePrev" aria-label="Предыдущий шкаф">‹</button>
@@ -288,18 +329,12 @@ main,footer{position:relative;z-index:1}
     <div class="case-ind" id="caseInd"></div>
   </section>
 
-  <section>
-    <div class="section-head"><h2>По жанрам</h2></div>
-    <div class="chips" id="chips"></div>
+  <section id="stickerSection">
+    <div class="section-head"><h2>Мои стикеры</h2></div>
+    <p class="sticker-hint">Нажмите на стикер, чтобы прикрепить его к профилю (можно несколько).</p>
+    <div class="sticker-pick" id="stickerPick"></div>
   </section>
 
-  <div class="howto">
-    <span class="ic">🔑</span>
-    <div>
-      <h4>Гости по коду, без всякого сервера</h4>
-      <p>Полка и профиль хранятся прямо в браузере (localStorage), хостинг — на GitHub Pages, бесплатно. Через карандашик ✎ у профиля можно скопировать код полки и отправить другу. Друг вставляет его в «+ полка друга» и видит вашу библиотеку. Код длинный, потому что сервера нет (данные внутри кода); с бесплатным Supabase он позже станет коротким, а вид не изменится.</p>
-    </div>
-  </div>
 
 </main>
 
@@ -366,8 +401,24 @@ main,footer{position:relative;z-index:1}
   <button class="close" data-close>×</button>
   <h3>Добавить полку друга</h3>
   <p class="mp">Вставьте код, которым поделился друг, и его полка появится среди ваших профилей.</p>
-  <textarea class="codebox" id="joinInput" placeholder="PLK1..."></textarea>
+  <textarea class="codebox" id="joinInput" placeholder="код полки друга"></textarea>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="joinAdd">Добавить полку</button></div>
+</div>
+
+<!-- регистрация при первом входе -->
+<div class="modal" id="welModal" role="dialog" aria-modal="true" aria-label="Регистрация">
+  <h3>Заведём вашу полку 🌿</h3>
+  <div id="welStep1">
+    <p class="mp">Как вас зовут? Имя будет на вашем профиле (потом можно поменять).</p>
+    <div class="field"><input id="welName" placeholder="ваше имя" maxlength="40" /></div>
+    <button class="btn" id="welGo" style="width:100%;display:flex;justify-content:center">Создать полку</button>
+  </div>
+  <div id="welStep2" style="display:none">
+    <p class="mp">Готово! Вот код вашей полки. Сохраните его и делитесь с друзьями — по нему откроется ваша полка.</p>
+    <textarea class="codebox" id="welCode" readonly></textarea>
+    <button class="linklike" id="welCopy" type="button">📋 Скопировать код</button>
+    <div class="modal-foot"><button class="btn" id="welDone" style="width:100%;display:flex;justify-content:center">Открыть мою полку</button></div>
+  </div>
 </div>
 
 <script>
@@ -376,6 +427,23 @@ main,footer{position:relative;z-index:1}
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = s => document.querySelector(s);
   const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+  /* ====== SUPABASE (для коротких кодов и общих полок) ======
+     Вставь сюда данные из своего проекта: Supabase → Settings → API.
+     Если оставить пустыми — сайт работает по-старому (длинные коды, без облака). */
+  const SUPABASE_URL = "https://pgcncqcgrmiiibojwtfnn.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnY25jcWNncm1paWJvand0Zm5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjkzODAsImV4cCI6MjA5NzU0NTM4MH0.Nygp00DifqzDfxBschFMqypyjPOoK2gB8-oeGI8WnqE";
+  /* ========================================================= */
+  const CLOUD = () => !!(SUPABASE_URL && SUPABASE_KEY);
+  const SB_H = () => ({ apikey:SUPABASE_KEY, Authorization:"Bearer "+SUPABASE_KEY, "Content-Type":"application/json" });
+  async function sbUpsert(row){
+    await fetch(SUPABASE_URL+"/rest/v1/shelves",{method:"POST",headers:{...SB_H(),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(row)});
+  }
+  async function sbFetch(code){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/shelves?select=*&code=eq."+encodeURIComponent(code),{headers:SB_H()});
+    const a = await r.json(); return Array.isArray(a)?a[0]:null;
+  }
+  function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 
   /* палитра обложек */
   const COLORS = [
@@ -394,9 +462,54 @@ main,footer{position:relative;z-index:1}
   const isFav = b => b.fav !== undefined ? !!b.fav : (b.r >= 5);
   const lastName = a => String(a||"").trim().split(/\s+/).slice(-1)[0] || "";
 
+  /* стикеры (наш собственный арт) */
+  const STICKERS = [
+    {id:"cat",     bg:"#cdd8ec", ring:"#3a4a6b", emoji:"🐱", l1:"КНИЖНЫЙ", l2:"КОТ"},
+    {id:"cry",     bg:"#d7e6cf", ring:"#46663a", emoji:"😭", l1:"ПЛАЧУ НАД", l2:"КНИГАМИ"},
+    {id:"romance", bg:"#f3c6d6", ring:"#b5476a", emoji:"🗡️", l1:"РОМАНТЭЗИ", l2:"КЛУБ"},
+    {id:"kindle",  bg:"#f4cfe0", ring:"#c0567f", emoji:"📱", l1:"ЧИТАЛКА", l2:"ГЁРЛИ"},
+    {id:"coffee",  bg:"#e8d4ba", ring:"#8a5a2a", emoji:"☕", l1:"КОФЕ И", l2:"РОМАН"},
+    {id:"night",   bg:"#d2cfe6", ring:"#5b4a8a", emoji:"🌙", l1:"ЧИТАЮ", l2:"ПО НОЧАМ"},
+    {id:"star",    bg:"#f0e0b8", ring:"#9a7a3c", emoji:"⭐", l1:"КЛУБ", l2:"КНИГОМАНОВ"},
+    {id:"heart",   bg:"#f3d0cf", ring:"#b5483a", emoji:"💌", l1:"ЛЮБЛЮ", l2:"ГЕРОЕВ"}
+  ];
+  const STK = Object.fromEntries(STICKERS.map(s=>[s.id,s]));
+
+  /* пиксельное сердечко-облачко над любимыми книгами */
+  const HEART_PX = [
+    "..CCCCCCCC..",
+    ".CCCCCCCCCC.",
+    ".CCRRCCRRCC.",
+    ".CRPRRRRPRC.",
+    ".CRRRRRRRRC.",
+    ".CCRRRRRRCC.",
+    ".CCCRRRRCCC.",
+    ".CCCCRRCCCC.",
+    ".CCCCCCCCCCs",
+    "..CCCCCCCCs.",
+    "...CCCCs....",
+    "...CCs......"
+  ];
+  function pixelHeartSVG(size){
+    const map={C:"#e7ded0",R:"#7e3a31",P:"#c98f8b",s:"#b3a794"};
+    let r="";
+    HEART_PX.forEach((row,y)=>{ for(let x=0;x<row.length;x++){ const c=map[row[x]]; if(c) r+=`<rect x="${x}" y="${y}" width="1.03" height="1.03" fill="${c}"/>`; } });
+    return `<svg class="s-heart" viewBox="0 0 12 12" width="${size}" height="${size}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+  }
+  function badgeSVG(s, size){
+    if(!s) return "";
+    return `<svg class="badge" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="${esc(s.l1+' '+s.l2)}">
+      <circle cx="50" cy="50" r="49" fill="#fff"/><circle cx="50" cy="50" r="46" fill="${s.bg}"/>
+      <circle cx="50" cy="50" r="44.5" fill="none" stroke="${s.ring}" stroke-width="3"/>
+      <text x="50" y="43" font-size="27" text-anchor="middle">${s.emoji}</text>
+      <text x="50" y="67" font-size="11" text-anchor="middle" fill="${s.ring}" font-family="Fredoka,sans-serif" font-weight="800">${esc(s.l1)}</text>
+      <text x="50" y="79" font-size="11" text-anchor="middle" fill="${s.ring}" font-family="Fredoka,sans-serif" font-weight="800">${esc(s.l2)}</text>
+    </svg>`;
+  }
+
   /* демо-друзья */
   const DEMO_FRIENDS = {
-    anya:{ name:"Аня Дроздова", color:"#b1432a", quote:"чай, плед и толстый роман",
+    anya:{ name:"Аня Дроздова", color:"#b1432a", quote:"чай, плед и толстый роман", stickers:["romance","cry"],
       books:[
         {t:"Анна Каренина",a:"Л. Толстой",g:"Классика",fav:true,note:"перечитываю каждую осень"},
         {t:"Тоннель",a:"Я. Вишневский",g:"Проза"},
@@ -406,7 +519,7 @@ main,footer{position:relative;z-index:1}
         {t:"Норвежский лес",a:"Х. Мураками",g:"Проза",fav:true},
         {t:"Идиот",a:"Ф. Достоевский",g:"Классика"}
       ]},
-    mark:{ name:"Марк Орлов", color:"#6f6a4e", quote:"сначала факты, потом кофе",
+    mark:{ name:"Марк Орлов", color:"#6f6a4e", quote:"сначала факты, потом кофе", stickers:["coffee","star"],
       books:[
         {t:"Sapiens",a:"Ю. Харари",g:"Нон-фикшн",fav:true,note:"меняет оптику"},
         {t:"Думай медленно",a:"Д. Канеман",g:"Нон-фикшн"},
@@ -426,6 +539,9 @@ main,footer{position:relative;z-index:1}
   let myName  = localStorage.getItem("polka_name")  || "Моя полка";
   let myQuote = localStorage.getItem("polka_quote") || "";
   let myPhoto = localStorage.getItem("polka_photo") || "";
+  let myStickers = [];
+  try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || ["cat"]; } catch(e){ myStickers = ["cat"]; }
+  let myCode = localStorage.getItem("polka_code") || "";
 
   /* мои книги */
   let myBooks = [];
@@ -440,20 +556,53 @@ main,footer{position:relative;z-index:1}
   ]; }
   const saveMine = () => { try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} };
 
-  /* коды */
-  function encodeCode(p){ return "PLK1" + btoa(unescape(encodeURIComponent(JSON.stringify(p)))); }
-  function decodeCode(code){ const raw = String(code).trim().replace(/\s+/g,"").replace(/^PLK1/,""); return JSON.parse(decodeURIComponent(escape(atob(raw)))); }
+  /* коды (компактный формат PLK2) */
+  const GENRES = ["Проза","Фантастика","Нон-фикшн","Поэзия","Детектив","Классика"];
+  const b64e = s => btoa(unescape(encodeURIComponent(s)));
+  const b64d = s => decodeURIComponent(escape(atob(s)));
+  function encodeCode(p){
+    const gi = g => { const k = GENRES.indexOf(g); return k<0?0:k; };
+    const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
+    const cb = (p.b||[]).map(bk=>{
+      const a = [bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0];
+      if(bk.note) a.push(bk.note);
+      return a;
+    });
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", p.s||[], cb]));
+  }
+  function decodeCode(code){
+    let raw = String(code).trim().replace(/\s+/g,"");
+    if(raw.startsWith("PLK2")){
+      const a = JSON.parse(b64d(raw.slice(4)));
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[],
+        b:(a[3]||[]).map(x=>({ t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4], note:x[5]||"" })) };
+    }
+    raw = raw.replace(/^PLK1/,"");
+    const d = JSON.parse(b64d(raw));
+    return Array.isArray(d) ? {b:d} : d;
+  }
+  function myShareCode(){
+    if(CLOUD()){
+      if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
+      return myCode;
+    }
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers});
+  }
+  async function syncUp(){
+    if(!CLOUD() || !myCode) return;
+    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers})}); }catch(e){}
+  }
 
   /* состояние */
   let view = "me";
-  let activeGenre = "Все";
   let casePage = 0;
   let slideDir = 0;
   const SHELVES_PER_CASE = 4;
   const isMe = () => view === "me";
   const friend = () => DEMO_FRIENDS[view];
   const currentBooks = () => isMe() ? myBooks : friend().books;
-  const currentList = () => activeGenre==="Все" ? currentBooks() : currentBooks().filter(b=>b.g===activeGenre);
+  const currentList = () => currentBooks();
+  const currentStickers = () => isMe() ? myStickers : (friend().stickers || []);
 
   const bookcase = $("#bookcase");
   const overlay = $("#overlay");
@@ -469,7 +618,7 @@ main,footer{position:relative;z-index:1}
     const b = e.target.closest(".tab"); if(!b) return;
     if(b.id==="addFriend"){ openJoin(); return; }
     if(!b.dataset.view) return;
-    view = b.dataset.view; activeGenre="Все"; casePage=0; slideDir=0; renderAll();
+    view = b.dataset.view; casePage=0; slideDir=0; renderAll();
   });
 
   /* профиль */
@@ -492,19 +641,34 @@ main,footer{position:relative;z-index:1}
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
+    $("#myStickers").innerHTML = currentStickers().map(id=>badgeSVG(STK[id],48)).join("");
+    $("#stickerSection").style.display = isMe() ? "" : "none";
   }
+
+  /* выбор стикеров */
+  function renderPicker(){
+    $("#stickerPick").innerHTML = STICKERS.map(s=>
+      `<button class="sticker-opt ${myStickers.includes(s.id)?'on':''}" data-s="${s.id}">${badgeSVG(s,74)}</button>`).join("");
+  }
+  $("#stickerPick").addEventListener("click", e=>{
+    const b = e.target.closest(".sticker-opt"); if(!b) return;
+    const id = b.dataset.s; const i = myStickers.indexOf(id);
+    if(i>-1) myStickers.splice(i,1); else myStickers.push(id);
+    try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){}
+    syncUp(); renderPicker(); $("#myStickers").innerHTML = currentStickers().map(x=>badgeSVG(STK[x],48)).join("");
+  });
 
   /* размеры корешка */
   function spineDims(b){
     const seedN = (b.t.length*7 + b.a.length*3) % 5;
-    return { w: 32 + seedN*3, h: 150 + ((b.t.length*5) % 52) };
+    return { w: 22 + seedN*2, h: 92 + ((b.t.length*4) % 38) };
   }
-  function perShelf(){ const w = bookcase.clientWidth - 44; return Math.max(4, Math.floor(w / 50)); }
+  function perShelf(){ const w = bookcase.clientWidth - 36; return Math.max(5, Math.floor(w / 30)); }
 
   function spineHTML(b, i){
     const {w,h} = spineDims(b);
     return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${w}px;height:${h}px;background:${spineBg(b)}">
-      ${isFav(b)?'<span class="s-heart">♥</span>':''}
+      ${isFav(b)?pixelHeartSVG(19):''}
       <div class="s-title">${esc(b.t)}</div>
       <div><div class="s-band">${esc(lastName(b.a))}</div></div>
     </div>`;
@@ -564,18 +728,7 @@ main,footer{position:relative;z-index:1}
     if(sp) openInfo(parseInt(sp.dataset.i,10));
   });
 
-  /* жанры */
-  function renderChips(){
-    const genres = ["Все", ...Array.from(new Set(currentBooks().map(b=>b.g)))];
-    if(!genres.includes(activeGenre)) activeGenre="Все";
-    $("#chips").innerHTML = genres.map(g=>`<button class="chip ${g===activeGenre?'active':''}" data-g="${esc(g)}">${esc(g)}</button>`).join("");
-  }
-  $("#chips").addEventListener("click", e=>{
-    const c = e.target.closest(".chip"); if(!c) return;
-    activeGenre = c.dataset.g; casePage=0; slideDir=0; renderChips(); renderCase();
-  });
-
-  function renderAll(){ renderTabs(); renderProfile(); renderChips(); renderCase(); }
+  function renderAll(){ renderTabs(); renderProfile(); renderPicker(); renderCase(); }
 
   /* ---- добавить книгу ---- */
   const addModal = $("#addModal");
@@ -593,8 +746,8 @@ main,footer{position:relative;z-index:1}
     const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
     myBooks.push({ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
       c:selColor, fav:favNew, note:$("#fNote").value.trim() });
-    saveMine();
-    activeGenre="Все"; casePage=9999; slideDir=0; closeModals(); renderAll();
+    saveMine(); syncUp();
+    casePage=9999; slideDir=0; closeModals(); renderAll();
   });
 
   /* ---- инфо о книге ---- */
@@ -610,7 +763,7 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
   $("#delBook").addEventListener("click", ()=>{
-    if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); } closeModals(); renderAll(); }
+    if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll(); }
   });
 
   /* ---- профиль: редактирование ---- */
@@ -618,7 +771,7 @@ main,footer{position:relative;z-index:1}
   function paintPhoto(){ const p=$("#photoPrev"); if(tempPhoto){ p.style.backgroundImage=`url(${tempPhoto})`; p.textContent=""; } else { p.style.backgroundImage="none"; p.textContent=(myName[0]||"М"); } }
   function openProfile(){
     $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; tempPhoto=myPhoto; paintPhoto();
-    $("#myCode").value = encodeCode({n:myName, q:myQuote, b:myBooks});
+    $("#myCode").value = myShareCode();
     overlay.classList.add("open"); profileModal.classList.add("open");
   }
   $("#editProfile").addEventListener("click", openProfile);
@@ -628,7 +781,7 @@ main,footer{position:relative;z-index:1}
   });
   $("#photoRemove").addEventListener("click", ()=>{ tempPhoto=""; paintPhoto(); });
   $("#copyCode").addEventListener("click", ()=>{
-    const v=encodeCode({n:$("#pNameInput").value.trim()||myName, q:$("#pQuoteInput").value.trim(), b:myBooks});
+    const v=myShareCode();
     $("#myCode").value=v;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код полки скопирован!"), sel); else sel();
     function sel(){ $("#myCode").select(); toast("Код выделен — скопируйте вручную"); }
@@ -638,25 +791,35 @@ main,footer{position:relative;z-index:1}
     try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote);
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo"); }
     catch(e){ toast("Фото слишком большое для памяти браузера"); }
-    closeModals(); renderAll();
+    syncUp(); closeModals(); renderAll();
   });
 
   /* ---- добавить полку по коду ---- */
   const joinModal = $("#joinModal");
   function openJoin(){ $("#joinInput").value=""; overlay.classList.add("open"); joinModal.classList.add("open"); setTimeout(()=>$("#joinInput").focus(),60); }
   $("#joinAdd").addEventListener("click", ()=>addFriendByCode($("#joinInput").value));
-  function addFriendByCode(code){
+  async function addFriendByCode(code){
     if(!code || !code.trim()) return;
-    let p; try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); }
+    code = code.trim();
+    let p = null;
+    if(/^PLK/i.test(code)){
+      try{ p = decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); }
+    } else if(CLOUD()){
+      let row; try{ row = await sbFetch(code.toUpperCase()); }catch(e){ return toast("Нет связи с облаком"); }
+      if(!row || !row.data) return toast("Полка с таким кодом не найдена");
+      try{ p = decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
+    } else {
+      return toast("Короткие коды работают только с Supabase");
+    }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books) || !books.length) return toast("Код не похож на полку");
     const id="fr"+Date.now().toString(36);
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books};
+    const friendObj={id, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[]};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj;
-    view=id; activeGenre="Все"; casePage=0; closeModals(); renderAll(); toast("Полка «"+name+"» добавлена!");
+    view=id; casePage=0; closeModals(); renderAll(); toast("Полка «"+name+"» добавлена!");
   }
 
   /* ---- тост ---- */
@@ -669,17 +832,38 @@ main,footer{position:relative;z-index:1}
   }
 
   /* ---- закрытие модалок ---- */
+  function welcomeLocked(){ return $("#welModal").classList.contains("open") && !localStorage.getItem("polka_registered"); }
   function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open")); }
-  overlay.addEventListener("click", closeModals);
+  overlay.addEventListener("click", ()=>{ if(welcomeLocked()) return; closeModals(); });
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", closeModals));
-  document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModals(); });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !welcomeLocked()) closeModals(); });
+
+  /* регистрация при первом входе */
+  const welModal = $("#welModal");
+  function openWelcome(){
+    $("#welStep1").style.display=""; $("#welStep2").style.display="none";
+    $("#welName").value = (myName && myName!=="Моя полка") ? myName : "";
+    overlay.classList.add("open"); welModal.classList.add("open"); setTimeout(()=>$("#welName").focus(),80);
+  }
+  $("#welGo").addEventListener("click", async ()=>{
+    myName = $("#welName").value.trim() || "Моя полка";
+    if(CLOUD() && !myCode) myCode = genCode();
+    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_registered","1"); if(myCode) localStorage.setItem("polka_code",myCode); }catch(e){}
+    await syncUp();
+    $("#welCode").value = myShareCode();
+    $("#welStep1").style.display="none"; $("#welStep2").style.display=""; renderAll();
+  });
+  $("#welCopy").addEventListener("click", ()=>{ const v=$("#welCode").value;
+    if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код скопирован!"), ()=>$("#welCode").select()); else $("#welCode").select(); });
+  $("#welDone").addEventListener("click", closeModals);
+  if(!localStorage.getItem("polka_registered")) openWelcome();
 
   /* ---- импорт из ссылки #shelf= ---- */
   if(location.hash.startsWith("#shelf=")){
     try{
       const data = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(7)))));
       const books = Array.isArray(data) ? data : (data && data.b);
-      if(Array.isArray(books)){ DEMO_FRIENDS.guest={name:(data&&data.n)||"Полка из ссылки", color:"#b8493a", quote:(data&&data.q)||"открыто по ссылке", books}; view="guest"; }
+      if(Array.isArray(books)){ DEMO_FRIENDS.guest={name:(data&&data.n)||"Полка из ссылки", color:"#b8493a", quote:(data&&data.q)||"открыто по ссылке", books, stickers:(data&&data.s)||[]}; view="guest"; }
     }catch(e){}
   }
 
