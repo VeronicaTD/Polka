@@ -53,8 +53,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   transform:rotate(-3deg);position:relative;flex:0 0 auto}
 .polaroid::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-5deg);
   width:48px;height:18px;background:rgba(184,137,63,.45);box-shadow:0 1px 2px rgba(0,0,0,.1)}
-.ava{width:72px;height:72px;border-radius:2px;display:grid;place-items:center;
-  font-family:"Fredoka",sans-serif;font-weight:600;font-size:32px;color:#fff;background-size:cover;background-position:center}
+.ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;
+  font-family:"Fredoka",sans-serif;font-weight:600;font-size:44px;color:#fff;background-size:cover;background-position:center}
 .pname-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0}
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
@@ -106,8 +106,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.02em;opacity:.85;
   border-top:1px solid rgba(255,255,255,.25);padding-top:4px}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} }
-.s-heart{position:absolute;top:-8px;left:50%;transform:translateX(-50%);z-index:6;
-  filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+.s-foot{width:100%;display:flex;flex-direction:column;align-items:center;gap:1px}
+.s-heart{display:block;margin:0 auto 2px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
 .spine:hover{transform:translateY(-16px) rotateZ(-1.5deg);box-shadow:4px 14px 22px -8px rgba(0,0,0,.6);z-index:5}
 
 .shelf .placeholder{position:relative;z-index:1;color:rgba(255,255,255,.7);font-size:14px;font-style:italic;padding:10px 4px;align-self:center}
@@ -147,19 +147,19 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 
 /* стикеры профиля */
-.my-stickers{position:absolute;right:-12px;bottom:0;display:flex;align-items:flex-end;z-index:4}
-.my-stickers .badge{width:32px;height:32px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
-.my-stickers .badge:not(:first-child){margin-left:-14px}
+.my-stickers{position:absolute;right:-16px;bottom:-6px;display:flex;align-items:flex-end;z-index:4}
+.my-stickers .badge{width:46px;height:46px;background:transparent;filter:drop-shadow(0 2px 3px rgba(0,0,0,.28))}
+.my-stickers .badge:not(:first-child){margin-left:-18px}
 .my-stickers.editable{cursor:pointer}
-.sticker-ph{width:30px;height:30px;border-radius:50%;border:1.6px dashed var(--ink-soft);background:var(--paper);
-  color:var(--ink-soft);display:grid;place-items:center;font-size:17px;font-weight:700;box-shadow:var(--shadow)}
+.sticker-ph{width:34px;height:34px;border-radius:50%;border:1.6px dashed var(--ink-soft);background:var(--paper);
+  color:var(--ink-soft);display:grid;place-items:center;font-size:18px;font-weight:700;box-shadow:var(--shadow)}
 .my-stickers.editable:hover .sticker-ph{border-color:var(--accent);color:var(--accent)}
 .sticker-hint{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
 .sticker-pick{display:flex;gap:14px;flex-wrap:wrap;padding-bottom:8px}
-.sticker-opt{border:none;background:transparent;padding:5px;border-radius:14px;line-height:0;position:relative;transition:.2s;opacity:.55;filter:grayscale(.45)}
-.sticker-opt:hover{opacity:.9;transform:translateY(-2px)}
-.sticker-opt.on{opacity:1;filter:none;background:var(--paper-2)}
-.sticker-opt .badge{width:74px;height:74px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
+.sticker-opt{border:none;background:transparent;padding:6px;border-radius:14px;line-height:0;position:relative;transition:.2s;opacity:.7}
+.sticker-opt:hover{opacity:1;transform:translateY(-2px)}
+.sticker-opt.on{opacity:1;box-shadow:0 0 0 2px var(--accent)}
+.sticker-opt .badge{width:84px;height:84px;background:transparent;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
 .sticker-opt.on::after{content:"✓";position:absolute;top:-2px;right:-2px;width:22px;height:22px;
   background:var(--accent);color:#fff;border-radius:50%;font-size:13px;display:grid;place-items:center;box-shadow:var(--shadow)}
 .badge.cust{object-fit:contain;border-radius:0;border:none;box-shadow:none;filter:drop-shadow(0 3px 5px rgba(0,0,0,.18))}
@@ -385,6 +385,12 @@ main,footer{position:relative;z-index:1}
       <div class="meta" id="infoMeta"></div>
 
       <div id="infoEdit">
+        <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
+        <div class="field"><label>Автор</label><input id="iAuthor" maxlength="60" /></div>
+        <div class="field"><label>Жанр</label>
+          <select id="iGenre"><option>Проза</option><option>Фантастика</option><option>Нон-фикшн</option><option>Поэзия</option><option>Детектив</option><option>Классика</option></select>
+        </div>
+        <div class="field"><label>Цвет обложки</label><div class="swatches" id="iColors"></div></div>
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
@@ -479,10 +485,12 @@ main,footer{position:relative;z-index:1}
   const CLOUD = () => !!(SUPABASE_URL && SUPABASE_KEY);
   const SB_H = () => ({ apikey:SUPABASE_KEY, Authorization:"Bearer "+SUPABASE_KEY, "Content-Type":"application/json" });
   async function sbUpsert(row){
-    await fetch(SUPABASE_URL+"/rest/v1/shelves",{method:"POST",headers:{...SB_H(),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(row)});
+    const r = await fetch(SUPABASE_URL+"/rest/v1/shelves",{method:"POST",headers:{...SB_H(),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(row)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
   }
   async function sbFetch(code){
     const r = await fetch(SUPABASE_URL+"/rest/v1/shelves?select=*&code=eq."+encodeURIComponent(code),{headers:SB_H()});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
     const a = await r.json(); return Array.isArray(a)?a[0]:null;
   }
   function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
@@ -616,8 +624,9 @@ main,footer{position:relative;z-index:1}
     return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers});
   }
   async function syncUp(){
-    if(!CLOUD() || !myCode) return;
-    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers})}); }catch(e){}
+    if(!CLOUD() || !myCode) return true;
+    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers})}); return true; }
+    catch(e){ console.warn("syncUp error", e); return false; }
   }
 
   /* состояние */
@@ -675,11 +684,11 @@ main,footer{position:relative;z-index:1}
     const list = currentStickers().slice(0,3);
     if(isMe()){
       el.classList.add("editable");
-      el.innerHTML = myStickers.length ? list.map(id=>renderSticker(id,32)).join("")
+      el.innerHTML = myStickers.length ? list.map(id=>renderSticker(id,46)).join("")
         : `<span class="sticker-ph" title="Выбрать стикеры">+</span>`;
     } else {
       el.classList.remove("editable");
-      el.innerHTML = list.map(id=>renderSticker(id,32)).join("");
+      el.innerHTML = list.map(id=>renderSticker(id,46)).join("");
     }
   }
   $("#myStickers").addEventListener("click", ()=>{ if(isMe()) openStickerModal(); });
@@ -717,19 +726,18 @@ main,footer{position:relative;z-index:1}
   /* размеры корешка */
   const phone = () => window.innerWidth <= 640;
   /* книг на полке: максимум 7, шире книги — крупнее текст */
-  function perShelf(){ const w = bookcase.clientWidth - 40; const unit = phone()?54:78; return Math.min(7, Math.max(3, Math.floor(w/unit))); }
-  function bookWidth(per){ const innerW = bookcase.clientWidth - 40; return Math.max(28, Math.floor((innerW - 5*(per-1))/per)); }
+  function perShelf(){ const w = bookcase.clientWidth - 40; const unit = phone()?44:58; return Math.min(7, Math.max(3, Math.floor(w/unit))); }
+  function bookWidth(per){ const innerW = bookcase.clientWidth - 40; const fill = Math.floor((innerW - 5*(per-1))/per); return Math.min(phone()?38:50, Math.max(26, fill)); }
 
   function spineHTML(b, i, bw){
-    const font = Math.min(20, Math.max(11, Math.round(bw*0.32)));      // шире книга — крупнее шрифт
-    const bandFont = Math.max(6, Math.round(font*0.5));
-    const maxH = phone()?224:256;
-    const h = Math.min(maxH, Math.max(118, Math.round(b.t.length*font*0.62 + 30))); // длиннее название — выше книга
-    const heart = Math.min(22, Math.max(15, Math.round(bw*0.42)));
+    const font = Math.min(16, Math.max(10, Math.round(bw*0.32)));
+    const bandFont = Math.max(6, Math.round(font*0.55));
+    const maxH = phone()?168:192;
+    const h = Math.min(maxH, Math.max(104, Math.round(b.t.length*font*0.56 + 26))); // длиннее название — выше книга
+    const heart = Math.min(16, Math.max(11, Math.round(bw*0.36)));
     return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${bw}px;height:${h}px;background:${spineBg(b)}">
-      ${isFav(b)?pixelHeartSVG(heart):''}
       <div class="s-title" style="font-size:${font}px">${esc(b.t)}</div>
-      <div><div class="s-band" style="font-size:${bandFont}px">${esc(lastName(b.a))}</div></div>
+      <div class="s-foot">${isFav(b)?pixelHeartSVG(heart):''}<div class="s-band" style="font-size:${bandFont}px">${esc(lastName(b.a))}</div></div>
     </div>`;
   }
 
@@ -814,8 +822,10 @@ main,footer{position:relative;z-index:1}
   });
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
-  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false;
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0];
   function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
+  function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); $("#infoSpine").style.background = iSelColor; }
+  $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); });
   $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
   $("#iFav").addEventListener("click", ()=>{ iFav=!iFav; paintIFav(); });
   function openInfo(i){
@@ -825,6 +835,8 @@ main,footer{position:relative;z-index:1}
     $("#infoMeta").textContent = `${b.a} · ${b.g}`;
     if(isMe()){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
+      $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
+      iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       $("#iNote").value = b.note||"";
     } else {
@@ -836,8 +848,13 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
   $("#saveInfo").addEventListener("click", ()=>{
-    if(infoBook && isMe()){ infoBook.r=iRate; infoBook.fav=iFav; infoBook.note=$("#iNote").value.trim();
-      saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено"); }
+    if(infoBook && isMe()){
+      infoBook.t = $("#iTitle").value.trim() || infoBook.t;
+      infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
+      infoBook.g = $("#iGenre").value;
+      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.note = $("#iNote").value.trim();
+      saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
+    }
   });
   $("#delBook").addEventListener("click", ()=>{
     if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll(); }
@@ -933,7 +950,7 @@ main,footer{position:relative;z-index:1}
       localStorage.setItem("polka_registered","1");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
-    syncUp();                       // в фоне, не ждём ответа облака
+    syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
     $("#welCode").value = myShareCode();
     welShow("welStep2"); renderAll();
   });
@@ -946,7 +963,7 @@ main,footer{position:relative;z-index:1}
     let p=null, used="";
     if(/^PLK/i.test(code)){ try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); } }
     else if(CLOUD()){
-      let row; try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Нет связи с облаком"); }
+      let row; try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Облако: "+(e.message||e)); }
       if(!row || !row.data) return toast("Полка с таким кодом не найдена");
       try{ p=decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
       used=code.toUpperCase();
