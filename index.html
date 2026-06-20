@@ -981,6 +981,12 @@ main,footer{position:relative;z-index:1}
   }
   if(!localStorage.getItem("polka_registered")) openWelcome();
 
+  /* при загрузке убедимся, что полка записана в облако */
+  if(CLOUD() && localStorage.getItem("polka_registered")){
+    if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} }
+    syncUp().then(ok=>{ if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase"); });
+  }
+
   /* ---- импорт из ссылки #shelf= ---- */
   if(location.hash.startsWith("#shelf=")){
     try{
