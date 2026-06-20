@@ -147,12 +147,12 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 
 /* стикеры профиля */
-.my-stickers{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.my-stickers:empty{display:none}
-.my-stickers .badge{width:48px;height:48px;filter:drop-shadow(0 3px 5px rgba(0,0,0,.18))}
+.my-stickers{position:absolute;right:-12px;bottom:0;display:flex;align-items:flex-end;z-index:4}
+.my-stickers .badge{width:32px;height:32px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.my-stickers .badge:not(:first-child){margin-left:-14px}
 .my-stickers.editable{cursor:pointer}
-.sticker-ph{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--line);color:var(--ink-soft);
-  border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:600}
+.sticker-ph{width:30px;height:30px;border-radius:50%;border:1.6px dashed var(--ink-soft);background:var(--paper);
+  color:var(--ink-soft);display:grid;place-items:center;font-size:17px;font-weight:700;box-shadow:var(--shadow)}
 .my-stickers.editable:hover .sticker-ph{border-color:var(--accent);color:var(--accent)}
 .sticker-hint{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
 .sticker-pick{display:flex;gap:14px;flex-wrap:wrap;padding-bottom:8px}
@@ -223,6 +223,10 @@ main,footer{position:relative;z-index:1}
   padding:9px 16px;font-weight:600;color:var(--ink-soft);font-size:14px}
 .fav-toggle.on{background:#fbeef0;border-color:#e0a0aa;color:#c0566a}
 .fav-toggle .hh{font-size:16px}
+.rate{display:flex;gap:4px}
+.rate button{border:none;background:none;font-size:26px;color:var(--line);cursor:pointer;line-height:1;padding:0}
+.rate button.on{color:var(--gold)}
+.bookinfo .stars{color:var(--gold);font-size:20px;letter-spacing:2px;margin-bottom:8px}
 .preview{display:flex;align-items:flex-end;gap:14px;background:var(--paper-2);border-radius:10px;padding:14px;margin-bottom:16px}
 .preview .pl{font-size:13px;color:var(--ink-soft)}
 .photo-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
@@ -304,14 +308,13 @@ main,footer{position:relative;z-index:1}
 <main class="wrap">
 
   <section class="profile">
-    <div class="polaroid"><div class="ava" id="ava">М</div></div>
+    <div class="polaroid"><div class="ava" id="ava">М</div><div class="my-stickers" id="myStickers"></div></div>
     <div>
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
       </div>
       <div class="sub" id="pSub"></div>
-      <div class="my-stickers" id="myStickers"></div>
     </div>
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
@@ -366,6 +369,7 @@ main,footer{position:relative;z-index:1}
     <select id="fGenre"><option>Проза</option><option>Фантастика</option><option>Нон-фикшн</option><option>Поэзия</option><option>Детектив</option><option>Классика</option></select>
   </div>
   <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
+  <div class="field"><label>Оценка</label><div class="rate" id="fRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
   <div class="field"><label>Комментарий <span style="font-weight:400">(увидят друзья)</span></label><textarea id="fNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
   <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
@@ -376,11 +380,21 @@ main,footer{position:relative;z-index:1}
   <button class="close" data-close>×</button>
   <div class="row">
     <div class="big-spine" id="infoSpine"></div>
-    <div>
+    <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="note" id="infoNote"></div>
-      <button class="del" id="delBook">Снять с полки</button>
+
+      <div id="infoEdit">
+        <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
+        <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
+        <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
+        <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
+      </div>
+
+      <div id="infoRead">
+        <div class="stars" id="infoStars"></div>
+        <div class="note" id="infoNote"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -574,7 +588,7 @@ main,footer{position:relative;z-index:1}
     const gi = g => { const k = GENRES.indexOf(g); return k<0?0:k; };
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>{
-      const a = [bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0];
+      const a = [bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0];
       if(bk.note) a.push(bk.note);
       return a;
     });
@@ -586,7 +600,9 @@ main,footer{position:relative;z-index:1}
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
       return { n:a[0]||"", q:a[1]||"", s:a[2]||[],
-        b:(a[3]||[]).map(x=>({ t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4], note:x[5]||"" })) };
+        b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
+          return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
+            r:isNum?r5:0, note:isNum?(x[6]||""):(r5||"") }; }) };
     }
     raw = raw.replace(/^PLK1/,"");
     const d = JSON.parse(b64d(raw));
@@ -656,13 +672,14 @@ main,footer{position:relative;z-index:1}
   }
   function renderMyStickers(){
     const el = $("#myStickers");
+    const list = currentStickers().slice(0,3);
     if(isMe()){
       el.classList.add("editable");
-      el.innerHTML = myStickers.length ? myStickers.map(id=>renderSticker(id,48)).join("")
-        : `<span class="sticker-ph">＋ выбрать стикеры</span>`;
+      el.innerHTML = myStickers.length ? list.map(id=>renderSticker(id,32)).join("")
+        : `<span class="sticker-ph" title="Выбрать стикеры">+</span>`;
     } else {
       el.classList.remove("editable");
-      el.innerHTML = currentStickers().map(id=>renderSticker(id,48)).join("");
+      el.innerHTML = list.map(id=>renderSticker(id,32)).join("");
     }
   }
   $("#myStickers").addEventListener("click", ()=>{ if(isMe()) openStickerModal(); });
@@ -699,19 +716,20 @@ main,footer{position:relative;z-index:1}
 
   /* размеры корешка */
   const phone = () => window.innerWidth <= 640;
-  function spineDims(b){
-    const seedN = (b.t.length*7 + b.a.length*3) % 5;
-    if(phone()) return { w: 22 + seedN*2, h: 92 + ((b.t.length*4) % 38) };
-    return { w: 32 + seedN*3, h: 134 + ((b.t.length*5) % 52) };
-  }
-  function perShelf(){ const w = bookcase.clientWidth - 36; const unit = phone()?30:48; return Math.max(5, Math.floor(w / unit)); }
+  /* книг на полке: максимум 7, шире книги — крупнее текст */
+  function perShelf(){ const w = bookcase.clientWidth - 40; const unit = phone()?54:78; return Math.min(7, Math.max(3, Math.floor(w/unit))); }
+  function bookWidth(per){ const innerW = bookcase.clientWidth - 40; return Math.max(28, Math.floor((innerW - 5*(per-1))/per)); }
 
-  function spineHTML(b, i){
-    const {w,h} = spineDims(b);
-    return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${w}px;height:${h}px;background:${spineBg(b)}">
-      ${isFav(b)?pixelHeartSVG(19):''}
-      <div class="s-title">${esc(b.t)}</div>
-      <div><div class="s-band">${esc(lastName(b.a))}</div></div>
+  function spineHTML(b, i, bw){
+    const font = Math.min(20, Math.max(11, Math.round(bw*0.32)));      // шире книга — крупнее шрифт
+    const bandFont = Math.max(6, Math.round(font*0.5));
+    const maxH = phone()?224:256;
+    const h = Math.min(maxH, Math.max(118, Math.round(b.t.length*font*0.62 + 30))); // длиннее название — выше книга
+    const heart = Math.min(22, Math.max(15, Math.round(bw*0.42)));
+    return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${bw}px;height:${h}px;background:${spineBg(b)}">
+      ${isFav(b)?pixelHeartSVG(heart):''}
+      <div class="s-title" style="font-size:${font}px">${esc(b.t)}</div>
+      <div><div class="s-band" style="font-size:${bandFont}px">${esc(lastName(b.a))}</div></div>
     </div>`;
   }
 
@@ -729,7 +747,8 @@ main,footer{position:relative;z-index:1}
     const addPage = Math.floor(books.length / cap);
     const showAddHere = isMe() && casePage === addPage;
 
-    const cells = pageBooks.map((b,i)=>spineHTML(b, start+i));
+    const bw = bookWidth(per);
+    const cells = pageBooks.map((b,i)=>spineHTML(b, start+i, bw));
     if(showAddHere) cells.push(`<button class="add-slot" id="quickAdd" title="Добавить книгу">+</button>`);
     if(!cells.length) cells.push(`<span class="placeholder">Здесь пока пусто. Поставьте первый прочитанный томик →</span>`);
 
@@ -773,36 +792,53 @@ main,footer{position:relative;z-index:1}
 
   /* ---- добавить книгу ---- */
   const addModal = $("#addModal");
-  let selColor = COLORS[0], favNew = false;
+  let selColor = COLORS[0], favNew = false, rateNew = 0;
+  const starsStr = n => "★".repeat(n) + "☆".repeat(5-n);
   function paintColors(){ $("#fColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===selColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); $("#prevSpine").style.background = selColor; }
   function paintFav(){ $("#fFav").classList.toggle("on", favNew); $("#fFav").querySelector(".hh").textContent = favNew?"♥":"♡"; $("#fFavLabel").textContent = favNew?"В любимых":"Добавить в любимые"; }
+  function paintRate(box, val){ box.querySelectorAll("button").forEach(b=>b.classList.toggle("on", +b.dataset.r<=val)); }
   $("#fColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; selColor=s.dataset.c; paintColors(); });
   $("#fFav").addEventListener("click", ()=>{ favNew=!favNew; paintFav(); });
+  $("#fRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; rateNew=+b.dataset.r; paintRate($("#fRate"),rateNew); });
   function openAdd(){
     $("#fTitle").value=""; $("#fAuthor").value=""; $("#fGenre").value="Проза"; $("#fNote").value="";
-    selColor=COLORS[0]; favNew=false; paintColors(); paintFav();
+    selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
   $("#saveBook").addEventListener("click", ()=>{
     const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
     myBooks.push({ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
-      c:selColor, fav:favNew, note:$("#fNote").value.trim() });
+      c:selColor, fav:favNew, r:rateNew, note:$("#fNote").value.trim() });
     saveMine(); syncUp();
     casePage=9999; slideDir=0; closeModals(); renderAll();
   });
 
-  /* ---- инфо о книге ---- */
-  const infoModal = $("#infoModal"); let infoBook=null;
+  /* ---- инфо о книге (можно редактировать свои) ---- */
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false;
+  function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
+  $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
+  $("#iFav").addEventListener("click", ()=>{ iFav=!iFav; paintIFav(); });
   function openInfo(i){
     const b = currentList()[i]; if(!b) return; infoBook=b;
     $("#infoSpine").style.background = spineBg(b);
     $("#infoTitle").textContent = b.t;
-    $("#infoMeta").textContent = `${b.a} · ${b.g}${isFav(b)?" · ♥ любимая":""}`;
-    const note=$("#infoNote");
-    if(b.note){ note.style.display=""; note.textContent = "«"+b.note+"»"; } else note.style.display="none";
-    $("#delBook").style.display = isMe() ? "" : "none";
+    $("#infoMeta").textContent = `${b.a} · ${b.g}`;
+    if(isMe()){
+      $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
+      iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
+      $("#iNote").value = b.note||"";
+    } else {
+      $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
+      $("#infoStars").textContent = (b.r? starsStr(b.r):"") + (isFav(b)?"  ♥":"");
+      const note=$("#infoNote");
+      if(b.note){ note.style.display=""; note.textContent = "«"+b.note+"»"; } else note.style.display="none";
+    }
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
+  $("#saveInfo").addEventListener("click", ()=>{
+    if(infoBook && isMe()){ infoBook.r=iRate; infoBook.fav=iFav; infoBook.note=$("#iNote").value.trim();
+      saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено"); }
+  });
   $("#delBook").addEventListener("click", ()=>{
     if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll(); }
   });
