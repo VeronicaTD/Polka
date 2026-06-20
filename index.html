@@ -162,7 +162,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .sticker-opt .badge{width:74px;height:74px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
 .sticker-opt.on::after{content:"✓";position:absolute;top:-2px;right:-2px;width:22px;height:22px;
   background:var(--accent);color:#fff;border-radius:50%;font-size:13px;display:grid;place-items:center;box-shadow:var(--shadow)}
-.badge.cust{border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.badge.cust{object-fit:contain;border-radius:0;border:none;box-shadow:none;filter:drop-shadow(0 3px 5px rgba(0,0,0,.18))}
 .add-sticker{width:84px;height:84px;border:2px dashed var(--line);border-radius:50%;color:var(--accent);
   font-size:30px;display:grid;place-items:center;opacity:1;filter:none;background:transparent}
 .add-sticker:hover{border-color:var(--accent);background:var(--paper-2);transform:translateY(-2px)}
@@ -490,25 +490,22 @@ main,footer{position:relative;z-index:1}
   const isFav = b => b.fav !== undefined ? !!b.fav : (b.r >= 5);
   const lastName = a => String(a||"").trim().split(/\s+/).slice(-1)[0] || "";
 
-  /* стикеры (наш собственный арт) */
+  /* встроенные стикеры — картинки из папки stickers/ (видны всем пользователям).
+     Положи свои файлы в book-site/stickers/ с именами 1.png ... 5.png */
   const STICKERS = [
-    {id:"cat",     bg:"#cdd8ec", ring:"#3a4a6b", emoji:"🐱", l1:"КНИЖНЫЙ", l2:"КОТ"},
-    {id:"cry",     bg:"#d7e6cf", ring:"#46663a", emoji:"😭", l1:"ПЛАЧУ НАД", l2:"КНИГАМИ"},
-    {id:"romance", bg:"#f3c6d6", ring:"#b5476a", emoji:"🗡️", l1:"РОМАНТЭЗИ", l2:"КЛУБ"},
-    {id:"kindle",  bg:"#f4cfe0", ring:"#c0567f", emoji:"📱", l1:"ЧИТАЛКА", l2:"ГЁРЛИ"},
-    {id:"coffee",  bg:"#e8d4ba", ring:"#8a5a2a", emoji:"☕", l1:"КОФЕ И", l2:"РОМАН"},
-    {id:"night",   bg:"#d2cfe6", ring:"#5b4a8a", emoji:"🌙", l1:"ЧИТАЮ", l2:"ПО НОЧАМ"},
-    {id:"star",    bg:"#f0e0b8", ring:"#9a7a3c", emoji:"⭐", l1:"КЛУБ", l2:"КНИГОМАНОВ"},
-    {id:"heart",   bg:"#f3d0cf", ring:"#b5483a", emoji:"💌", l1:"ЛЮБЛЮ", l2:"ГЕРОЕВ"}
+    {id:"s1", img:"stickers/1.png"},
+    {id:"s2", img:"stickers/2.png"},
+    {id:"s3", img:"stickers/3.png"},
+    {id:"s4", img:"stickers/4.png"},
+    {id:"s5", img:"stickers/5.png"}
   ];
   const STK = Object.fromEntries(STICKERS.map(s=>[s.id,s]));
 
   /* отрисовка стикера: встроенный (рисуем) или свой (картинка) */
   function renderSticker(id, size){
-    if(STK[id]) return badgeSVG(STK[id], size);
-    const c = customStickers.find(x=>x.id===id);
-    if(c) return `<img class="badge cust" src="${c.img}" width="${size}" height="${size}" alt="">`;
-    return "";
+    const s = STK[id] || customStickers.find(x=>x.id===id);
+    if(!s || !s.img) return "";
+    return `<img class="badge cust" src="${s.img}" width="${size}" height="${size}" alt="" onerror="this.style.display='none'">`;
   }
   /* уменьшить картинку до квадрата size×size */
   function imgToDataURL(file, size, cb){
@@ -673,8 +670,8 @@ main,footer{position:relative;z-index:1}
 
   /* выбор стикеров */
   function renderPicker(){
-    const built = STICKERS.map(s=>`<button class="sticker-opt ${myStickers.includes(s.id)?'on':''}" data-s="${s.id}">${badgeSVG(s,74)}</button>`).join("");
-    const cust = customStickers.map(c=>`<button class="sticker-opt ${myStickers.includes(c.id)?'on':''}" data-s="${c.id}"><img class="badge cust" src="${c.img}" width="74" height="74" alt=""></button>`).join("");
+    const built = STICKERS.map(s=>`<button class="sticker-opt ${myStickers.includes(s.id)?'on':''}" data-s="${s.id}">${renderSticker(s.id,74)}</button>`).join("");
+    const cust = customStickers.map(c=>`<button class="sticker-opt ${myStickers.includes(c.id)?'on':''}" data-s="${c.id}">${renderSticker(c.id,74)}</button>`).join("");
     const add = `<button class="sticker-opt add-sticker" id="addSticker" title="Загрузить свой стикер">+</button>`;
     $("#stickerPick").innerHTML = built + cust + add;
   }
