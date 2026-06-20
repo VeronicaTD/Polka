@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Polka — ваша библиотека прочитанного</title>
+<meta name="description" content="Личная библиотека прочитанных книг в виде уютных книжных шкафов. Заполняйте полки и ходите в гости к друзьям по коду." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crafty+Girls&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   Palette: крем #FFF8F1 + кофейный #7B5B4B. Один акцент.
+   Данные: своя полка/профиль в localStorage. Друзья — по коду.
+   ========================================================= */
+:root{
+  --wood-1:#8a6a57; --wood-2:#5e4538;
+  --paper:#FFF8F1; --paper-2:#f3e7da;
+  --ink:#4a382e; --ink-soft:#7a6253;
+  --line:#e7d9c8;
+  --accent:#7B5B4B; --accent-deep:#5e4538;
+  --gold:#b8893f;
+  --radius:14px;
+  --display:"Crafty Girls",cursive;
+  --shadow:0 16px 34px -22px rgba(40,25,10,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Manrope",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 15% 0%, rgba(184,73,58,.05), transparent 38%),
+                   radial-gradient(circle at 100% 100%, rgba(184,137,63,.06), transparent 42%);}
+h1,h2,h3,.serif{font-family:"Fraunces",Georgia,serif;font-weight:500;letter-spacing:-.01em;line-height:1.08}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+
+/* header */
+header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper) 82%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:14px;height:64px}
+.brand{display:flex;align-items:center;gap:9px}
+.brand svg{flex:0 0 auto}
+.bw{font-family:var(--display);font-size:28px;line-height:1;color:var(--accent-deep)}
+.bar .sp{flex:1}
+.bar .tagline{color:var(--ink-soft);font-size:14px}
+.btn{border:none;background:var(--accent);color:#fff;border-radius:999px;padding:12px 20px;font-weight:700;font-size:14px;transition:.2s}
+.btn:hover{background:var(--accent-deep);transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--ink);background:var(--paper-2)}
+
+/* профиль */
+.profile{display:flex;align-items:center;gap:22px;padding:36px 0 8px}
+.polaroid{background:#fff;padding:7px 7px 16px;border-radius:3px;box-shadow:var(--shadow);
+  transform:rotate(-3deg);position:relative;flex:0 0 auto}
+.polaroid::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-5deg);
+  width:48px;height:18px;background:rgba(184,137,63,.45);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.ava{width:72px;height:72px;border-radius:2px;display:grid;place-items:center;
+  font-family:"Fraunces",serif;font-size:32px;color:#fff;background-size:cover;background-position:center}
+.pname-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0}
+.edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
+  color:var(--ink-soft);font-size:14px}
+.edit-profile:hover{border-color:var(--ink);color:var(--ink)}
+.profile .sub{color:var(--ink-soft);font-size:15px;margin-top:2px;max-width:46ch}
+.stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap}
+.stats div b{font-family:"Fraunces",serif;font-size:26px;font-weight:600;display:block;line-height:1}
+.stats div span{font-size:12.5px;color:var(--ink-soft)}
+
+/* вкладки */
+.tabs{display:flex;gap:10px;flex-wrap:wrap;padding:22px 0 10px;align-items:center}
+.tab{border:1px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:999px;
+  padding:9px 16px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:9px;transition:.2s}
+.tab:hover{border-color:var(--ink);color:var(--ink)}
+.tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tab .face{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;background-size:cover;background-position:center}
+.tabs .lbl{margin-right:4px;font-size:13px;color:var(--ink-soft)}
+.tab-add{border-style:dashed;color:var(--accent);font-weight:700}
+.tab-add:hover{border-color:var(--accent);color:var(--accent-deep)}
+
+/* книжный шкаф */
+.bookcase{background:linear-gradient(180deg,var(--wood-1),var(--wood-2));border-radius:var(--radius);
+  padding:20px 22px 8px;margin:14px 0 14px;
+  box-shadow:var(--shadow), inset 0 0 0 3px rgba(0,0,0,.12), inset 0 0 60px rgba(0,0,0,.25);
+  position:relative;perspective:1400px;overflow:hidden}
+.shelf{position:relative;display:flex;align-items:flex-end;gap:7px;min-height:188px;padding:0 6px 14px;margin-bottom:16px}
+.shelf::after{content:"";position:absolute;left:-12px;right:-12px;bottom:0;height:16px;
+  background:linear-gradient(180deg,#3c2614,#2a1a0c);border-radius:3px;
+  box-shadow:0 8px 14px -6px rgba(0,0,0,.6), inset 0 2px 0 rgba(255,255,255,.06)}
+.shelf::before{content:"";position:absolute;left:-12px;right:-12px;top:-6px;bottom:16px;
+  background:linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.05));border-radius:4px;z-index:0}
+
+.spine{position:relative;z-index:1;flex:0 0 auto;border-radius:2px 4px 4px 2px;color:#fff;cursor:pointer;
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:9px 4px;overflow:hidden;
+  box-shadow:2px 2px 6px -2px rgba(0,0,0,.5);transition:transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s;
+  transform-origin:bottom center}
+.spine::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
+.spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
+  font-size:13px;line-height:1.05;max-height:74%;overflow:hidden;text-align:left}
+.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.04em;opacity:.85;
+  border-top:1px solid rgba(255,255,255,.25);padding-top:5px}
+.s-heart{position:absolute;top:7px;left:50%;transform:translateX(-50%);z-index:4;font-size:12px;
+  color:#f4dca6;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.spine:hover{transform:translateY(-16px) rotateZ(-1.5deg);box-shadow:4px 14px 22px -8px rgba(0,0,0,.6);z-index:5}
+
+.shelf .placeholder{position:relative;z-index:1;color:rgba(255,255,255,.7);font-size:14px;font-style:italic;padding:10px 4px;align-self:center}
+.add-slot{position:relative;z-index:1;flex:0 0 auto;width:40px;align-self:flex-end;height:120px;
+  border:2px dashed rgba(255,255,255,.4);border-radius:4px;background:transparent;color:rgba(255,255,255,.75);
+  font-size:26px;display:grid;place-items:center;transition:.2s}
+.add-slot:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.08)}
+
+/* листание шкафов */
+.case-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:22px;line-height:1;
+  box-shadow:var(--shadow);display:none;place-items:center}
+.case-nav.show{display:grid}
+.case-nav.prev{left:-14px}
+.case-nav.next{right:-14px}
+.case-nav:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.case-ind{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin:6px 0 40px;display:none}
+
+/* скрапбук-детали */
+#caseWrap{position:relative;margin-top:4px}
+.tape{position:absolute;z-index:4;width:80px;height:26px;top:4px;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 6px,transparent 6px 12px),var(--tcol,rgba(184,137,63,.5));
+  box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tape-l{left:-14px;transform:rotate(-7deg)}
+.bow{position:absolute;top:-22px;right:14px;z-index:5;transform:rotate(8deg);filter:drop-shadow(0 4px 6px rgba(0,0,0,.22))}
+.hand-note{position:absolute;z-index:5;bottom:90px;left:-10px;transform:rotate(-4deg);
+  background:var(--paper);font-family:var(--display);color:var(--accent-deep);padding:5px 14px;border-radius:4px;
+  box-shadow:var(--shadow);font-size:18px;border:1px solid var(--line);white-space:nowrap}
+@media(max-width:640px){.hand-note,.bow{display:none}}
+
+/* секции */
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:30px 0 14px;flex-wrap:wrap}
+.section-head h2{font-size:clamp(24px,4vw,34px);margin:0}
+.chips{display:flex;gap:11px;flex-wrap:wrap;padding-bottom:8px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600;color:var(--ink-soft);transition:.2s}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* инфо-полоса */
+.howto{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;margin:24px 0 48px;display:flex;gap:18px;align-items:flex-start}
+.howto .ic{font-size:24px;flex-shrink:0}
+.howto h4{margin:0 0 4px;font-size:17px}
+.howto p{margin:0;color:var(--ink-soft);font-size:14.5px;max-width:72ch}
+
+footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--ink-soft);font-size:13.5px;text-align:center}
+
+/* фон: звёзды */
+.decor{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.decor svg{position:absolute;display:block;transform:rotate(var(--r,0deg));animation:bob 8s ease-in-out infinite}
+.d-star{opacity:.62;width:128px;height:128px}
+.s1{top:-34px;left:-32px;color:#b8493a;--r:-12deg}
+.s2{top:54px;right:-40px;color:#7B5B4B;--r:14deg;width:156px;height:156px}
+.s3{bottom:-34px;left:-28px;color:#c98a3c;--r:10deg;width:146px;height:146px}
+.s4{bottom:90px;right:34px;color:#b8493a;--r:-8deg;width:96px;height:96px;opacity:.5}
+.s5{top:44%;left:-44px;color:#8a6a57;--r:18deg;width:110px;height:110px;opacity:.42}
+.decor svg:nth-of-type(2){animation-delay:-2s}.decor svg:nth-of-type(3){animation-delay:-4s}
+.decor svg:nth-of-type(4){animation-delay:-1s}.decor svg:nth-of-type(5){animation-delay:-3s}
+@keyframes bob{0%,100%{transform:rotate(var(--r)) translateY(0)}50%{transform:rotate(var(--r)) translateY(-12px)}}
+main,footer{position:relative;z-index:1}
+
+/* модалки */
+.overlay{position:fixed;inset:0;background:rgba(40,30,18,.5);opacity:0;pointer-events:none;transition:.25s;z-index:80}
+.overlay.open{opacity:1;pointer-events:auto}
+.modal{position:fixed;z-index:90;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;
+  width:min(460px,92vw);max-height:90dvh;overflow:auto;background:var(--paper);border-radius:var(--radius);padding:26px;
+  box-shadow:var(--shadow);transition:.3s cubic-bezier(.16,1,.3,1)}
+.modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.modal h3{margin:0 0 6px;font-family:var(--display);font-weight:400;letter-spacing:0;font-size:24px}
+.mp{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 14px;
+  font-size:15px;font-family:inherit;background:var(--paper-2);color:var(--ink)}
+.field textarea{resize:vertical;min-height:64px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatch{width:34px;height:34px;border-radius:6px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.swatch.sel{border-color:var(--ink);transform:scale(1.08)}
+.fav-toggle{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:transparent;border-radius:999px;
+  padding:9px 16px;font-weight:600;color:var(--ink-soft);font-size:14px}
+.fav-toggle.on{background:#fbeef0;border-color:#e0a0aa;color:#c0566a}
+.fav-toggle .hh{font-size:16px}
+.preview{display:flex;align-items:flex-end;gap:14px;background:var(--paper-2);border-radius:10px;padding:14px;margin-bottom:16px}
+.preview .pl{font-size:13px;color:var(--ink-soft)}
+.photo-row{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.photo-prev{width:64px;height:64px;border-radius:6px;background:var(--paper-2);background-size:cover;background-position:center;
+  display:grid;place-items:center;color:var(--ink-soft);font-size:24px;font-family:"Fraunces",serif;border:1px solid var(--line);flex:0 0 auto}
+.photo-row .fbtns{display:flex;flex-direction:column;gap:6px}
+.linklike{background:none;border:none;color:var(--accent);font-weight:600;font-size:13px;padding:0;text-align:left}
+.linklike:hover{color:var(--accent-deep);text-decoration:underline}
+.codebox{width:100%;height:92px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+  font-family:ui-monospace,monospace;font-size:12px;line-height:1.5;background:var(--paper-2);color:var(--ink);resize:none;word-break:break-all;margin-bottom:10px}
+.modal-foot{display:flex;gap:10px;margin-top:8px}
+.modal-foot .btn{flex:1;text-align:center;display:flex;justify-content:center}
+.close{position:absolute;top:16px;right:18px;background:none;border:none;font-size:24px;color:var(--ink-soft);line-height:1}
+.bookinfo .row{display:flex;gap:16px;align-items:flex-start}
+.bookinfo .big-spine{width:70px;height:170px;border-radius:3px 6px 6px 3px;flex-shrink:0;box-shadow:var(--shadow)}
+.bookinfo .meta{color:var(--ink-soft);font-size:14px;margin:4px 0 10px}
+.bookinfo .note{background:var(--paper-2);border-radius:10px;padding:12px 14px;font-size:14.5px;font-style:italic;color:var(--ink);margin-top:4px}
+.bookinfo .del{margin-top:18px;background:none;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--ink-soft)}
+.bookinfo .del:hover{border-color:#a23b2a;color:#a23b2a}
+
+@media(max-width:620px){.profile{flex-wrap:wrap;gap:16px}.stats{margin-left:0;width:100%;gap:22px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}.spine:hover{transform:translateY(-8px)!important}}
+</style>
+</head>
+<body>
+
+<!-- спрайт звёзд -->
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+  <defs>
+    <filter id="torn"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="8"/></filter>
+    <pattern id="news" width="42" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(-7)">
+      <rect width="42" height="26" fill="#efe7d3"/>
+      <g fill="#9b9078"><rect x="3" y="4" width="36" height="2"/><rect x="3" y="9" width="28" height="2"/><rect x="3" y="14" width="36" height="2"/><rect x="3" y="19" width="22" height="2"/></g>
+    </pattern>
+  </defs>
+  <symbol id="pstar" viewBox="0 0 200 200"><g filter="url(#torn)">
+    <path d="M100 10 L118 68.8 L177.9 55 L136 100 L177.9 145 L118 131.2 L100 190 L82 131.2 L22.1 145 L64 100 L22.1 55 L82 68.8 Z" fill="currentColor"/>
+    <path d="M100 10 L118 68.8 L177.9 55 L136 100 L177.9 145 L118 131.2 L100 190 L82 131.2 L22.1 145 L64 100 L22.1 55 L82 68.8 Z" fill="url(#news)" transform="translate(26,26) scale(0.74)"/>
+    <path d="M100 10 L118 68.8 L177.9 55 L136 100 L177.9 145 L118 131.2 L100 190 L82 131.2 L22.1 145 L64 100 L22.1 55 L82 68.8 Z" fill="currentColor" opacity="0.92" transform="translate(60,60) scale(0.4)"/>
+  </g></symbol>
+</svg>
+<div class="decor" aria-hidden="true">
+  <svg class="d-star s1" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="d-star s2" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="d-star s3" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="d-star s4" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="d-star s5" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+</div>
+
+<header>
+  <div class="wrap bar">
+    <span class="brand">
+      <svg class="logo-shelf" viewBox="0 0 120 112" width="42" height="42" aria-hidden="true">
+        <path d="M24 72 V54 a36 36 0 0 1 72 0 V72" fill="#f6ead8" stroke="#d8c2a3" stroke-width="2"/>
+        <rect x="41" y="30" width="13" height="49" rx="2" fill="#7a4a32"/>
+        <rect x="55" y="35" width="13" height="44" rx="2" fill="#b05a44"/>
+        <g transform="rotate(9 76 60)"><rect x="69" y="40" width="13" height="39" rx="2" fill="#6f6a4e"/></g>
+        <g stroke="#c8a25a" stroke-width="1.3" fill="none"><path d="M42 37 H53 M42 40 H53 M42 73 H53"/><path d="M56 42 H67 M56 45 H67 M56 73 H67"/></g>
+        <rect x="20" y="79" width="80" height="9" rx="2" fill="#5a3b27"/>
+        <path d="M36 88 H84 L76 99 H44 Z" fill="#4a3120"/>
+        <path d="M93 28 l1.6 4.2 4.4 1.6 -4.4 1.6 -1.6 4.4 -1.6 -4.4 -4.4 -1.6 4.4 -1.6 z" fill="#c8a25a"/>
+        <path d="M28 52 l1.2 3.2 3.2 1.2 -3.2 1.2 -1.2 3.2 -1.2 -3.2 -3.2 -1.2 3.2 -1.2 z" fill="#c8a25a"/>
+      </svg>
+      <span class="bw">Polka</span>
+    </span>
+    <span class="sp"></span>
+    <span class="tagline">уютная полка прочитанного</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="profile">
+    <div class="polaroid"><div class="ava" id="ava">М</div></div>
+    <div>
+      <div class="pname-row">
+        <h1 id="pName">Моя полка</h1>
+        <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
+      </div>
+      <div class="sub" id="pSub"></div>
+    </div>
+    <div class="stats">
+      <div><b id="stTotal">0</b><span>прочитано</span></div>
+      <div><b id="stFav">0</b><span>любимых</span></div>
+    </div>
+  </section>
+
+  <section class="tabs" id="tabs"></section>
+
+  <section id="caseWrap">
+    <span class="tape tape-l"></span>
+    <svg class="bow" viewBox="0 0 100 80" width="64" aria-hidden="true">
+      <g fill="#b8493a" stroke="#8a3325" stroke-width="2" stroke-linejoin="round">
+        <path d="M50 40 C30 16 6 22 11 40 C6 58 30 64 50 40 Z"/>
+        <path d="M50 40 C70 16 94 22 89 40 C94 58 70 64 50 40 Z"/>
+        <path d="M47 43 L33 76 L46 69 Z"/><path d="M53 43 L67 76 L54 69 Z"/>
+        <rect x="43" y="32" width="14" height="17" rx="4"/>
+      </g>
+    </svg>
+    <span class="hand-note" id="handNote">★ моя полка ★</span>
+    <button class="case-nav prev" id="casePrev" aria-label="Предыдущий шкаф">‹</button>
+    <button class="case-nav next" id="caseNext" aria-label="Следующий шкаф">›</button>
+    <div class="bookcase" id="bookcase"></div>
+    <div class="case-ind" id="caseInd"></div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>По жанрам</h2></div>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <div class="howto">
+    <span class="ic">🔑</span>
+    <div>
+      <h4>Гости по коду, без всякого сервера</h4>
+      <p>Полка и профиль хранятся прямо в браузере (localStorage), хостинг — на GitHub Pages, бесплатно. Через карандашик ✎ у профиля можно скопировать код полки и отправить другу. Друг вставляет его в «+ полка друга» и видит вашу библиотеку. Код длинный, потому что сервера нет (данные внутри кода); с бесплатным Supabase он позже станет коротким, а вид не изменится.</p>
+    </div>
+  </div>
+
+</main>
+
+<footer><div class="wrap">Polka · демо-прототип. Книги и профиль сохраняются в этом браузере.</div></footer>
+
+<!-- модалки -->
+<div class="overlay" id="overlay"></div>
+
+<!-- добавить книгу -->
+<div class="modal" id="addModal" role="dialog" aria-modal="true" aria-label="Добавить книгу">
+  <button class="close" data-close>×</button>
+  <h3>Поставить томик на полку</h3>
+  <div class="preview">
+    <div class="big-spine" id="prevSpine" style="width:46px;height:120px;border-radius:2px 4px 4px 2px"></div>
+    <div class="pl">Так будет выглядеть корешок.<br>Выберите цвет ниже.</div>
+  </div>
+  <div class="field"><label>Название</label><input id="fTitle" placeholder="например, Над пропастью во ржи" /></div>
+  <div class="field"><label>Автор</label><input id="fAuthor" placeholder="например, Дж. Сэлинджер" /></div>
+  <div class="field"><label>Жанр</label>
+    <select id="fGenre"><option>Проза</option><option>Фантастика</option><option>Нон-фикшн</option><option>Поэзия</option><option>Детектив</option><option>Классика</option></select>
+  </div>
+  <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
+  <div class="field"><label>Комментарий <span style="font-weight:400">(увидят друзья)</span></label><textarea id="fNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
+  <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
+  <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
+</div>
+
+<!-- инфо о книге -->
+<div class="modal bookinfo" id="infoModal" role="dialog" aria-modal="true" aria-label="О книге">
+  <button class="close" data-close>×</button>
+  <div class="row">
+    <div class="big-spine" id="infoSpine"></div>
+    <div>
+      <h3 id="infoTitle"></h3>
+      <div class="meta" id="infoMeta"></div>
+      <div class="note" id="infoNote"></div>
+      <button class="del" id="delBook">Снять с полки</button>
+    </div>
+  </div>
+</div>
+
+<!-- редактировать профиль -->
+<div class="modal" id="profileModal" role="dialog" aria-modal="true" aria-label="Профиль">
+  <button class="close" data-close>×</button>
+  <h3>Мой профиль</h3>
+  <div class="photo-row">
+    <div class="photo-prev" id="photoPrev">М</div>
+    <div class="fbtns">
+      <label class="linklike" style="cursor:pointer">Загрузить фото<input type="file" id="photoInput" accept="image/*" hidden></label>
+      <button class="linklike" id="photoRemove" type="button">Убрать фото</button>
+    </div>
+  </div>
+  <div class="field"><label>Имя</label><input id="pNameInput" placeholder="как вас зовут" maxlength="40" /></div>
+  <div class="field"><label>Любимая цитата</label><input id="pQuoteInput" placeholder="строчка, которая про вас" maxlength="120" /></div>
+  <div class="field"><label>Код вашей полки</label>
+    <textarea class="codebox" id="myCode" readonly></textarea>
+    <button class="linklike" id="copyCode" type="button">📋 Скопировать код полки</button>
+  </div>
+  <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveProfile">Сохранить</button></div>
+</div>
+
+<!-- добавить полку по коду -->
+<div class="modal" id="joinModal" role="dialog" aria-modal="true" aria-label="Добавить полку по коду">
+  <button class="close" data-close>×</button>
+  <h3>Добавить полку друга</h3>
+  <p class="mp">Вставьте код, которым поделился друг, и его полка появится среди ваших профилей.</p>
+  <textarea class="codebox" id="joinInput" placeholder="PLK1..."></textarea>
+  <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="joinAdd">Добавить полку</button></div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+  /* палитра обложек */
+  const COLORS = [
+    "linear-gradient(95deg,#8a4a36,#5e2f20)","linear-gradient(95deg,#b05a44,#7a3526)",
+    "linear-gradient(95deg,#a4632f,#6e3d18)","linear-gradient(95deg,#c08a3c,#8a5e20)",
+    "linear-gradient(95deg,#7d7a44,#4e4b22)","linear-gradient(95deg,#5f7a52,#36492f)",
+    "linear-gradient(95deg,#3f7d6e,#214c43)","linear-gradient(95deg,#5a7a8c,#34505e)",
+    "linear-gradient(95deg,#7a3b52,#4f2336)","linear-gradient(95deg,#8a3b3b,#561f1f)",
+    "linear-gradient(95deg,#6b5436,#3e2f1a)","linear-gradient(95deg,#4a4036,#2a231c)"
+  ];
+  /* запасной цвет по жанру (для демо/старых книг без c) */
+  const PALETTE = {"Проза":"linear-gradient(95deg,#8a4a36,#5e2f20)","Фантастика":"linear-gradient(95deg,#6b5436,#3e2f1a)",
+    "Нон-фикшн":"linear-gradient(95deg,#a4632f,#6e3d18)","Поэзия":"linear-gradient(95deg,#7a3b52,#4f2336)",
+    "Детектив":"linear-gradient(95deg,#4a4036,#2a231c)","Классика":"linear-gradient(95deg,#956a39,#5e4220)"};
+  const spineBg = b => b.c || PALETTE[b.g] || "linear-gradient(95deg,#444,#222)";
+  const isFav = b => b.fav !== undefined ? !!b.fav : (b.r >= 5);
+  const lastName = a => String(a||"").trim().split(/\s+/).slice(-1)[0] || "";
+
+  /* демо-друзья */
+  const DEMO_FRIENDS = {
+    anya:{ name:"Аня Дроздова", color:"#b1432a", quote:"чай, плед и толстый роман",
+      books:[
+        {t:"Анна Каренина",a:"Л. Толстой",g:"Классика",fav:true,note:"перечитываю каждую осень"},
+        {t:"Тоннель",a:"Я. Вишневский",g:"Проза"},
+        {t:"Солярис",a:"С. Лем",g:"Фантастика",fav:true},
+        {t:"Маленькая жизнь",a:"Х. Янагихара",g:"Проза",fav:true,note:"плакала, но не жалею"},
+        {t:"Шантарам",a:"Г. Робертс",g:"Проза"},
+        {t:"Норвежский лес",a:"Х. Мураками",g:"Проза",fav:true},
+        {t:"Идиот",a:"Ф. Достоевский",g:"Классика"}
+      ]},
+    mark:{ name:"Марк Орлов", color:"#6f6a4e", quote:"сначала факты, потом кофе",
+      books:[
+        {t:"Sapiens",a:"Ю. Харари",g:"Нон-фикшн",fav:true,note:"меняет оптику"},
+        {t:"Думай медленно",a:"Д. Канеман",g:"Нон-фикшн"},
+        {t:"Девушка с татуировкой",a:"С. Ларссон",g:"Детектив"},
+        {t:"Чистый код",a:"Р. Мартин",g:"Нон-фикшн",fav:true},
+        {t:"И не осталось никого",a:"А. Кристи",g:"Детектив",fav:true}
+      ]}
+  };
+
+  /* добавленные по коду */
+  const FRIEND_COLORS = ["#b8493a","#7B5B4B","#c98a3c","#7a3b52","#956a39","#6f6a4e"];
+  let savedFriends = [];
+  try { savedFriends = JSON.parse(localStorage.getItem("polka_friends") || "[]"); } catch(e){ savedFriends = []; }
+  savedFriends.forEach(f => { DEMO_FRIENDS[f.id] = f; });
+
+  /* мой профиль */
+  let myName  = localStorage.getItem("polka_name")  || "Моя полка";
+  let myQuote = localStorage.getItem("polka_quote") || "";
+  let myPhoto = localStorage.getItem("polka_photo") || "";
+
+  /* мои книги */
+  let myBooks = [];
+  try { myBooks = JSON.parse(localStorage.getItem("polka_books") || "null") || seed(); }
+  catch(e){ myBooks = seed(); }
+  function seed(){ return [
+    {t:"Мастер и Маргарита",a:"М. Булгаков",g:"Классика",fav:true,note:"моя любимая, перечитывала трижды",c:COLORS[8]},
+    {t:"Цветы для Элджернона",a:"Д. Киз",g:"Фантастика",fav:true,c:COLORS[6]},
+    {t:"Маленький принц",a:"А. де Сент-Экзюпери",g:"Проза",c:COLORS[3]},
+    {t:"Дюна",a:"Ф. Герберт",g:"Фантастика",c:COLORS[2]},
+    {t:"Тонкое искусство пофигизма",a:"М. Мэнсон",g:"Нон-фикшн",c:COLORS[10]}
+  ]; }
+  const saveMine = () => { try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} };
+
+  /* коды */
+  function encodeCode(p){ return "PLK1" + btoa(unescape(encodeURIComponent(JSON.stringify(p)))); }
+  function decodeCode(code){ const raw = String(code).trim().replace(/\s+/g,"").replace(/^PLK1/,""); return JSON.parse(decodeURIComponent(escape(atob(raw)))); }
+
+  /* состояние */
+  let view = "me";
+  let activeGenre = "Все";
+  let casePage = 0;
+  let slideDir = 0;
+  const SHELVES_PER_CASE = 4;
+  const isMe = () => view === "me";
+  const friend = () => DEMO_FRIENDS[view];
+  const currentBooks = () => isMe() ? myBooks : friend().books;
+  const currentList = () => activeGenre==="Все" ? currentBooks() : currentBooks().filter(b=>b.g===activeGenre);
+
+  const bookcase = $("#bookcase");
+  const overlay = $("#overlay");
+
+  /* вкладки */
+  function renderTabs(){
+    const t = $("#tabs");
+    const me = `<button class="tab ${isMe()?'active':''}" data-view="me"><span class="face" style="${myPhoto?`background-image:url(${myPhoto})`:'background:var(--accent)'}">${myPhoto?'':'М'}</span>${esc(myName.split(" ")[0])}</button>`;
+    const fr = Object.entries(DEMO_FRIENDS).map(([k,f])=>`<button class="tab ${view===k?'active':''}" data-view="${k}"><span class="face" style="background:${f.color}">${esc(f.name[0])}</span>${esc(f.name.split(" ")[0])}</button>`).join("");
+    t.innerHTML = `<span class="lbl">Профили:</span>${me}${fr}<button class="tab tab-add" id="addFriend" title="Добавить полку друга по коду">+ полка друга</button>`;
+  }
+  $("#tabs").addEventListener("click", e=>{
+    const b = e.target.closest(".tab"); if(!b) return;
+    if(b.id==="addFriend"){ openJoin(); return; }
+    if(!b.dataset.view) return;
+    view = b.dataset.view; activeGenre="Все"; casePage=0; slideDir=0; renderAll();
+  });
+
+  /* профиль */
+  function renderProfile(){
+    const books = currentBooks();
+    const ava = $("#ava");
+    if(isMe()){
+      $("#pName").textContent = myName;
+      $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
+      $("#editProfile").style.display = "";
+      if(myPhoto){ ava.style.backgroundImage = `url(${myPhoto})`; ava.textContent=""; ava.style.background=""; ava.style.backgroundImage=`url(${myPhoto})`; }
+      else { ava.style.backgroundImage="none"; ava.style.background="var(--accent)"; ava.textContent="М"; }
+    } else {
+      const f = friend();
+      $("#pName").textContent = f.name;
+      $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
+      $("#editProfile").style.display = "none";
+      ava.style.backgroundImage="none"; ava.style.background=f.color; ava.textContent=f.name[0];
+    }
+    $("#stTotal").textContent = books.length;
+    $("#stFav").textContent = books.filter(isFav).length;
+    const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
+  }
+
+  /* размеры корешка */
+  function spineDims(b){
+    const seedN = (b.t.length*7 + b.a.length*3) % 5;
+    return { w: 32 + seedN*3, h: 150 + ((b.t.length*5) % 52) };
+  }
+  function perShelf(){ const w = bookcase.clientWidth - 44; return Math.max(4, Math.floor(w / 50)); }
+
+  function spineHTML(b, i){
+    const {w,h} = spineDims(b);
+    return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${w}px;height:${h}px;background:${spineBg(b)}">
+      ${isFav(b)?'<span class="s-heart">♥</span>':''}
+      <div class="s-title">${esc(b.t)}</div>
+      <div><div class="s-band">${esc(lastName(b.a))}</div></div>
+    </div>`;
+  }
+
+  /* шкаф с листанием */
+  function renderCase(){
+    const books = currentList();
+    const per = perShelf();
+    const cap = per * SHELVES_PER_CASE;
+    const addOne = isMe() ? 1 : 0;
+    const totalPages = Math.max(1, Math.ceil((books.length + addOne) / cap));
+    casePage = Math.min(Math.max(0, casePage), totalPages-1);
+
+    const start = casePage * cap;
+    const pageBooks = books.slice(start, start + cap);
+    const addPage = Math.floor(books.length / cap);
+    const showAddHere = isMe() && casePage === addPage;
+
+    const cells = pageBooks.map((b,i)=>spineHTML(b, start+i));
+    if(showAddHere) cells.push(`<button class="add-slot" id="quickAdd" title="Добавить книгу">+</button>`);
+    if(!cells.length) cells.push(`<span class="placeholder">Здесь пока пусто. Поставьте первый прочитанный томик →</span>`);
+
+    const shelves = [];
+    for(let s=0;s<SHELVES_PER_CASE;s++) shelves.push(cells.slice(s*per,(s+1)*per));
+    bookcase.innerHTML = shelves.map(row=>`<div class="shelf">${row.join("")}</div>`).join("");
+
+    $("#casePrev").classList.toggle("show", casePage>0);
+    $("#caseNext").classList.toggle("show", casePage<totalPages-1);
+    const ind = $("#caseInd");
+    if(totalPages>1){ ind.style.display="block"; ind.textContent = `Шкаф ${casePage+1} / ${totalPages}`; }
+    else ind.style.display="none";
+
+    if(!reduce && slideDir!==0){
+      bookcase.animate([{opacity:.4,transform:`translateX(${slideDir*36}px)`},{opacity:1,transform:"none"}],{duration:300,easing:"cubic-bezier(.16,1,.3,1)"});
+      slideDir = 0;
+    }
+  }
+
+  $("#casePrev").addEventListener("click", ()=>{ slideDir=-1; casePage--; renderCase(); });
+  $("#caseNext").addEventListener("click", ()=>{ slideDir=1; casePage++; renderCase(); });
+
+  /* свайп */
+  let sx=null;
+  bookcase.addEventListener("pointerdown", e=>{ sx=e.clientX; });
+  bookcase.addEventListener("pointerup", e=>{
+    if(sx===null) return; const dx=e.clientX-sx; sx=null;
+    if(Math.abs(dx)<60) return;
+    if(dx<0){ slideDir=1; casePage++; } else { slideDir=-1; casePage--; }
+    renderCase();
+  });
+
+  /* клик по корешку / плюсу */
+  bookcase.addEventListener("click", e=>{
+    if(e.target.closest("#quickAdd")){ openAdd(); return; }
+    const sp = e.target.closest(".spine");
+    if(sp) openInfo(parseInt(sp.dataset.i,10));
+  });
+
+  /* жанры */
+  function renderChips(){
+    const genres = ["Все", ...Array.from(new Set(currentBooks().map(b=>b.g)))];
+    if(!genres.includes(activeGenre)) activeGenre="Все";
+    $("#chips").innerHTML = genres.map(g=>`<button class="chip ${g===activeGenre?'active':''}" data-g="${esc(g)}">${esc(g)}</button>`).join("");
+  }
+  $("#chips").addEventListener("click", e=>{
+    const c = e.target.closest(".chip"); if(!c) return;
+    activeGenre = c.dataset.g; casePage=0; slideDir=0; renderChips(); renderCase();
+  });
+
+  function renderAll(){ renderTabs(); renderProfile(); renderChips(); renderCase(); }
+
+  /* ---- добавить книгу ---- */
+  const addModal = $("#addModal");
+  let selColor = COLORS[0], favNew = false;
+  function paintColors(){ $("#fColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===selColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); $("#prevSpine").style.background = selColor; }
+  function paintFav(){ $("#fFav").classList.toggle("on", favNew); $("#fFav").querySelector(".hh").textContent = favNew?"♥":"♡"; $("#fFavLabel").textContent = favNew?"В любимых":"Добавить в любимые"; }
+  $("#fColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; selColor=s.dataset.c; paintColors(); });
+  $("#fFav").addEventListener("click", ()=>{ favNew=!favNew; paintFav(); });
+  function openAdd(){
+    $("#fTitle").value=""; $("#fAuthor").value=""; $("#fGenre").value="Проза"; $("#fNote").value="";
+    selColor=COLORS[0]; favNew=false; paintColors(); paintFav();
+    overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
+  }
+  $("#saveBook").addEventListener("click", ()=>{
+    const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
+    myBooks.push({ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
+      c:selColor, fav:favNew, note:$("#fNote").value.trim() });
+    saveMine();
+    activeGenre="Все"; casePage=9999; slideDir=0; closeModals(); renderAll();
+  });
+
+  /* ---- инфо о книге ---- */
+  const infoModal = $("#infoModal"); let infoBook=null;
+  function openInfo(i){
+    const b = currentList()[i]; if(!b) return; infoBook=b;
+    $("#infoSpine").style.background = spineBg(b);
+    $("#infoTitle").textContent = b.t;
+    $("#infoMeta").textContent = `${b.a} · ${b.g}${isFav(b)?" · ♥ любимая":""}`;
+    const note=$("#infoNote");
+    if(b.note){ note.style.display=""; note.textContent = "«"+b.note+"»"; } else note.style.display="none";
+    $("#delBook").style.display = isMe() ? "" : "none";
+    overlay.classList.add("open"); infoModal.classList.add("open");
+  }
+  $("#delBook").addEventListener("click", ()=>{
+    if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); } closeModals(); renderAll(); }
+  });
+
+  /* ---- профиль: редактирование ---- */
+  const profileModal = $("#profileModal"); let tempPhoto="";
+  function paintPhoto(){ const p=$("#photoPrev"); if(tempPhoto){ p.style.backgroundImage=`url(${tempPhoto})`; p.textContent=""; } else { p.style.backgroundImage="none"; p.textContent=(myName[0]||"М"); } }
+  function openProfile(){
+    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; tempPhoto=myPhoto; paintPhoto();
+    $("#myCode").value = encodeCode({n:myName, q:myQuote, b:myBooks});
+    overlay.classList.add("open"); profileModal.classList.add("open");
+  }
+  $("#editProfile").addEventListener("click", openProfile);
+  $("#photoInput").addEventListener("change", e=>{
+    const f=e.target.files && e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ tempPhoto=r.result; paintPhoto(); }; r.readAsDataURL(f);
+  });
+  $("#photoRemove").addEventListener("click", ()=>{ tempPhoto=""; paintPhoto(); });
+  $("#copyCode").addEventListener("click", ()=>{
+    const v=encodeCode({n:$("#pNameInput").value.trim()||myName, q:$("#pQuoteInput").value.trim(), b:myBooks});
+    $("#myCode").value=v;
+    if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код полки скопирован!"), sel); else sel();
+    function sel(){ $("#myCode").select(); toast("Код выделен — скопируйте вручную"); }
+  });
+  $("#saveProfile").addEventListener("click", ()=>{
+    myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myPhoto=tempPhoto;
+    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote);
+      if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo"); }
+    catch(e){ toast("Фото слишком большое для памяти браузера"); }
+    closeModals(); renderAll();
+  });
+
+  /* ---- добавить полку по коду ---- */
+  const joinModal = $("#joinModal");
+  function openJoin(){ $("#joinInput").value=""; overlay.classList.add("open"); joinModal.classList.add("open"); setTimeout(()=>$("#joinInput").focus(),60); }
+  $("#joinAdd").addEventListener("click", ()=>addFriendByCode($("#joinInput").value));
+  function addFriendByCode(code){
+    if(!code || !code.trim()) return;
+    let p; try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); }
+    const books = Array.isArray(p) ? p : (p && p.b);
+    if(!Array.isArray(books) || !books.length) return toast("Код не похож на полку");
+    const id="fr"+Date.now().toString(36);
+    const name=(p && p.n) ? p.n : "Полка друга";
+    const friendObj={id, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books};
+    savedFriends.push(friendObj);
+    try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
+    DEMO_FRIENDS[id]=friendObj;
+    view=id; activeGenre="Все"; casePage=0; closeModals(); renderAll(); toast("Полка «"+name+"» добавлена!");
+  }
+
+  /* ---- тост ---- */
+  function toast(msg){
+    const el=document.createElement("div"); el.textContent=msg;
+    el.style.cssText="position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:14px 22px;border-radius:999px;z-index:99;font-weight:600;font-size:14px;box-shadow:var(--shadow)";
+    document.body.appendChild(el);
+    if(!reduce) el.animate([{opacity:0,transform:"translate(-50%,12px)"},{opacity:1,transform:"translate(-50%,0)"}],{duration:250});
+    setTimeout(()=>el.remove(),2600);
+  }
+
+  /* ---- закрытие модалок ---- */
+  function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open")); }
+  overlay.addEventListener("click", closeModals);
+  document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", closeModals));
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModals(); });
+
+  /* ---- импорт из ссылки #shelf= ---- */
+  if(location.hash.startsWith("#shelf=")){
+    try{
+      const data = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(7)))));
+      const books = Array.isArray(data) ? data : (data && data.b);
+      if(Array.isArray(books)){ DEMO_FRIENDS.guest={name:(data&&data.n)||"Полка из ссылки", color:"#b8493a", quote:(data&&data.q)||"открыто по ссылке", books}; view="guest"; }
+    }catch(e){}
+  }
+
+  /* ресайз */
+  let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(renderCase,150); });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
