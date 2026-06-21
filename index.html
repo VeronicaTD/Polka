@@ -395,7 +395,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · демо-прототип · версия 19 · книги и профиль сохраняются в этом браузере.</div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v21 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -539,6 +539,12 @@ main,footer{position:relative;z-index:1}
     <textarea class="codebox" id="welLoginInput" placeholder="ваш код"></textarea>
     <div class="modal-foot"><button class="btn ghost" id="welBack2" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welLoginGo" style="justify-content:center;display:flex">Войти</button></div>
   </div>
+  <div id="welAccess" style="display:none">
+    <p class="mp">Чтобы создать свою полку, нужен доступ — разово, навсегда. Получите код у автора в Telegram и введите ниже.</p>
+    <a class="btn" id="welBuyBtn" href="#" target="_blank" rel="noopener" style="width:100%;display:flex;justify-content:center;text-decoration:none">Получить доступ в Telegram</a>
+    <div class="field" style="margin-top:14px"><input id="welAccessCode" placeholder="код доступа" /></div>
+    <div class="modal-foot"><button class="btn ghost" id="welAccessBack" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welAccessGo" style="justify-content:center;display:flex">Активировать</button></div>
+  </div>
 </div>
 
 <script>
@@ -581,7 +587,7 @@ main,footer{position:relative;z-index:1}
 
   /* ====== ДОСТУП (разовая оплата навсегда) ======
      Вставь ссылку на своего Telegram-бота: */
-  const BUY_URL = "";   // например https://t.me/polka_access_bot
+  const BUY_URL = "https://t.me/veronica_182";   // твой Telegram
   /* ============================================== */
   const isPaid = () => localStorage.getItem("polka_paid")==="1";
   function requirePaid(){ if(isPaid()) return true; openAccess(); return false; }
@@ -705,13 +711,13 @@ main,footer{position:relative;z-index:1}
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||""]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[]]));
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[], p.pd?1:0]));
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[], pd:a[7]||0,
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"" }; }) };
@@ -725,11 +731,11 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean)});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0});
   }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
-    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean)})}); return true; }
+    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0})}); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
@@ -1125,14 +1131,15 @@ main,footer{position:relative;z-index:1}
 
   /* регистрация при первом входе */
   const welModal = $("#welModal");
-  function welShow(id){ ["welChoose","welStep1","welStep2","welLogin"].forEach(s=>{ $("#"+s).style.display = (s===id?"":"none"); }); }
+  function welShow(id){ ["welChoose","welStep1","welStep2","welLogin","welAccess"].forEach(s=>{ $("#"+s).style.display = (s===id?"":"none"); }); }
   function openWelcome(){ welShow("welChoose"); overlay.classList.add("open"); welModal.classList.add("open"); }
   $("#welNew").addEventListener("click", ()=>{ welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
   $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
   $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
   $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
-  $("#welGo").addEventListener("click", ()=>{
-    myName = $("#welName").value.trim() || "Моя полка";
+  let pendingName = "";
+  function createShelf(name){
+    myName = name || "Моя полка";
     myBooks = []; myQuote = ""; myStickers = [];          // новая полка — пустая
     myCode = CLOUD() ? genCode() : "";
     try{
@@ -1144,6 +1151,19 @@ main,footer{position:relative;z-index:1}
     syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
     $("#welCode").value = myShareCode();
     welShow("welStep2"); renderAll();
+  }
+  $("#welGo").addEventListener("click", ()=>{
+    const name = $("#welName").value.trim() || "Моя полка";
+    if(!isPaid()){ pendingName = name; $("#welBuyBtn").href = BUY_URL || "#"; welShow("welAccess"); return; }
+    createShelf(name);
+  });
+  $("#welAccessBack").addEventListener("click", ()=>welShow("welStep1"));
+  $("#welAccessGo").addEventListener("click", async ()=>{
+    const code = $("#welAccessCode").value.trim().toUpperCase();
+    if(!code) return;
+    const ok = await sbRedeem(code);
+    if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} toast("Доступ открыт! 💛"); createShelf(pendingName); }
+    else toast("Код неверный или уже использован");
   });
   $("#welCopy").addEventListener("click", ()=>{ const v=$("#welCode").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код скопирован!"), ()=>$("#welCode").select()); else $("#welCode").select(); });
@@ -1166,6 +1186,7 @@ main,footer{position:relative;z-index:1}
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading);
       localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
       localStorage.setItem("polka_registered","1");
+      if(p && p.pd) localStorage.setItem("polka_paid","1");
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
