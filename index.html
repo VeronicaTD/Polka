@@ -8,6 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#7B5B4B">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Polka">
 <style>
 /* =========================================================
    Palette: крем #FFF8F1 + кофейный #7B5B4B. Один акцент.
@@ -129,7 +134,9 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .case-nav.prev{left:-14px}
 .case-nav.next{right:-14px}
 .case-nav:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.case-ind{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin:6px 0 40px;display:none}
+.case-ind{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin:6px 0 10px;display:none}
+.dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 20px;font-weight:700;font-size:14px;margin-bottom:30px}
+.dice-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
 
 /* скрапбук-детали */
 #caseWrap{position:relative;margin-top:4px}
@@ -333,6 +340,7 @@ main,footer{position:relative;z-index:1}
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
+      <div id="stMatchWrap" style="display:none"><b id="stMatch">0</b><span>мэтч 💞</span></div>
     </div>
   </section>
 
@@ -359,12 +367,13 @@ main,footer{position:relative;z-index:1}
     <button class="case-nav next" id="caseNext" aria-label="Следующий шкаф">›</button>
     <div class="bookcase" id="bookcase"></div>
     <div class="case-ind" id="caseInd"></div>
+    <div style="text-align:center;margin-top:6px"><button class="dice-btn" id="diceBtn">🎲 что почитать?</button></div>
   </section>
 
 
 </main>
 
-<footer><div class="wrap">Polka · демо-прототип · версия 13 · книги и профиль сохраняются в этом браузере.</div></footer>
+<footer><div class="wrap">Polka · демо-прототип · версия 14 · книги и профиль сохраняются в этом браузере.</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -405,6 +414,7 @@ main,footer{position:relative;z-index:1}
           <select id="iGenre"><option>Проза</option><option>Фантастика</option><option>Нон-фикшн</option><option>Поэзия</option><option>Детектив</option><option>Классика</option></select>
         </div>
         <div class="field"><label>Цвет обложки</label><div class="swatches" id="iColors"></div></div>
+        <div class="field"><button class="btn ghost" id="iCoverBtn" type="button" style="width:100%;justify-content:center;display:flex">🔎 Найти настоящую обложку</button></div>
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
@@ -636,11 +646,7 @@ main,footer{position:relative;z-index:1}
   function encodeCode(p){
     const gi = g => { const k = GENRES.indexOf(g); return k<0?0:k; };
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
-    const cb = (p.b||[]).map(bk=>{
-      const a = [bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0];
-      if(bk.note) a.push(bk.note);
-      return a;
-    });
+    const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||""]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
     return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||""]));
   }
@@ -651,7 +657,7 @@ main,footer{position:relative;z-index:1}
       return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"",
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
-            r:isNum?r5:0, note:isNum?(x[6]||""):(r5||"") }; }) };
+            r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"" }; }) };
     }
     raw = raw.replace(/^PLK1/,"");
     const d = JSON.parse(b64d(raw));
@@ -721,6 +727,13 @@ main,footer{position:relative;z-index:1}
     }
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
+    if(isMe()){ $("#stMatchWrap").style.display="none"; }
+    else {
+      const norm = s => String(s||"").trim().toLowerCase();
+      const mine = new Set(myBooks.map(b=>norm(b.t)));
+      const m = friend().books.filter(b=>mine.has(norm(b.t))).length;
+      $("#stMatch").textContent = m; $("#stMatchWrap").style.display="";
+    }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     renderMyStickers();
   }
@@ -824,6 +837,12 @@ main,footer{position:relative;z-index:1}
 
   $("#casePrev").addEventListener("click", ()=>{ slideDir=-1; casePage--; renderCase(); });
   $("#caseNext").addEventListener("click", ()=>{ slideDir=1; casePage++; renderCase(); });
+  $("#diceBtn").addEventListener("click", ()=>{
+    const list = currentBooks();
+    if(!list.length){ toast("Сначала добавьте книги на полку"); return; }
+    const b = list[Math.floor(Math.random()*list.length)];
+    toast("Почитай: «"+b.t+"» — "+b.a);
+  });
 
   /* свайп */
   let sx=null;
@@ -868,15 +887,35 @@ main,footer{position:relative;z-index:1}
   });
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
-  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0];
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], iCover="";
   function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
-  function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); $("#infoSpine").style.background = iSelColor; }
-  $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); });
+  function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); }
+  function setInfoSpine(cover, grad){
+    const el=$("#infoSpine");
+    if(cover){ el.style.backgroundImage=`url(${cover})`; el.style.backgroundSize="cover"; el.style.backgroundPosition="center"; }
+    else { el.style.backgroundImage="none"; el.style.background=grad; }
+  }
+  async function fetchCover(title, author){
+    try{
+      const q="https://openlibrary.org/search.json?limit=1&fields=cover_i&title="+encodeURIComponent(title)+(author?"&author="+encodeURIComponent(author):"");
+      const r=await fetch(q); const j=await r.json();
+      const id=j&&j.docs&&j.docs[0]&&j.docs[0].cover_i;
+      return id ? ("https://covers.openlibrary.org/b/id/"+id+"-L.jpg") : "";
+    }catch(e){ return ""; }
+  }
+  $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); if(!iCover) setInfoSpine("", iSelColor); });
   $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
   $("#iFav").addEventListener("click", ()=>{ iFav=!iFav; paintIFav(); });
+  $("#iCoverBtn").addEventListener("click", async ()=>{
+    const t=$("#iTitle").value.trim(), a=$("#iAuthor").value.trim();
+    if(!t){ toast("Впишите название"); return; }
+    toast("Ищу обложку…");
+    const url=await fetchCover(t,a);
+    if(url){ iCover=url; setInfoSpine(iCover, iSelColor); toast("Обложка найдена!"); }
+    else toast("Обложка не найдена");
+  });
   function openInfo(i){
     const b = currentList()[i]; if(!b) return; infoBook=b;
-    $("#infoSpine").style.background = spineBg(b);
     $("#infoTitle").textContent = b.t;
     $("#infoMeta").textContent = `${b.a} · ${b.g}`;
     if(isMe()){
@@ -884,9 +923,11 @@ main,footer{position:relative;z-index:1}
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
-      $("#iNote").value = b.note||"";
+      $("#iNote").value = b.note||""; iCover = b.cover||"";
+      setInfoSpine(iCover, iSelColor);
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
+      setInfoSpine(b.cover||"", spineBg(b));
       $("#infoStars").textContent = (b.r? starsStr(b.r):"") + (isFav(b)?"  ♥":"");
       const note=$("#infoNote");
       if(b.note){ note.style.display=""; note.textContent = "«"+b.note+"»"; } else note.style.display="none";
@@ -898,7 +939,7 @@ main,footer{position:relative;z-index:1}
       infoBook.t = $("#iTitle").value.trim() || infoBook.t;
       infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
       infoBook.g = $("#iGenre").value;
-      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.note = $("#iNote").value.trim();
+      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.note = $("#iNote").value.trim(); infoBook.cover = iCover;
       saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
     }
   });

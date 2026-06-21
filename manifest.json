@@ -1,0 +1,12 @@
+{
+  "name": "Polka — библиотека прочитанного",
+  "short_name": "Polka",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#FFF8F1",
+  "theme_color": "#7B5B4B",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
