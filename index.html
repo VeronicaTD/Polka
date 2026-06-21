@@ -395,7 +395,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · демо-прототип · версия 18 · книги и профиль сохраняются в этом браузере.</div></footer>
+<footer><div class="wrap">Polka · демо-прототип · версия 19 · книги и профиль сохраняются в этом браузере.</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -489,6 +489,16 @@ main,footer{position:relative;z-index:1}
   <input type="file" id="stickerFile" accept="image/*" hidden>
 </div>
 
+<!-- доступ: разовая оплата -->
+<div class="modal" id="accessModal" role="dialog" aria-modal="true" aria-label="Доступ">
+  <button class="close" data-close>×</button>
+  <h3>Полный доступ к Polka 🔓</h3>
+  <p class="mp">Смотреть можно бесплатно. Чтобы вести свою полку, нужен доступ — разово, навсегда.</p>
+  <a class="btn" id="buyBtn" href="#" target="_blank" rel="noopener" style="display:flex;justify-content:center;text-decoration:none">Получить доступ в Telegram</a>
+  <div class="field" style="margin-top:16px"><label>У меня есть код доступа</label><input id="accessCode" placeholder="код из бота" /></div>
+  <div class="modal-foot"><button class="btn ghost" data-close>Позже</button><button class="btn" id="redeemBtn">Активировать</button></div>
+</div>
+
 <!-- тема оформления -->
 <div class="modal" id="themeModal" role="dialog" aria-modal="true" aria-label="Тема">
   <button class="close" data-close>×</button>
@@ -568,6 +578,22 @@ main,footer{position:relative;z-index:1}
     await fetch(SUPABASE_URL+"/rest/v1/requests?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:SB_H()});
   }
   function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
+
+  /* ====== ДОСТУП (разовая оплата навсегда) ======
+     Вставь ссылку на своего Telegram-бота: */
+  const BUY_URL = "";   // например https://t.me/polka_access_bot
+  /* ============================================== */
+  const isPaid = () => localStorage.getItem("polka_paid")==="1";
+  function requirePaid(){ if(isPaid()) return true; openAccess(); return false; }
+  async function sbRedeem(code){
+    if(!CLOUD()) return false;
+    try{
+      const r = await fetch(SUPABASE_URL+"/rest/v1/access_codes?code=eq."+encodeURIComponent(code)+"&used=eq.false",
+        {method:"PATCH", headers:{...SB_H(), Prefer:"return=representation"}, body:JSON.stringify({used:true})});
+      if(!r.ok) return false;
+      const a = await r.json(); return Array.isArray(a) && a.length>0;
+    }catch(e){ return false; }
+  }
 
 
   /* палитра обложек */
@@ -928,6 +954,7 @@ main,footer{position:relative;z-index:1}
   $("#fFav").addEventListener("click", ()=>{ favNew=!favNew; paintFav(); });
   $("#fRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; rateNew=+b.dataset.r; paintRate($("#fRate"),rateNew); });
   function openAdd(){
+    if(!requirePaid()) return;
     $("#fTitle").value=""; $("#fAuthor").value=""; $("#fGenre").value="Проза"; $("#fNote").value="";
     selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
@@ -968,6 +995,7 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
   $("#saveInfo").addEventListener("click", ()=>{
+    if(!requirePaid()) return;
     if(infoBook && isMe()){
       infoBook.t = $("#iTitle").value.trim() || infoBook.t;
       infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
@@ -1009,6 +1037,21 @@ main,footer{position:relative;z-index:1}
     syncUp(); closeModals(); renderAll();
   });
 
+  /* ---- доступ (оплата навсегда) ---- */
+  const accessModal = $("#accessModal");
+  function openAccess(){
+    $("#buyBtn").href = BUY_URL || "#";
+    $("#accessCode").value = "";
+    overlay.classList.add("open"); accessModal.classList.add("open");
+  }
+  $("#redeemBtn").addEventListener("click", async ()=>{
+    const code = $("#accessCode").value.trim().toUpperCase();
+    if(!code) return;
+    const ok = await sbRedeem(code);
+    if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }
+    else toast("Код неверный или уже использован");
+  });
+
   /* ---- темы оформления ---- */
   const THEMES = [
     {id:"coffee", name:"Кофе", c1:"#FFF8F1", c2:"#7B5B4B"},
@@ -1035,6 +1078,7 @@ main,footer{position:relative;z-index:1}
   $("#joinAdd").addEventListener("click", ()=>addFriendByCode($("#joinInput").value));
   async function addFriendByCode(code){
     if(!code || !code.trim()) return;
+    if(!requirePaid()) return;
     code = code.trim();
     let p = null, used = "";
     if(/^PLK/i.test(code)){
