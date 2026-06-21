@@ -395,7 +395,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v21 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v23 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -468,6 +468,10 @@ main,footer{position:relative;z-index:1}
     <textarea class="codebox" id="myCode" readonly></textarea>
     <button class="linklike" id="copyCode" type="button">📋 Скопировать код полки</button>
   </div>
+  <div class="field"><label>🔑 Ссылка для входа (сохраните её!)</label>
+    <textarea class="codebox" id="myLink" readonly></textarea>
+    <button class="linklike" id="copyLink" type="button">📋 Скопировать ссылку для входа</button>
+  </div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveProfile">Сохранить</button></div>
 </div>
 
@@ -532,6 +536,9 @@ main,footer{position:relative;z-index:1}
     <p class="mp">Готово! Вот код вашей полки. Сохраните его и делитесь с друзьями — по нему откроется ваша полка.</p>
     <textarea class="codebox" id="welCode" readonly></textarea>
     <button class="linklike" id="welCopy" type="button">📋 Скопировать код</button>
+    <p class="mp" style="margin-top:14px">🔑 А это ваша ссылка для входа — <b>обязательно сохраните</b> (по ней вы вернётесь в свою полку даже на новом телефоне, и код помнить не нужно):</p>
+    <textarea class="codebox" id="welLink" readonly></textarea>
+    <button class="linklike" id="welLinkCopy" type="button">📋 Скопировать ссылку для входа</button>
     <div class="modal-foot"><button class="btn" id="welDone" style="width:100%;display:flex;justify-content:center">Открыть мою полку</button></div>
   </div>
   <div id="welLogin" style="display:none">
@@ -733,6 +740,7 @@ main,footer{position:relative;z-index:1}
     }
     return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0});
   }
+  function loginLink(){ return location.href.split("#")[0] + "#login=" + encodeURIComponent(myShareCode()); }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0})}); return true; }
@@ -1020,6 +1028,7 @@ main,footer{position:relative;z-index:1}
   function openProfile(){
     $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pReadingInput").value=myReading; tempPhoto=myPhoto; paintPhoto();
     $("#myCode").value = myShareCode();
+    $("#myLink").value = loginLink();
     overlay.classList.add("open"); profileModal.classList.add("open");
   }
   $("#editProfile").addEventListener("click", openProfile);
@@ -1034,6 +1043,10 @@ main,footer{position:relative;z-index:1}
     $("#myCode").value=v;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код полки скопирован!"), sel); else sel();
     function sel(){ $("#myCode").select(); toast("Код выделен — скопируйте вручную"); }
+  });
+  $("#copyLink").addEventListener("click", ()=>{
+    const v=loginLink(); $("#myLink").value=v;
+    if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#myLink").select()); else $("#myLink").select();
   });
   $("#saveProfile").addEventListener("click", ()=>{
     myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myReading=$("#pReadingInput").value.trim(); myPhoto=tempPhoto;
@@ -1150,6 +1163,7 @@ main,footer{position:relative;z-index:1}
     }catch(e){}
     syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
     $("#welCode").value = myShareCode();
+    $("#welLink").value = loginLink();
     welShow("welStep2"); renderAll();
   }
   $("#welGo").addEventListener("click", ()=>{
@@ -1167,6 +1181,8 @@ main,footer{position:relative;z-index:1}
   });
   $("#welCopy").addEventListener("click", ()=>{ const v=$("#welCode").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код скопирован!"), ()=>$("#welCode").select()); else $("#welCode").select(); });
+  $("#welLinkCopy").addEventListener("click", ()=>{ const v=$("#welLink").value;
+    if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#welLink").select()); else $("#welLink").select(); });
   $("#welDone").addEventListener("click", closeModals);
   $("#welLoginGo").addEventListener("click", ()=>doLogin($("#welLoginInput").value));
   async function doLogin(code){
@@ -1207,14 +1223,30 @@ main,footer{position:relative;z-index:1}
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     renderAll();
   }
-  if(!localStorage.getItem("polka_registered")) openWelcome();
-
-  /* при загрузке убедимся, что полка записана в облако */
-  if(CLOUD() && localStorage.getItem("polka_registered")){
-    if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} }
-    syncUp().then(ok=>{ if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase"); });
-    setTimeout(refreshReqBadge, 800);
-    refreshFriends();
+  /* при загрузке: проверяем, существует ли полка в облаке; если удалена — сбрасываем устройство */
+  async function bootCloud(){
+    if(!CLOUD() || !localStorage.getItem("polka_registered")) return;
+    if(myCode){
+      let row, fetched=true;
+      try{ row = await sbFetch(myCode); }catch(e){ fetched=false; }   // сеть недоступна — не трогаем
+      if(fetched && !row){
+        // полку удалили в облаке → стираем профиль на устройстве
+        ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+        toast("Эта полка была удалена");
+        setTimeout(()=>location.reload(), 1300);
+        return;
+      }
+    } else {
+      myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){}
+    }
+    const ok = await syncUp(); if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase");
+    refreshReqBadge(); refreshFriends();
+  }
+  const loginHash = location.hash.match(/^#login=([^&]+)/);
+  if(loginHash){ doLogin(decodeURIComponent(loginHash[1])); }
+  else {
+    if(!localStorage.getItem("polka_registered")) openWelcome();
+    bootCloud();
   }
   /* подтянуть свежие данные друзей из облака (фото, книги, цитата) */
   async function refreshFriends(){
