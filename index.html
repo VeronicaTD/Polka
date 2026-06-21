@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#7B5B4B">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Polka">
 <style>
@@ -71,6 +71,9 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   color:var(--ink-soft);font-size:14px}
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
 .profile .sub{color:var(--ink-soft);font-size:15px;margin-top:2px;max-width:46ch}
+.reading{margin-top:7px;font-size:14px;color:var(--ink-soft)}
+.reading b{color:var(--ink);font-weight:600}
+.reading.editable{cursor:pointer}
 .stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap}
 .stats div b{font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;display:block;line-height:1}
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
@@ -336,6 +339,7 @@ main,footer{position:relative;z-index:1}
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
       </div>
       <div class="sub" id="pSub"></div>
+      <div class="reading" id="pReading"></div>
     </div>
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
@@ -373,7 +377,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · демо-прототип · версия 14 · книги и профиль сохраняются в этом браузере.</div></footer>
+<footer><div class="wrap">Polka · демо-прототип · версия 16 · книги и профиль сохраняются в этом браузере.</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -442,6 +446,7 @@ main,footer{position:relative;z-index:1}
   </div>
   <div class="field"><label>Имя</label><input id="pNameInput" placeholder="как вас зовут" maxlength="40" /></div>
   <div class="field"><label>Любимая цитата</label><input id="pQuoteInput" placeholder="строчка, которая про вас" maxlength="120" /></div>
+  <div class="field"><label>Сейчас читаю</label><input id="pReadingInput" placeholder="что читаете прямо сейчас" maxlength="80" /></div>
   <div class="field"><label>Код вашей полки</label>
     <textarea class="codebox" id="myCode" readonly></textarea>
     <button class="linklike" id="copyCode" type="button">📋 Скопировать код полки</button>
@@ -627,6 +632,7 @@ main,footer{position:relative;z-index:1}
   let myName  = localStorage.getItem("polka_name")  || "Моя полка";
   let myQuote = localStorage.getItem("polka_quote") || "";
   let myPhoto = localStorage.getItem("polka_photo") || "";
+  let myReading = localStorage.getItem("polka_reading") || "";
   let myStickers = [];
   try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || []; } catch(e){ myStickers = []; }
   let myCode = localStorage.getItem("polka_code") || "";
@@ -648,13 +654,13 @@ main,footer{position:relative;z-index:1}
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||""]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||""]));
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||""]));
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"",
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"",
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"" }; }) };
@@ -668,11 +674,11 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading});
   }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
-    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto})}); return true; }
+    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading})}); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
@@ -734,6 +740,9 @@ main,footer{position:relative;z-index:1}
       const m = friend().books.filter(b=>mine.has(norm(b.t))).length;
       $("#stMatch").textContent = m; $("#stMatchWrap").style.display="";
     }
+    const pr = $("#pReading");
+    if(isMe()){ pr.classList.add("editable"); pr.innerHTML = myReading ? `📖 сейчас читаю: <b>${esc(myReading)}</b>` : `📖 <span style="opacity:.7">что читаете сейчас?</span>`; }
+    else { pr.classList.remove("editable"); const rd=friend().reading; pr.innerHTML = rd ? `📖 сейчас читает: <b>${esc(rd)}</b>` : ""; }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     renderMyStickers();
   }
@@ -837,11 +846,31 @@ main,footer{position:relative;z-index:1}
 
   $("#casePrev").addEventListener("click", ()=>{ slideDir=-1; casePage--; renderCase(); });
   $("#caseNext").addEventListener("click", ()=>{ slideDir=1; casePage++; renderCase(); });
+  const SUGGESTIONS = [
+    {t:"Цветы для Элджернона",a:"Д. Киз"},{t:"Над пропастью во ржи",a:"Дж. Сэлинджер"},
+    {t:"1984",a:"Дж. Оруэлл"},{t:"Маленький принц",a:"А. де Сент-Экзюпери"},
+    {t:"Убить пересмешника",a:"Х. Ли"},{t:"Норвежский лес",a:"Х. Мураками"},
+    {t:"Гордость и предубеждение",a:"Дж. Остин"},{t:"Зулейха открывает глаза",a:"Г. Яхина"},
+    {t:"Дом, в котором…",a:"М. Петросян"},{t:"Вино из одуванчиков",a:"Р. Брэдбери"},
+    {t:"Сто лет одиночества",a:"Г. Маркес"},{t:"Маленькие женщины",a:"Л. Олкотт"},
+    {t:"Маленькая жизнь",a:"Х. Янагихара"},{t:"Щегол",a:"Д. Тартт"}
+  ];
   $("#diceBtn").addEventListener("click", ()=>{
-    const list = currentBooks();
-    if(!list.length){ toast("Сначала добавьте книги на полку"); return; }
-    const b = list[Math.floor(Math.random()*list.length)];
-    toast("Почитай: «"+b.t+"» — "+b.a);
+    const norm = s => String(s||"").trim().toLowerCase();
+    const have = new Set(myBooks.map(b=>norm(b.t)));
+    // 1) книги с полок друзей, которых у меня нет
+    const pool = [];
+    Object.values(DEMO_FRIENDS).forEach(f => (f.books||[]).forEach(b=>{ if(!have.has(norm(b.t))) pool.push({t:b.t, a:b.a, from:(f.name||"").split(" ")[0]}); }));
+    if(pool.length){
+      const p = pool[Math.floor(Math.random()*pool.length)];
+      toast("Советуем: «"+p.t+"» — "+p.a+" (у "+p.from+")");
+      return;
+    }
+    // 2) из списка популярных, чего у тебя ещё нет
+    const fresh = SUGGESTIONS.filter(b=>!have.has(norm(b.t)));
+    const list = fresh.length ? fresh : SUGGESTIONS;
+    const p = list[Math.floor(Math.random()*list.length)];
+    toast("Советуем почитать: «"+p.t+"» — "+p.a);
   });
 
   /* свайп */
@@ -896,12 +925,25 @@ main,footer{position:relative;z-index:1}
     else { el.style.backgroundImage="none"; el.style.background=grad; }
   }
   async function fetchCover(title, author){
+    // 1) Google Books (хорошо знает русские книги)
     try{
-      const q="https://openlibrary.org/search.json?limit=1&fields=cover_i&title="+encodeURIComponent(title)+(author?"&author="+encodeURIComponent(author):"");
-      const r=await fetch(q); const j=await r.json();
-      const id=j&&j.docs&&j.docs[0]&&j.docs[0].cover_i;
-      return id ? ("https://covers.openlibrary.org/b/id/"+id+"-L.jpg") : "";
-    }catch(e){ return ""; }
+      const q = encodeURIComponent(title + (author ? " "+author : ""));
+      const r = await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=3&q="+q);
+      const j = await r.json();
+      const items = (j && j.items) || [];
+      for(const it of items){
+        const img = it.volumeInfo && it.volumeInfo.imageLinks;
+        if(img){ const u = img.thumbnail || img.smallThumbnail; if(u) return u.replace(/^http:/,"https:").replace("&edge=curl",""); }
+      }
+    }catch(e){}
+    // 2) Open Library (запасной)
+    try{
+      const r2 = await fetch("https://openlibrary.org/search.json?limit=1&fields=cover_i&q="+encodeURIComponent(title+(author?" "+author:"")));
+      const j2 = await r2.json();
+      const id = j2 && j2.docs && j2.docs[0] && j2.docs[0].cover_i;
+      if(id) return "https://covers.openlibrary.org/b/id/"+id+"-L.jpg";
+    }catch(e){}
+    return "";
   }
   $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); if(!iCover) setInfoSpine("", iSelColor); });
   $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
@@ -951,11 +993,12 @@ main,footer{position:relative;z-index:1}
   const profileModal = $("#profileModal"); let tempPhoto="";
   function paintPhoto(){ const p=$("#photoPrev"); if(tempPhoto){ p.style.backgroundImage=`url(${tempPhoto})`; p.textContent=""; } else { p.style.backgroundImage="none"; p.textContent=(myName[0]||"М"); } }
   function openProfile(){
-    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; tempPhoto=myPhoto; paintPhoto();
+    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pReadingInput").value=myReading; tempPhoto=myPhoto; paintPhoto();
     $("#myCode").value = myShareCode();
     overlay.classList.add("open"); profileModal.classList.add("open");
   }
   $("#editProfile").addEventListener("click", openProfile);
+  $("#pReading").addEventListener("click", ()=>{ if(isMe()) openProfile(); });
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 256, url=>{ tempPhoto=url; paintPhoto(); });
@@ -968,8 +1011,8 @@ main,footer{position:relative;z-index:1}
     function sel(){ $("#myCode").select(); toast("Код выделен — скопируйте вручную"); }
   });
   $("#saveProfile").addEventListener("click", ()=>{
-    myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myPhoto=tempPhoto;
-    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote);
+    myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myReading=$("#pReadingInput").value.trim(); myPhoto=tempPhoto;
+    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading);
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo"); }
     catch(e){ toast("Фото слишком большое для памяти браузера"); }
     syncUp(); closeModals(); renderAll();
@@ -998,7 +1041,7 @@ main,footer{position:relative;z-index:1}
     if(used && savedFriends.some(f=>f.code===used)){ const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id="fr"+Date.now().toString(36);
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||""};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:(p && p.rd)||""};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj;
@@ -1063,9 +1106,9 @@ main,footer{position:relative;z-index:1}
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||"";
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=(p&&p.rd)||"";
     try{
-      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote);
+      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading);
       localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
       localStorage.setItem("polka_registered","1");
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
@@ -1092,7 +1135,7 @@ main,footer{position:relative;z-index:1}
         const row = await sbFetch(f.code);
         if(row && row.data){ const p = decodeCode(row.data);
           f.name = p.n || f.name; f.quote = p.q || ""; f.stickers = p.s || [];
-          f.photo = p.ph || ""; if(Array.isArray(p.b)) f.books = p.b; changed = true; }
+          f.photo = p.ph || ""; f.reading = p.rd || ""; if(Array.isArray(p.b)) f.books = p.b; changed = true; }
       }catch(e){}
     }
     if(changed){ try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){} renderAll(); }
