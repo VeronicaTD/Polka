@@ -108,8 +108,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
   font-size:13px;line-height:1.05;max-height:74%;overflow:hidden;text-align:left}
-.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.02em;opacity:.85;
-  border-top:1px solid rgba(255,255,255,.25);padding-top:4px}
+.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.02em;opacity:.8;
+  border-top:1px solid currentColor;padding-top:4px}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} }
 .s-foot{width:100%;display:flex;flex-direction:column;align-items:center;gap:1px}
 .s-heart{display:block;margin:0 auto 2px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
@@ -141,7 +141,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .hand-note{position:absolute;z-index:5;bottom:90px;left:-10px;transform:rotate(-4deg);
   background:var(--paper);font-family:var(--display);color:var(--accent-deep);padding:5px 14px;border-radius:4px;
   box-shadow:var(--shadow);font-size:18px;border:1px solid var(--line);white-space:nowrap}
-@media(max-width:640px){.hand-note,.bow{display:none}}
+@media(max-width:640px){
+  .bow{width:52px;top:-14px;right:6px}
+  .hand-note{font-size:15px;padding:4px 10px;bottom:auto;top:-12px;left:6px}
+}
 
 /* секции */
 .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:30px 0 14px;flex-wrap:wrap}
@@ -167,7 +170,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .sticker-opt .badge{width:84px;height:84px;background:transparent;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
 .sticker-opt.on::after{content:"✓";position:absolute;top:-2px;right:-2px;width:22px;height:22px;
   background:var(--accent);color:#fff;border-radius:50%;font-size:13px;display:grid;place-items:center;box-shadow:var(--shadow)}
-.badge.cust{object-fit:contain;border-radius:0;border:none;box-shadow:none;filter:drop-shadow(0 3px 5px rgba(0,0,0,.18))}
+.badge.cust{object-fit:cover;border-radius:50%;border:none;box-shadow:none;filter:drop-shadow(0 3px 5px rgba(0,0,0,.18))}
 .add-sticker{width:84px;height:84px;border:2px dashed var(--line);border-radius:50%;color:var(--accent);
   font-size:30px;display:grid;place-items:center;opacity:1;filter:none;background:transparent}
 .add-sticker:hover{border-color:var(--accent);background:var(--paper-2);transform:translateY(-2px)}
@@ -324,7 +327,6 @@ main,footer{position:relative;z-index:1}
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
-        <button class="edit-profile" id="removeFriend" title="Убрать из друзей" aria-label="Убрать из друзей" style="display:none">✕</button>
       </div>
       <div class="sub" id="pSub"></div>
     </div>
@@ -362,7 +364,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · демо-прототип · версия 10 · книги и профиль сохраняются в этом браузере.</div></footer>
+<footer><div class="wrap">Polka · демо-прототип · версия 13 · книги и профиль сохраняются в этом браузере.</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -527,20 +529,27 @@ main,footer{position:relative;z-index:1}
   }
   function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 
+
   /* палитра обложек */
   const COLORS = [
-    "linear-gradient(95deg,#8a4a36,#5e2f20)","linear-gradient(95deg,#b05a44,#7a3526)",
-    "linear-gradient(95deg,#a4632f,#6e3d18)","linear-gradient(95deg,#c08a3c,#8a5e20)",
-    "linear-gradient(95deg,#7d7a44,#4e4b22)","linear-gradient(95deg,#5f7a52,#36492f)",
-    "linear-gradient(95deg,#3f7d6e,#214c43)","linear-gradient(95deg,#5a7a8c,#34505e)",
-    "linear-gradient(95deg,#7a3b52,#4f2336)","linear-gradient(95deg,#8a3b3b,#561f1f)",
-    "linear-gradient(95deg,#6b5436,#3e2f1a)","linear-gradient(95deg,#4a4036,#2a231c)"
+    "linear-gradient(95deg,#dbc0e8,#c3a2d6)", "linear-gradient(95deg,#a3c1e2,#7fa3ce)",
+    "linear-gradient(95deg,#f7e289,#e9cb5e)", "linear-gradient(95deg,#252d45,#161b2c)",
+    "linear-gradient(95deg,#fbb28b,#f2925f)", "linear-gradient(95deg,#f76f54,#de5235)",
+    "linear-gradient(95deg,#a6b486,#87976a)", "linear-gradient(95deg,#47b5a8,#2f9387)",
+    "linear-gradient(95deg,#f9a2c5,#f277a8)", "linear-gradient(95deg,#ea5e86,#d43e6a)",
+    "linear-gradient(95deg,#6b515e,#4e3a45)", "linear-gradient(95deg,#b79a65,#9c7e4a)"
   ];
-  /* запасной цвет по жанру (для демо/старых книг без c) */
-  const PALETTE = {"Проза":"linear-gradient(95deg,#8a4a36,#5e2f20)","Фантастика":"linear-gradient(95deg,#6b5436,#3e2f1a)",
-    "Нон-фикшн":"linear-gradient(95deg,#a4632f,#6e3d18)","Поэзия":"linear-gradient(95deg,#7a3b52,#4f2336)",
-    "Детектив":"linear-gradient(95deg,#4a4036,#2a231c)","Классика":"linear-gradient(95deg,#956a39,#5e4220)"};
+  /* запасной цвет по жанру (для старых книг без c) */
+  const PALETTE = {"Проза":"linear-gradient(95deg,#a3c1e2,#7fa3ce)","Фантастика":"linear-gradient(95deg,#6b515e,#4e3a45)",
+    "Нон-фикшн":"linear-gradient(95deg,#f7e289,#e9cb5e)","Поэзия":"linear-gradient(95deg,#f9a2c5,#f277a8)",
+    "Детектив":"linear-gradient(95deg,#252d45,#161b2c)","Классика":"linear-gradient(95deg,#a6b486,#87976a)"};
   const spineBg = b => b.c || PALETTE[b.g] || "linear-gradient(95deg,#444,#222)";
+  /* цвет текста на корешке: тёмный на светлых обложках, белый на тёмных */
+  function pickFg(grad){
+    const m = String(grad).match(/#([0-9a-fA-F]{6})/); if(!m) return "#fff";
+    const h=m[1], r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    return (0.299*r + 0.587*g + 0.114*b) > 150 ? "#2e2620" : "#fff";
+  }
   const isFav = b => b.fav !== undefined ? !!b.fav : (b.r >= 5);
   const lastName = a => String(a||"").trim().split(/\s+/).slice(-1)[0] || "";
 
@@ -679,7 +688,7 @@ main,footer{position:relative;z-index:1}
   function renderTabs(){
     const t = $("#tabs");
     const me = `<button class="tab ${isMe()?'active':''}" data-view="me"><span class="face" style="${myPhoto?`background-image:url(${myPhoto})`:'background:var(--accent)'}">${myPhoto?'':'М'}</span>${esc(myName.split(" ")[0])}</button>`;
-    const fr = Object.entries(DEMO_FRIENDS).map(([k,f])=>`<button class="tab ${view===k?'active':''}" data-view="${k}"><span class="face" style="background:${f.color}">${esc(f.name[0])}</span>${esc(f.name.split(" ")[0])}</button>`).join("");
+    const fr = Object.entries(DEMO_FRIENDS).map(([k,f])=>`<button class="tab ${view===k?'active':''}" data-view="${k}"><span class="face" style="${f.photo?`background-image:url(${f.photo})`:`background:${f.color}`}">${f.photo?'':esc(f.name[0])}</span>${esc(f.name.split(" ")[0])}</button>`).join("");
     t.innerHTML = `<span class="lbl">Профили:</span>${me}${fr}<button class="tab tab-add" id="addFriend" title="Добавить полку друга по коду">+ полка друга</button>`;
   }
   $("#tabs").addEventListener("click", e=>{
@@ -702,14 +711,12 @@ main,footer{position:relative;z-index:1}
       $("#pName").textContent = myName;
       $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
       $("#editProfile").style.display = "";
-      $("#removeFriend").style.display = "none";
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
       $("#pName").textContent = f.name;
       $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
       $("#editProfile").style.display = "none";
-      $("#removeFriend").style.display = "";
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
     $("#stTotal").textContent = books.length;
@@ -773,7 +780,8 @@ main,footer{position:relative;z-index:1}
     const maxH = phone()?168:192;
     const h = Math.min(maxH, Math.max(104, Math.round(b.t.length*font*0.56 + 26))); // длиннее название — выше книга
     const heart = Math.min(16, Math.max(11, Math.round(bw*0.36)));
-    return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${bw}px;height:${h}px;background:${spineBg(b)}">
+    const bg = spineBg(b);
+    return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${bw}px;height:${h}px;background:${bg};color:${pickFg(bg)}">
       <div class="s-title" style="font-size:${font}px">${esc(b.t)}</div>
       <div class="s-foot">${isFav(b)?pixelHeartSVG(heart):''}<div class="s-band" style="font-size:${bandFont}px">${esc(lastName(b.a))}</div></div>
     </div>`;
@@ -907,14 +915,6 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); profileModal.classList.add("open");
   }
   $("#editProfile").addEventListener("click", openProfile);
-  $("#removeFriend").addEventListener("click", ()=>{
-    if(isMe()) return;
-    const id = view;
-    savedFriends = savedFriends.filter(f=>f.id!==id);
-    delete DEMO_FRIENDS[id];
-    try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
-    view="me"; casePage=0; renderAll(); toast("Полка убрана из друзей");
-  });
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 256, url=>{ tempPhoto=url; paintPhoto(); });
