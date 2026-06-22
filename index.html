@@ -395,7 +395,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v24 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v25 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -741,6 +741,7 @@ main,footer{position:relative;z-index:1}
     return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0});
   }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
+  function setUrlLogin(){ if(CLOUD() && myCode){ try{ history.replaceState(null, "", location.pathname + "?login=" + encodeURIComponent(myCode)); }catch(e){} } }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0})}); return true; }
@@ -1164,6 +1165,7 @@ main,footer{position:relative;z-index:1}
     syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
     $("#welCode").value = myShareCode();
     $("#welLink").value = loginLink();
+    setUrlLogin();
     welShow("welStep2"); renderAll();
   }
   $("#welGo").addEventListener("click", ()=>{
@@ -1206,6 +1208,7 @@ main,footer{position:relative;z-index:1}
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
+    setUrlLogin();
     // восстановить друзей из облака
     const frCodes = (p && Array.isArray(p.fr)) ? p.fr : [];
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
@@ -1239,12 +1242,19 @@ main,footer{position:relative;z-index:1}
     } else {
       myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){}
     }
+    setUrlLogin();
     const ok = await syncUp(); if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase");
     refreshReqBadge(); refreshFriends();
   }
   const loginMatch = location.href.match(/[?#]login=([^&#]+)/);
-  if(loginMatch){ doLogin(decodeURIComponent(loginMatch[1])); }
-  else {
+  if(loginMatch){
+    const lcode = decodeURIComponent(loginMatch[1]);
+    if(localStorage.getItem("polka_registered") && myCode && lcode.toUpperCase()===myCode.toUpperCase()){
+      bootCloud();                 // уже в этом аккаунте — просто открываем
+    } else {
+      doLogin(lcode);              // вход в аккаунт из ссылки
+    }
+  } else {
     if(!localStorage.getItem("polka_registered")) openWelcome();
     bootCloud();
   }
