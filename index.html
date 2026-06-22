@@ -10,6 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#7B5B4B">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Polka">
@@ -396,7 +398,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v27 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v31 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -657,14 +659,15 @@ main,footer{position:relative;z-index:1}
     return `<img class="badge cust" src="${s.img}" width="${size}" height="${size}" alt="" onerror="this.style.display='none'">`;
   }
   /* уменьшить картинку до квадрата size×size */
-  function imgToDataURL(file, size, cb){
+  function imgToDataURL(file, size, cb, jpeg){
     const r = new FileReader();
     r.onload = () => { const im = new Image(); im.onload = () => {
       const cv = document.createElement("canvas"); cv.width=size; cv.height=size;
       const ctx = cv.getContext("2d");
+      if(jpeg){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,size,size); }
       const s = Math.min(im.width, im.height), sx=(im.width-s)/2, sy=(im.height-s)/2;
       ctx.drawImage(im, sx, sy, s, s, 0, 0, size, size);
-      cb(cv.toDataURL("image/png"));
+      cb(jpeg ? cv.toDataURL("image/jpeg", 0.82) : cv.toDataURL("image/png"));
     }; im.src = r.result; };
     r.readAsDataURL(file);
   }
@@ -899,7 +902,8 @@ main,footer{position:relative;z-index:1}
     const bw = bookWidth(per);
     const cells = pageBooks.map((b,i)=>spineHTML(b, start+i, bw));
     if(showAddHere) cells.push(`<button class="add-slot" id="quickAdd" title="Добавить книгу">+</button>`);
-    if(!cells.length) cells.push(`<span class="placeholder">Здесь пока пусто. Поставьте первый прочитанный томик →</span>`);
+    if(isMe() && books.length===0){ cells.unshift(`<span class="placeholder">Поставьте сюда первый прочитанный томик →</span>`); }
+    else if(!cells.length){ cells.push(`<span class="placeholder">Полка пока пустая 🤍</span>`); }
 
     const shelves = [];
     for(let s=0;s<SHELVES_PER_CASE;s++) shelves.push(cells.slice(s*per,(s+1)*per));
@@ -1035,7 +1039,7 @@ main,footer{position:relative;z-index:1}
   $("#pReading").addEventListener("click", ()=>{ if(isMe()) openProfile(); });
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
-    imgToDataURL(f, 256, url=>{ tempPhoto=url; paintPhoto(); });
+    imgToDataURL(f, 256, url=>{ tempPhoto=url; paintPhoto(); }, true);
   });
   $("#photoRemove").addEventListener("click", ()=>{ tempPhoto=""; paintPhoto(); });
   $("#copyCode").addEventListener("click", ()=>{
@@ -1111,7 +1115,7 @@ main,footer{position:relative;z-index:1}
       return toast("Короткие коды работают только с Supabase");
     }
     const books = Array.isArray(p) ? p : (p && p.b);
-    if(!Array.isArray(books) || !books.length) return toast("Код не похож на полку");
+    if(!Array.isArray(books)) return toast("Код не похож на полку");
     if(used && savedFriends.some(f=>f.code===used)){ const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id="fr"+Date.now().toString(36);
     const name=(p && p.n) ? p.n : "Полка друга";
@@ -1237,6 +1241,9 @@ main,footer{position:relative;z-index:1}
         setTimeout(()=>location.reload(), 1300);
         return;
       }
+      if(row && row.data){ try{ const cp = decodeCode(row.data);
+        if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} renderProfile(); }
+      }catch(e){} }
     } else {
       myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){}
     }
