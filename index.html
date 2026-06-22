@@ -395,7 +395,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v25 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v26 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -924,19 +924,11 @@ main,footer{position:relative;z-index:1}
   $("#diceBtn").addEventListener("click", ()=>{
     const norm = s => String(s||"").trim().toLowerCase();
     const have = new Set(myBooks.map(b=>norm(b.t)));
-    // 1) книги с полок друзей, которых у меня нет
-    const pool = [];
-    Object.values(DEMO_FRIENDS).forEach(f => (f.books||[]).forEach(b=>{ if(!have.has(norm(b.t))) pool.push({t:b.t, a:b.a, from:(f.name||"").split(" ")[0]}); }));
-    if(pool.length){
-      const p = pool[Math.floor(Math.random()*pool.length)];
-      toast("Советуем: «"+p.t+"» — "+p.a+" (у "+p.from+")");
-      return;
-    }
-    // 2) из списка популярных, чего у тебя ещё нет
     const fresh = SUGGESTIONS.filter(b=>!have.has(norm(b.t)));
     const list = fresh.length ? fresh : SUGGESTIONS;
-    const p = list[Math.floor(Math.random()*list.length)];
-    toast("Советуем почитать: «"+p.t+"» — "+p.a);
+    const slot = Math.floor(Date.now()/(8*3600*1000));   // совет меняется раз в 8 часов
+    const p = list[slot % list.length];
+    toast("Совет почитать: «"+p.t+"» — "+p.a);
   });
 
   /* свайп */
@@ -1067,6 +1059,7 @@ main,footer{position:relative;z-index:1}
   $("#redeemBtn").addEventListener("click", async ()=>{
     const code = $("#accessCode").value.trim().toUpperCase();
     if(!code) return;
+    toast("Проверяю код…");
     const ok = await sbRedeem(code);
     if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }
     else toast("Код неверный или уже использован");
@@ -1177,6 +1170,7 @@ main,footer{position:relative;z-index:1}
   $("#welAccessGo").addEventListener("click", async ()=>{
     const code = $("#welAccessCode").value.trim().toUpperCase();
     if(!code) return;
+    toast("Проверяю код…");
     const ok = await sbRedeem(code);
     if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} toast("Доступ открыт! 💛"); createShelf(pendingName); }
     else toast("Код неверный или уже использован");
@@ -1214,15 +1208,14 @@ main,footer{position:relative;z-index:1}
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
     savedFriends = [];
     view="me"; closeModals(); renderAll(); toast("С возвращением, "+myName.split(" ")[0]+"!");
-    for(const fc of frCodes){
-      if(!fc || fc===myCode) continue;
-      try{
-        const row = await sbFetch(fc); if(!row || !row.data) continue;
-        const fp = decodeCode(row.data); const fb = Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) continue;
-        const fo = {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", color:FRIEND_COLORS[savedFriends.length%FRIEND_COLORS.length], quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:(fp&&fp.rd)||""};
-        savedFriends.push(fo); DEMO_FRIENDS[fo.id]=fo;
-      }catch(e){}
-    }
+    const codes = frCodes.filter(fc=>fc && fc!==myCode);
+    const rows = await Promise.all(codes.map(async fc=>{
+      try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null; return {fc,fp,fb}; }catch(e){ return null; }
+    }));
+    rows.filter(Boolean).forEach(({fc,fp,fb})=>{
+      const fo = {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", color:FRIEND_COLORS[savedFriends.length%FRIEND_COLORS.length], quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:(fp&&fp.rd)||""};
+      savedFriends.push(fo); DEMO_FRIENDS[fo.id]=fo;
+    });
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     renderAll();
   }
