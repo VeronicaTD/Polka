@@ -70,6 +70,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 @media(max-width:640px){ .bar .tagline{display:none} }
 .btn{border:none;background:var(--accent);color:#fff;border-radius:999px;padding:12px 20px;font-weight:700;font-size:14px;transition:.2s}
 .btn:hover{background:var(--accent-deep);transform:translateY(-1px)}
+.btn:disabled{opacity:.6;cursor:default;transform:none}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .btn.ghost:hover{border-color:var(--ink);background:var(--paper-2)}
 
@@ -395,7 +396,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v26 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v27 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -560,6 +561,12 @@ main,footer{position:relative;z-index:1}
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = s => document.querySelector(s);
   const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  /* показать «загрузку» на кнопке во время сетевого действия */
+  async function withBtn(btn, busyText, fn){
+    if(!btn) return fn();
+    const old = btn.textContent; btn.disabled = true; btn.textContent = busyText;
+    try{ return await fn(); } finally { try{ btn.disabled=false; btn.textContent=old; }catch(e){} }
+  }
 
   /* ====== SUPABASE (для коротких кодов и общих полок) ======
      Вставь сюда данные из своего проекта: Supabase → Settings → API.
@@ -1056,14 +1063,13 @@ main,footer{position:relative;z-index:1}
     $("#accessCode").value = "";
     overlay.classList.add("open"); accessModal.classList.add("open");
   }
-  $("#redeemBtn").addEventListener("click", async ()=>{
+  $("#redeemBtn").addEventListener("click", ()=>withBtn($("#redeemBtn"),"Проверяю…", async ()=>{
     const code = $("#accessCode").value.trim().toUpperCase();
     if(!code) return;
-    toast("Проверяю код…");
     const ok = await sbRedeem(code);
     if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }
     else toast("Код неверный или уже использован");
-  });
+  }));
 
   /* ---- темы оформления ---- */
   const THEMES = [
@@ -1088,7 +1094,7 @@ main,footer{position:relative;z-index:1}
   /* ---- добавить полку по коду ---- */
   const joinModal = $("#joinModal");
   function openJoin(){ $("#joinInput").value=""; overlay.classList.add("open"); joinModal.classList.add("open"); setTimeout(()=>$("#joinInput").focus(),60); }
-  $("#joinAdd").addEventListener("click", ()=>addFriendByCode($("#joinInput").value));
+  $("#joinAdd").addEventListener("click", ()=>withBtn($("#joinAdd"),"Добавляю…", ()=>addFriendByCode($("#joinInput").value)));
   async function addFriendByCode(code){
     if(!code || !code.trim()) return;
     if(!requirePaid()) return;
@@ -1167,20 +1173,19 @@ main,footer{position:relative;z-index:1}
     createShelf(name);
   });
   $("#welAccessBack").addEventListener("click", ()=>welShow("welStep1"));
-  $("#welAccessGo").addEventListener("click", async ()=>{
+  $("#welAccessGo").addEventListener("click", ()=>withBtn($("#welAccessGo"),"Проверяю…", async ()=>{
     const code = $("#welAccessCode").value.trim().toUpperCase();
     if(!code) return;
-    toast("Проверяю код…");
     const ok = await sbRedeem(code);
     if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} toast("Доступ открыт! 💛"); createShelf(pendingName); }
     else toast("Код неверный или уже использован");
-  });
+  }));
   $("#welCopy").addEventListener("click", ()=>{ const v=$("#welCode").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код скопирован!"), ()=>$("#welCode").select()); else $("#welCode").select(); });
   $("#welLinkCopy").addEventListener("click", ()=>{ const v=$("#welLink").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#welLink").select()); else $("#welLink").select(); });
   $("#welDone").addEventListener("click", closeModals);
-  $("#welLoginGo").addEventListener("click", ()=>doLogin($("#welLoginInput").value));
+  $("#welLoginGo").addEventListener("click", ()=>withBtn($("#welLoginGo"),"Вхожу…", ()=>doLogin($("#welLoginInput").value)));
   async function doLogin(code){
     code=(code||"").trim(); if(!code) return;
     let p=null, used="";
