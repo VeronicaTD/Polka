@@ -32,16 +32,16 @@
   --shadow:0 16px 34px -22px rgba(40,25,10,.6);
 }
 body[data-theme="rose"]{
-  --paper:#fff4f8; --paper-2:#fbe1ec; --ink:#5b2f46; --ink-soft:#9b6a83; --line:#f2d4e1;
-  --accent:#d76a97; --accent-deep:#b34d79; --gold:#c98aa8; --wood-1:#c79bb0; --wood-2:#8c5d73;
+  --paper:#fff4f3; --paper-2:#ffe1e0; --ink:#604d53; --ink-soft:#8f767c; --line:#f3d6d6;
+  --accent:#db7f8e; --accent-deep:#c25e70; --gold:#bf8a93; --wood-1:#a98c92; --wood-2:#604d53;
 }
 body[data-theme="night"]{
-  --paper:#1d2030; --paper-2:#272b3e; --ink:#ece8f0; --ink-soft:#a7a3b8; --line:#3a3e54;
-  --accent:#9a86d6; --accent-deep:#7d68c2; --gold:#d8b46a; --wood-1:#4a4636; --wood-2:#2b2920;
+  --paper:#2a1228; --paper-2:#45123f; --ink:#e1dafb; --ink-soft:#b3a6cf; --line:#5a2b52;
+  --accent:#5b4fb0; --accent-deep:#4d3ea3; --gold:#d8b46a; --wood-1:#4a2746; --wood-2:#2a1228;
 }
 body[data-theme="mint"]{
-  --paper:#f1faf4; --paper-2:#dcefe2; --ink:#27433a; --ink-soft:#5f7d72; --line:#cbe3d4;
-  --accent:#3f9d86; --accent-deep:#2c7d69; --gold:#b59a55; --wood-1:#8aa896; --wood-2:#5a7464;
+  --paper:#f2fff6; --paper-2:#d6f5e3; --ink:#08343a; --ink-soft:#5a877f; --line:#cdeede;
+  --accent:#238689; --accent-deep:#1b6a6c; --gold:#b59a55; --wood-1:#5f928e; --wood-2:#2e5c5b;
 }
 *{box-sizing:border-box}
 #splash{position:fixed;inset:0;z-index:200;background:#FFF8F1;display:grid;place-items:center;text-align:center}
@@ -403,7 +403,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v33 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v34 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1084,9 +1084,9 @@ main,footer{position:relative;z-index:1}
   /* ---- темы оформления ---- */
   const THEMES = [
     {id:"coffee", name:"Кофе", c1:"#FFF8F1", c2:"#7B5B4B"},
-    {id:"rose",   name:"Роза", c1:"#fff4f8", c2:"#d76a97"},
-    {id:"night",  name:"Ночь", c1:"#1d2030", c2:"#9a86d6"},
-    {id:"mint",   name:"Мята", c1:"#f1faf4", c2:"#3f9d86"}
+    {id:"rose",   name:"Роза", c1:"#ffe1e0", c2:"#db7f8e"},
+    {id:"night",  name:"Ночь", c1:"#2a1228", c2:"#5b4fb0"},
+    {id:"mint",   name:"Мята", c1:"#d6f5e3", c2:"#238689"}
   ];
   let myTheme = localStorage.getItem("polka_theme") || "coffee";
   function applyTheme(id){
