@@ -44,6 +44,9 @@ body[data-theme="mint"]{
   --accent:#3f9d86; --accent-deep:#2c7d69; --gold:#b59a55; --wood-1:#8aa896; --wood-2:#5a7464;
 }
 *{box-sizing:border-box}
+#splash{position:fixed;inset:0;z-index:200;background:#FFF8F1;display:grid;place-items:center;text-align:center}
+.splash-in{font-family:"Fredoka",sans-serif;font-size:30px;line-height:1.4;color:#5e4538}
+.splash-in span{font-size:14px;color:#7a6253}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:"Fredoka",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
   background-image:radial-gradient(circle at 15% 0%, rgba(184,73,58,.05), transparent 38%),
@@ -296,6 +299,8 @@ main,footer{position:relative;z-index:1}
 </head>
 <body>
 
+<div id="splash"><div class="splash-in">📖<br>Polka<br><span>загрузка…</span></div></div>
+
 <!-- спрайт звёзд -->
 <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
   <defs>
@@ -398,7 +403,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v31 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v33 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -564,6 +569,7 @@ main,footer{position:relative;z-index:1}
   const $ = s => document.querySelector(s);
   const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   /* показать «загрузку» на кнопке во время сетевого действия */
+  function hideSplash(){ const s=document.getElementById("splash"); if(s) s.style.display="none"; }
   async function withBtn(btn, busyText, fn){
     if(!btn) return fn();
     const old = btn.textContent; btn.disabled = true; btn.textContent = busyText;
@@ -667,7 +673,7 @@ main,footer{position:relative;z-index:1}
       if(jpeg){ ctx.fillStyle="#fff"; ctx.fillRect(0,0,size,size); }
       const s = Math.min(im.width, im.height), sx=(im.width-s)/2, sy=(im.height-s)/2;
       ctx.drawImage(im, sx, sy, s, s, 0, 0, size, size);
-      cb(jpeg ? cv.toDataURL("image/jpeg", 0.82) : cv.toDataURL("image/png"));
+      cb(jpeg ? cv.toDataURL("image/jpeg", 0.7) : cv.toDataURL("image/png"));
     }; im.src = r.result; };
     r.readAsDataURL(file);
   }
@@ -959,7 +965,7 @@ main,footer{position:relative;z-index:1}
     if(sp) openInfo(parseInt(sp.dataset.i,10));
   });
 
-  function renderAll(){ renderTabs(); renderProfile(); renderPicker(); renderCase(); }
+  function renderAll(){ renderTabs(); renderProfile(); renderPicker(); renderCase(); if(localStorage.getItem("polka_registered")) hideSplash(); }
 
   /* ---- добавить книгу ---- */
   const addModal = $("#addModal");
@@ -1039,7 +1045,7 @@ main,footer{position:relative;z-index:1}
   $("#pReading").addEventListener("click", ()=>{ if(isMe()) openProfile(); });
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
-    imgToDataURL(f, 256, url=>{ tempPhoto=url; paintPhoto(); }, true);
+    imgToDataURL(f, 160, url=>{ tempPhoto=url; paintPhoto(); }, true);
   });
   $("#photoRemove").addEventListener("click", ()=>{ tempPhoto=""; paintPhoto(); });
   $("#copyCode").addEventListener("click", ()=>{
@@ -1149,7 +1155,7 @@ main,footer{position:relative;z-index:1}
   /* регистрация при первом входе */
   const welModal = $("#welModal");
   function welShow(id){ ["welChoose","welStep1","welStep2","welLogin","welAccess"].forEach(s=>{ $("#"+s).style.display = (s===id?"":"none"); }); }
-  function openWelcome(){ welShow("welChoose"); overlay.classList.add("open"); welModal.classList.add("open"); }
+  function openWelcome(){ hideSplash(); welShow("welChoose"); overlay.classList.add("open"); welModal.classList.add("open"); }
   $("#welNew").addEventListener("click", ()=>{ welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
   $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
   $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
@@ -1212,25 +1218,13 @@ main,footer{position:relative;z-index:1}
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
     setUrlLogin();
-    // восстановить друзей из облака
-    const frCodes = (p && Array.isArray(p.fr)) ? p.fr : [];
-    Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
-    savedFriends = [];
-    view="me"; closeModals(); renderAll(); toast("С возвращением, "+myName.split(" ")[0]+"!");
-    const codes = frCodes.filter(fc=>fc && fc!==myCode);
-    const rows = await Promise.all(codes.map(async fc=>{
-      try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null; return {fc,fp,fb}; }catch(e){ return null; }
-    }));
-    rows.filter(Boolean).forEach(({fc,fp,fb})=>{
-      const fo = {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", color:FRIEND_COLORS[savedFriends.length%FRIEND_COLORS.length], quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:(fp&&fp.rd)||""};
-      savedFriends.push(fo); DEMO_FRIENDS[fo.id]=fo;
-    });
-    try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
-    renderAll();
+    view="me"; closeModals(); renderAll(); hideSplash(); toast("С возвращением, "+myName.split(" ")[0]+"!");
+    loadFriends((p && Array.isArray(p.fr)) ? p.fr : []);
   }
   /* при загрузке: проверяем, существует ли полка в облаке; если удалена — сбрасываем устройство */
   async function bootCloud(){
     if(!CLOUD() || !localStorage.getItem("polka_registered")) return;
+    let cloudFr = null;
     if(myCode){
       let row, fetched=true;
       try{ row = await sbFetch(myCode); }catch(e){ fetched=false; }   // сеть недоступна — не трогаем
@@ -1243,13 +1237,15 @@ main,footer{position:relative;z-index:1}
       }
       if(row && row.data){ try{ const cp = decodeCode(row.data);
         if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} renderProfile(); }
+        if(Array.isArray(cp.fr)) cloudFr = cp.fr;
       }catch(e){} }
     } else {
       myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){}
+      const ok = await syncUp(); if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase");
     }
     setUrlLogin();
-    const ok = await syncUp(); if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase");
-    refreshReqBadge(); refreshFriends();
+    refreshReqBadge();
+    loadFriends(cloudFr || savedFriends.map(f=>f.code));
   }
   const loginMatch = location.href.match(/[?#]login=([^&#]+)/);
   if(loginMatch){
@@ -1264,19 +1260,18 @@ main,footer{position:relative;z-index:1}
     bootCloud();
   }
   /* подтянуть свежие данные друзей из облака (фото, книги, цитата) */
-  async function refreshFriends(){
+  async function loadFriends(codes){
     if(!CLOUD()) return;
-    let changed = false;
-    for(const f of savedFriends){
-      if(!f.code) continue;
-      try{
-        const row = await sbFetch(f.code);
-        if(row && row.data){ const p = decodeCode(row.data);
-          f.name = p.n || f.name; f.quote = p.q || ""; f.stickers = p.s || [];
-          f.photo = p.ph || ""; f.reading = p.rd || ""; if(Array.isArray(p.b)) f.books = p.b; changed = true; }
-      }catch(e){}
-    }
-    if(changed){ try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){} renderAll(); }
+    const list = Array.from(new Set((codes||[]).filter(c=>c && c!==myCode)));
+    const built = await Promise.all(list.map(async fc=>{
+      try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null;
+        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:(fp&&fp.rd)||""}; }catch(e){ return null; }
+    }));
+    Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
+    savedFriends = [];
+    built.filter(Boolean).forEach((fo,i)=>{ fo.color=FRIEND_COLORS[i%FRIEND_COLORS.length]; savedFriends.push(fo); DEMO_FRIENDS[fo.id]=fo; });
+    try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
+    renderAll();
   }
 
   /* запросы «вас добавили» */
