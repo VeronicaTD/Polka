@@ -425,7 +425,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v41 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v43 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -811,12 +811,14 @@ main,footer{position:relative;z-index:1}
   function setUrlLogin(){ if(CLOUD() && myCode){ try{ history.replaceState(null, "", location.pathname + "?login=" + encodeURIComponent(myCode)); }catch(e){} } }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
-    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist})}); return true; }
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist});
+    try{ await sbUpsert({code:myCode, name:myName, data}); lastCloudData = data; return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
   /* состояние */
   let view = "me";
+  let lastCloudData = null;
   let casePage = 0;
   let slideDir = 0;
   const SHELVES_PER_CASE = 4;
@@ -1372,10 +1374,18 @@ main,footer{position:relative;z-index:1}
         setTimeout(()=>location.reload(), 1300);
         return;
       }
-      if(row && row.data){ try{ const cp = decodeCode(row.data);
-        if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} renderProfile(); }
+      if(row && row.data){ try{ const cp = decodeCode(row.data); lastCloudData = row.data;
+        if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
         if(Array.isArray(cp.fr)) cloudFr = cp.fr;
         if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
+        // подтягиваем последнюю версию полки из облака (книги, цитаты, имя и т.д.)
+        if(Array.isArray(cp.b)){ myBooks = cp.b; try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} }
+        if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
+        myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
+        if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
+        myReading = cp.rd || ""; try{ localStorage.setItem("polka_reading", myReading); }catch(e){}
+        if(cp.pd){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} }
+        renderAll();
       }catch(e){} }
     } else {
       myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){}
@@ -1397,6 +1407,30 @@ main,footer{position:relative;z-index:1}
     if(!localStorage.getItem("polka_registered")) openWelcome();
     bootCloud();
   }
+  /* автоподтягивание: тихо проверяем облако и обновляем полку, если изменилось на другом устройстве */
+  async function pullCloud(){
+    if(!CLOUD() || !myCode || !localStorage.getItem("polka_registered")) return;
+    if(!isMe()) return;                                   // в гостях не трогаем
+    if(overlay.classList.contains("open")) return;        // открыто окно — не мешаем
+    if(document.querySelector(".fullpage.open")) return;  // открыта страница цитат/хотелок
+    let row; try{ row = await sbFetch(myCode); }catch(e){ return; }
+    if(!row || !row.data || row.data === lastCloudData) return;   // нет изменений
+    lastCloudData = row.data;
+    let cp; try{ cp = decodeCode(row.data); }catch(e){ return; }
+    if(Array.isArray(cp.b)){ myBooks = cp.b; try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} }
+    if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
+    myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
+    if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
+    myReading = cp.rd || ""; try{ localStorage.setItem("polka_reading", myReading); }catch(e){}
+    if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
+    if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
+    if(cp.pd){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} }
+    renderAll();
+  }
+  setInterval(pullCloud, 45000);                          // каждые 45 секунд
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) pullCloud(); });
+  window.addEventListener("focus", pullCloud);
+
   /* подтянуть свежие данные друзей из облака (фото, книги, цитата) */
   async function loadFriends(codes){
     if(!CLOUD()) return;
