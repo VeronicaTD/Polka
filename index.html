@@ -161,16 +161,27 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .case-nav.next{right:-14px}
 .case-nav:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .case-ind{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin:6px 0 10px;display:none}
+.case-top{display:flex;justify-content:center;margin:4px 0 8px}
 .case-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;margin-bottom:30px}
 .dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px}
 .dice-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
-.q-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
-.q-row .q-text{flex:1;font-family:"Fraunces",serif;font-style:italic;font-size:15px;color:var(--ink)}
-.q-spine{width:40px;height:58px;border-radius:2px 4px 4px 2px;flex:0 0 auto;box-shadow:var(--shadow)}
-.wish-stack{display:flex;flex-wrap:wrap;gap:10px}
-.wish-book{width:46px;height:120px;border-radius:2px 4px 4px 2px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:flex-end;justify-content:center;color:#fff;overflow:hidden;position:relative}
-.wish-book .wb-t{writing-mode:vertical-rl;font-family:"Fraunces",serif;font-weight:600;font-size:11px;padding:6px 3px;max-height:88%;overflow:hidden}
-.wb-del{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:12px;line-height:1;display:grid;place-items:center;padding:0}
+.fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
+.fullpage.open{display:block}
+.fp-head{position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);
+  display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);z-index:2}
+.fp-head h3{margin:0;font-size:22px}
+.fp-back{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 16px;font-weight:600;color:var(--ink)}
+.fp-back:hover{border-color:var(--ink)}
+.fp-body{max-width:760px;margin:0 auto;padding:20px}
+.q-row{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.q-row .q-text{flex:1;font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;color:var(--ink);line-height:1.4}
+.q-side{flex:0 0 auto;width:74px;text-align:center}
+.q-side .q-spine{width:40px;height:56px;border-radius:2px 4px 4px 2px;margin:0 auto;box-shadow:var(--shadow)}
+.q-side .q-bk{font-size:11px;margin-top:5px;color:var(--ink-soft);line-height:1.2}
+.q-side .q-bk b{color:var(--ink);font-weight:600;display:block}
+.wish-stack{margin-top:6px}
+.wish-stack .bookcase{margin:0}
+.wb-del{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:12px;line-height:1;display:grid;place-items:center;padding:0;z-index:5}
 
 /* скрапбук-детали */
 #caseWrap{position:relative;margin-top:4px}
@@ -384,6 +395,8 @@ main,footer{position:relative;z-index:1}
 
   <section class="tabs" id="tabs"></section>
 
+  <div class="case-top"><button class="dice-btn" id="diceBtn">🎲 что почитать</button></div>
+
   <section id="caseWrap">
     <svg class="bow" viewBox="0 0 120 140" width="80" aria-hidden="true">
       <defs><linearGradient id="bowg" x1="0" y1="0" x2="0" y2="1">
@@ -405,7 +418,6 @@ main,footer{position:relative;z-index:1}
     <div class="bookcase" id="bookcase"></div>
     <div class="case-ind" id="caseInd"></div>
     <div class="case-actions">
-      <button class="dice-btn" id="diceBtn">🎲 что почитать</button>
       <button class="dice-btn" id="quotesBtn">💬 мои цитаты</button>
       <button class="dice-btn" id="wishBtn">📌 хотелки</button>
     </div>
@@ -414,7 +426,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v38 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v39 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -541,25 +553,24 @@ main,footer{position:relative;z-index:1}
   <div id="reqList"></div>
 </div>
 
-<!-- мои цитаты -->
-<div class="modal" id="quotesModal" role="dialog" aria-modal="true" aria-label="Цитаты">
-  <button class="close" data-close>×</button>
-  <h3>Мои любимые цитаты 💬</h3>
-  <p class="mp">Цитаты, которые вы сохранили из своих книг.</p>
-  <div id="quotesList"></div>
+<!-- мои цитаты (полный экран) -->
+<div class="fullpage" id="quotesPage" aria-label="Цитаты">
+  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Мои цитаты 💬</h3></div>
+  <div class="fp-body"><p class="mp">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
 </div>
 
-<!-- книжные хотелки -->
-<div class="modal" id="wishModal" role="dialog" aria-modal="true" aria-label="Хотелки">
-  <button class="close" data-close>×</button>
-  <h3>Книжные хотелки 📌</h3>
-  <p class="mp">То, что хочется прочитать. Прочитали — нажмите на книгу и поставьте на полку.</p>
-  <div class="wish-stack" id="wishStack"></div>
-  <div class="field" style="margin-top:16px"><label>Добавить в хотелки</label>
-    <input id="wishTitle" placeholder="название" />
-    <input id="wishAuthor" placeholder="автор" style="margin-top:8px" />
+<!-- книжные хотелки (полный экран) -->
+<div class="fullpage" id="wishPage" aria-label="Хотелки">
+  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Книжные хотелки 📌</h3></div>
+  <div class="fp-body">
+    <p class="mp">То, что хочется прочитать. Прочитали — нажмите на книгу, чтобы поставить на полку.</p>
+    <div class="wish-stack" id="wishStack"></div>
+    <div class="field" style="margin-top:20px;max-width:440px"><label>Добавить в хотелки</label>
+      <input id="wishTitle" placeholder="название" />
+      <input id="wishAuthor" placeholder="автор" style="margin-top:8px" />
+      <button class="btn" id="wishAddBtn" style="margin-top:10px">Добавить</button>
+    </div>
   </div>
-  <div class="modal-foot"><button class="btn ghost" data-close>Закрыть</button><button class="btn" id="wishAddBtn">Добавить</button></div>
 </div>
 
 <!-- регистрация при первом входе -->
@@ -1002,21 +1013,40 @@ main,footer{position:relative;z-index:1}
   });
 
   /* мои цитаты */
+  function openPage(id){ $("#"+id).classList.add("open"); }
   $("#quotesBtn").addEventListener("click", ()=>{
     const items = currentBooks().filter(b=>b.qt);
     $("#quotesList").innerHTML = items.length
-      ? items.map(b=>`<div class="q-row"><span class="q-text">«${esc(b.qt)}»</span><div class="q-spine" style="background:${spineBg(b)}" title="${esc(b.t)}"></div></div>`).join("")
+      ? items.map(b=>`<div class="q-row"><span class="q-text">«${esc(b.qt)}»</span><div class="q-side"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
       : `<p class="mp">Пока нет цитат. Откройте книгу и впишите любимую цитату из неё.</p>`;
-    overlay.classList.add("open"); $("#quotesModal").classList.add("open");
+    openPage("quotesPage");
   });
 
-  /* книжные хотелки */
-  function renderWish(){
-    $("#wishStack").innerHTML = myWishlist.length
-      ? myWishlist.map((w,i)=>`<div class="wish-book" data-i="${i}" style="background:${w.c||COLORS[i%COLORS.length]};color:${pickFg(w.c||COLORS[i%COLORS.length])}" title="${esc(w.t)} — ${esc(w.a||'')}"><span class="wb-t">${esc(w.t)}</span><button class="wb-del" data-del="${i}" title="Убрать">×</button></div>`).join("")
-      : `<p class="mp" style="width:100%">Хотелки пусты. Добавьте книгу ниже.</p>`;
+  /* книжные хотелки — стоят как книги на полке */
+  function packShelves(cells, innerW, gap){
+    const all=[]; let row=[], used=0;
+    for(const c of cells){ const add=c.w+(row.length?gap:0); if(row.length && used+add>innerW){ all.push(row); row=[c]; used=c.w; } else { row.push(c); used+=add; } }
+    if(row.length) all.push(row);
+    return all;
   }
-  $("#wishBtn").addEventListener("click", ()=>{ $("#wishTitle").value=""; $("#wishAuthor").value=""; renderWish(); overlay.classList.add("open"); $("#wishModal").classList.add("open"); });
+  function wishSpineHTML(w,i){
+    const d = spineDims({t:w.t});
+    const bg = w.c || COLORS[i%COLORS.length];
+    return `<div class="spine wish-spine" data-i="${i}" title="${esc(w.t)} — ${esc(w.a||'')}" style="width:${d.w}px;height:${d.h}px;background:${bg};color:${pickFg(bg)}">
+      <button class="wb-del" data-del="${i}" title="Убрать">×</button>
+      <div class="s-title" style="font-size:${d.font}px">${esc(w.t)}</div>
+      <div class="s-foot"><div class="s-band" style="font-size:${Math.max(6,Math.round(d.font*0.55))}px">${esc(lastName(w.a||""))}</div></div>
+    </div>`;
+  }
+  function renderWish(){
+    const wc = $("#wishStack");
+    if(!myWishlist.length){ wc.innerHTML = `<p class="mp">Хотелки пусты. Добавьте книгу ниже.</p>`; return; }
+    const innerW = Math.max(180, wc.clientWidth - 40);
+    const cells = myWishlist.map((w,i)=>{ const d=spineDims({t:w.t}); return { html: wishSpineHTML(w,i), w:d.w }; });
+    const shelves = packShelves(cells, innerW, 6);
+    wc.innerHTML = `<div class="bookcase">${shelves.map(r=>`<div class="shelf">${r.map(c=>c.html).join("")}</div>`).join("")}</div>`;
+  }
+  $("#wishBtn").addEventListener("click", ()=>{ $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish(); });
   $("#wishAddBtn").addEventListener("click", ()=>{
     const t=$("#wishTitle").value.trim(); if(!t) return;
     myWishlist.push({t, a:$("#wishAuthor").value.trim(), c:COLORS[myWishlist.length%COLORS.length]});
@@ -1025,7 +1055,7 @@ main,footer{position:relative;z-index:1}
   $("#wishStack").addEventListener("click", e=>{
     const del = e.target.closest("[data-del]");
     if(del){ myWishlist.splice(+del.dataset.del,1); saveWish(); renderWish(); return; }
-    const el = e.target.closest(".wish-book"); if(!el) return;
+    const el = e.target.closest(".wish-spine"); if(!el) return;
     const i=+el.dataset.i, w=myWishlist[i]; if(!w) return;
     closeModals(); pendingWish=i; openAdd({t:w.t, a:w.a});
   });
@@ -1239,7 +1269,7 @@ main,footer{position:relative;z-index:1}
 
   /* ---- закрытие модалок ---- */
   function welcomeLocked(){ return $("#welModal").classList.contains("open") && !localStorage.getItem("polka_registered"); }
-  function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open")); }
+  function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".modal.open, .fullpage.open").forEach(m=>m.classList.remove("open")); }
   overlay.addEventListener("click", ()=>{ if(welcomeLocked()) return; closeModals(); });
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", closeModals));
   document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !welcomeLocked()) closeModals(); });
