@@ -97,7 +97,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .reading{margin-top:7px;font-size:14px;color:var(--ink-soft)}
 .reading b{color:var(--ink);font-weight:600}
 .reading.editable{cursor:pointer}
-.stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap}
+.stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap;align-items:center}
 .stats div b{font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;display:block;line-height:1}
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
 
@@ -390,12 +390,11 @@ main,footer{position:relative;z-index:1}
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
       <div id="stMatchWrap" style="display:none"><b id="stMatch">0</b><span>мэтч 💞</span></div>
+      <button class="dice-btn" id="diceBtn">🎲 что почитать</button>
     </div>
   </section>
 
   <section class="tabs" id="tabs"></section>
-
-  <div class="case-top"><button class="dice-btn" id="diceBtn">🎲 что почитать</button></div>
 
   <section id="caseWrap">
     <svg class="bow" viewBox="0 0 120 140" width="80" aria-hidden="true">
@@ -426,7 +425,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v39 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v41 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -555,17 +554,17 @@ main,footer{position:relative;z-index:1}
 
 <!-- мои цитаты (полный экран) -->
 <div class="fullpage" id="quotesPage" aria-label="Цитаты">
-  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Мои цитаты 💬</h3></div>
-  <div class="fp-body"><p class="mp">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
+  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
+  <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
 </div>
 
 <!-- книжные хотелки (полный экран) -->
 <div class="fullpage" id="wishPage" aria-label="Хотелки">
-  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Книжные хотелки 📌</h3></div>
+  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
   <div class="fp-body">
-    <p class="mp">То, что хочется прочитать. Прочитали — нажмите на книгу, чтобы поставить на полку.</p>
+    <p class="mp" id="wishSub">То, что хочется прочитать. Прочитали — нажмите на книгу, чтобы поставить на полку.</p>
     <div class="wish-stack" id="wishStack"></div>
-    <div class="field" style="margin-top:20px;max-width:440px"><label>Добавить в хотелки</label>
+    <div class="field" id="wishAddForm" style="margin-top:20px;max-width:440px"><label>Добавить в хотелки</label>
       <input id="wishTitle" placeholder="название" />
       <input id="wishAuthor" placeholder="автор" style="margin-top:8px" />
       <button class="btn" id="wishAddBtn" style="margin-top:10px">Добавить</button>
@@ -826,6 +825,7 @@ main,footer{position:relative;z-index:1}
   const currentBooks = () => isMe() ? myBooks : friend().books;
   const currentList = () => currentBooks();
   const currentStickers = () => isMe() ? myStickers : (friend().stickers || []);
+  const currentWishlist = () => isMe() ? myWishlist : (friend().wishlist || []);
 
   const bookcase = $("#bookcase");
   const overlay = $("#overlay");
@@ -878,6 +878,10 @@ main,footer{position:relative;z-index:1}
     if(isMe()){ pr.classList.add("editable"); pr.innerHTML = myReading ? `📖 сейчас читаю: <b>${esc(myReading)}</b>` : `📖 <span style="opacity:.7">что читаете сейчас?</span>`; }
     else { pr.classList.remove("editable"); const rd=friend().reading; pr.innerHTML = rd ? `📖 сейчас читает: <b>${esc(rd)}</b>` : ""; }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
+    const meV = isMe();
+    $("#diceBtn").style.display = meV ? "" : "none";
+    $("#quotesBtn").innerHTML = meV ? "💬 мои цитаты" : "💬 цитаты друга";
+    $("#wishBtn").innerHTML = meV ? "📌 хотелки" : "📌 хотелки друга";
     renderMyStickers();
   }
   function renderMyStickers(){
@@ -1015,10 +1019,13 @@ main,footer{position:relative;z-index:1}
   /* мои цитаты */
   function openPage(id){ $("#"+id).classList.add("open"); }
   $("#quotesBtn").addEventListener("click", ()=>{
+    const me = isMe(), fn = me ? "" : friend().name;
+    $("#quotesTitle").textContent = me ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
+    $("#quotesSub").textContent = me ? "Цитаты, которые вы сохранили из своих книг." : `Любимые цитаты из книг — ${fn}.`;
     const items = currentBooks().filter(b=>b.qt);
     $("#quotesList").innerHTML = items.length
       ? items.map(b=>`<div class="q-row"><span class="q-text">«${esc(b.qt)}»</span><div class="q-side"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
-      : `<p class="mp">Пока нет цитат. Откройте книгу и впишите любимую цитату из неё.</p>`;
+      : `<p class="mp">${me ? "Пока нет цитат. Откройте книгу и впишите любимую цитату из неё." : "У друга пока нет сохранённых цитат."}</p>`;
     openPage("quotesPage");
   });
 
@@ -1029,30 +1036,37 @@ main,footer{position:relative;z-index:1}
     if(row.length) all.push(row);
     return all;
   }
-  function wishSpineHTML(w,i){
+  function wishSpineHTML(w,i,editable){
     const d = spineDims({t:w.t});
     const bg = w.c || COLORS[i%COLORS.length];
     return `<div class="spine wish-spine" data-i="${i}" title="${esc(w.t)} — ${esc(w.a||'')}" style="width:${d.w}px;height:${d.h}px;background:${bg};color:${pickFg(bg)}">
-      <button class="wb-del" data-del="${i}" title="Убрать">×</button>
+      ${editable ? `<button class="wb-del" data-del="${i}" title="Убрать">×</button>` : ""}
       <div class="s-title" style="font-size:${d.font}px">${esc(w.t)}</div>
       <div class="s-foot"><div class="s-band" style="font-size:${Math.max(6,Math.round(d.font*0.55))}px">${esc(lastName(w.a||""))}</div></div>
     </div>`;
   }
   function renderWish(){
-    const wc = $("#wishStack");
-    if(!myWishlist.length){ wc.innerHTML = `<p class="mp">Хотелки пусты. Добавьте книгу ниже.</p>`; return; }
+    const wc = $("#wishStack"), me = isMe(), wl = currentWishlist();
+    if(!wl.length){ wc.innerHTML = `<p class="mp">${me ? "Хотелки пусты. Добавьте книгу ниже." : "У друга пока нет хотелок."}</p>`; return; }
     const innerW = Math.max(180, wc.clientWidth - 40);
-    const cells = myWishlist.map((w,i)=>{ const d=spineDims({t:w.t}); return { html: wishSpineHTML(w,i), w:d.w }; });
+    const cells = wl.map((w,i)=>{ const d=spineDims({t:w.t}); return { html: wishSpineHTML(w,i,me), w:d.w }; });
     const shelves = packShelves(cells, innerW, 6);
     wc.innerHTML = `<div class="bookcase">${shelves.map(r=>`<div class="shelf">${r.map(c=>c.html).join("")}</div>`).join("")}</div>`;
   }
-  $("#wishBtn").addEventListener("click", ()=>{ $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish(); });
+  $("#wishBtn").addEventListener("click", ()=>{
+    const me = isMe(), fn = me ? "" : friend().name;
+    $("#wishTitleH").textContent = me ? "Книжные хотелки 📌" : `Хотелки · ${fn} 📌`;
+    $("#wishSub").textContent = me ? "То, что хочется прочитать. Прочитали — нажмите на книгу, чтобы поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
+    $("#wishAddForm").style.display = me ? "" : "none";
+    $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish();
+  });
   $("#wishAddBtn").addEventListener("click", ()=>{
     const t=$("#wishTitle").value.trim(); if(!t) return;
     myWishlist.push({t, a:$("#wishAuthor").value.trim(), c:COLORS[myWishlist.length%COLORS.length]});
     saveWish(); $("#wishTitle").value=""; $("#wishAuthor").value=""; renderWish();
   });
   $("#wishStack").addEventListener("click", e=>{
+    if(!isMe()) return;
     const del = e.target.closest("[data-del]");
     if(del){ myWishlist.splice(+del.dataset.del,1); saveWish(); renderWish(); return; }
     const el = e.target.closest(".wish-spine"); if(!el) return;
@@ -1389,7 +1403,7 @@ main,footer{position:relative;z-index:1}
     const list = Array.from(new Set((codes||[]).filter(c=>c && c!==myCode)));
     const built = await Promise.all(list.map(async fc=>{
       try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null;
-        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:(fp&&fp.rd)||""}; }catch(e){ return null; }
+        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:(fp&&fp.rd)||"", wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[]}; }catch(e){ return null; }
     }));
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
     savedFriends = [];
