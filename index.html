@@ -61,7 +61,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .bar{display:flex;align-items:center;gap:14px;height:64px}
 .brand{display:flex;align-items:center;gap:9px}
 .brand svg{flex:0 0 auto}
-.bw{font-family:var(--display);font-size:28px;line-height:1;color:var(--accent-deep)}
+.bw{font-family:var(--display);font-size:28px;line-height:1;color:var(--ink)}
 .bar .sp{flex:1}
 .bar .tagline{color:var(--ink-soft);font-size:14px}
 .bell{position:relative;border:1px solid var(--line);background:var(--paper);border-radius:50%;width:42px;height:42px;font-size:18px;display:grid;place-items:center;margin-left:12px}
@@ -138,7 +138,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
-  font-size:13px;line-height:1.05;max-height:74%;overflow:hidden;text-align:left}
+  font-size:13px;line-height:1.05;max-height:82%;overflow:hidden;text-align:left}
 .spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.02em;opacity:.8;
   border-top:1px solid currentColor;padding-top:4px}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} }
@@ -377,7 +377,6 @@ main,footer{position:relative;z-index:1}
   <section class="tabs" id="tabs"></section>
 
   <section id="caseWrap">
-    <span class="tape tape-l"></span>
     <svg class="bow" viewBox="0 0 120 140" width="80" aria-hidden="true">
       <defs><linearGradient id="bowg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#d65a4e"/><stop offset="1" stop-color="#a3302a"/>
@@ -403,7 +402,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v34 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v37 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -480,6 +479,7 @@ main,footer{position:relative;z-index:1}
     <textarea class="codebox" id="myLink" readonly></textarea>
     <button class="linklike" id="copyLink" type="button">📋 Скопировать ссылку для входа</button>
   </div>
+  <div class="field"><button class="linklike" id="logoutBtn" type="button" style="color:#c0566a">↩ Выйти из профиля</button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveProfile">Сохранить</button></div>
 </div>
 
@@ -706,6 +706,9 @@ main,footer{position:relative;z-index:1}
   const FRIEND_COLORS = ["#b8493a","#7B5B4B","#c98a3c","#7a3b52","#956a39","#6f6a4e"];
   let savedFriends = [];
   try { savedFriends = JSON.parse(localStorage.getItem("polka_friends") || "[]"); } catch(e){ savedFriends = []; }
+  // убрать дубликаты по коду (один профиль — один раз)
+  (function(){ const seen=new Set(); savedFriends = savedFriends.filter(f=>{ const k=f.code||f.id; if(seen.has(k)) return false; seen.add(k); return true; }); })();
+  try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
   savedFriends.forEach(f => { DEMO_FRIENDS[f.id] = f; });
 
   /* мой профиль */
@@ -754,13 +757,14 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0});
   }
+  function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
   function setUrlLogin(){ if(CLOUD() && myCode){ try{ history.replaceState(null, "", location.pathname + "?login=" + encodeURIComponent(myCode)); }catch(e){} } }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
-    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:savedFriends.map(f=>f.code).filter(Boolean), pd:isPaid()?1:0})}); return true; }
+    try{ await sbUpsert({code:myCode, name:myName, data:encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0})}); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
@@ -879,10 +883,10 @@ main,footer{position:relative;z-index:1}
   function bookWidth(per){ const innerW = bookcase.clientWidth - 40; const fill = Math.floor((innerW - 5*(per-1))/per); return Math.min(phone()?38:50, Math.max(26, fill)); }
 
   function spineHTML(b, i, bw){
-    const font = Math.min(16, Math.max(10, Math.round(bw*0.32)));
+    const font = Math.min(17, Math.max(11, Math.round(bw*0.34)));
     const bandFont = Math.max(6, Math.round(font*0.55));
-    const maxH = phone()?168:192;
-    const h = Math.min(maxH, Math.max(104, Math.round(b.t.length*font*0.56 + 26))); // длиннее название — выше книга
+    const maxH = phone()?215:235;
+    const h = Math.min(maxH, Math.max(118, Math.round(b.t.length*font*0.92 + 30))); // длиннее название — выше книга
     const heart = Math.min(16, Math.max(11, Math.round(bw*0.36)));
     const bg = spineBg(b);
     return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${bw}px;height:${h}px;background:${bg};color:${pickFg(bg)}">
@@ -1042,6 +1046,11 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); profileModal.classList.add("open");
   }
   $("#editProfile").addEventListener("click", openProfile);
+  $("#logoutBtn").addEventListener("click", ()=>{
+    if(!confirm("Выйти из профиля? Ваша полка останется в облаке — вернётесь по своему коду.")) return;
+    ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    location.href = location.pathname;   // на чистый адрес → окно входа
+  });
   $("#pReading").addEventListener("click", ()=>{ if(isMe()) openProfile(); });
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
@@ -1123,7 +1132,7 @@ main,footer{position:relative;z-index:1}
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books)) return toast("Код не похож на полку");
     if(used && savedFriends.some(f=>f.code===used)){ const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
-    const id="fr"+Date.now().toString(36);
+    const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
     const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:(p && p.rd)||""};
     savedFriends.push(friendObj);
