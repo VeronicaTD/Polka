@@ -34,17 +34,25 @@
   --display:"Fredoka",sans-serif;
   --shadow:0 16px 34px -22px rgba(40,25,10,.6);
 }
+/* Роза — пыльная роза + крем */
 body[data-theme="rose"]{
-  --paper:#fff4f3; --paper-2:#ffe1e0; --ink:#604d53; --ink-soft:#8f767c; --line:#f3d6d6;
-  --accent:#db7f8e; --accent-deep:#c25e70; --gold:#bf8a93; --wood-1:#a98c92; --wood-2:#604d53;
+  --paper:#F2EED8; --paper-2:#ece0c8; --ink:#6f4b49; --ink-soft:#9d7470; --line:#e4d7bf;
+  --accent:#E09290; --accent-deep:#c66f6d; --gold:#c89a57; --wood-1:#d6a098; --wood-2:#a96f68;
 }
+/* Ночь — сапфир + песочно-розовый */
 body[data-theme="night"]{
-  --paper:#2a1228; --paper-2:#45123f; --ink:#e1dafb; --ink-soft:#b3a6cf; --line:#5a2b52;
-  --accent:#5b4fb0; --accent-deep:#4d3ea3; --gold:#d8b46a; --wood-1:#4a2746; --wood-2:#2a1228;
+  --paper:#051F45; --paper-2:#0d2c58; --ink:#f2c4cd; --ink-soft:#c096a0; --line:#1d3a66;
+  --accent:#cf7287; --accent-deep:#b85c73; --gold:#e7c06f; --wood-1:#15345f; --wood-2:#07203f;
 }
-body[data-theme="mint"]{
-  --paper:#f2fff6; --paper-2:#d6f5e3; --ink:#08343a; --ink-soft:#5a877f; --line:#cdeede;
-  --accent:#238689; --accent-deep:#1b6a6c; --gold:#b59a55; --wood-1:#5f928e; --wood-2:#2e5c5b;
+/* Тиффани — тиффани-блю + тёмно-фиолетовый */
+body[data-theme="tiffany"]{
+  --paper:#bfe6dd; --paper-2:#99D5C9; --ink:#2D0320; --ink-soft:#6e3a55; --line:#a6dbd0;
+  --accent:#3f0a2b; --accent-deep:#2D0320; --gold:#c2a25a; --wood-1:#6a2f4e; --wood-2:#2D0320;
+}
+/* Вишнёвая матча — матча + вишня */
+body[data-theme="matcha"]{
+  --paper:#d3e8b8; --paper-2:#BAD797; --ink:#670626; --ink-soft:#8f4a5c; --line:#c3db9f;
+  --accent:#670626; --accent-deep:#4d041c; --gold:#a98a3f; --wood-1:#8a2a40; --wood-2:#670626;
 }
 *{box-sizing:border-box}
 #splash{position:fixed;inset:0;z-index:200;background:#FFF8F1;display:grid;place-items:center;text-align:center}
@@ -197,17 +205,6 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .wr-frow b{font-weight:700}
 .wr-foot{margin-top:16px;font-size:13px;opacity:.8}
 .dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px}
-.ocr-btn{float:right;border:1px solid var(--line);background:var(--paper-2);color:var(--accent-deep);border-radius:999px;padding:3px 11px;font-weight:700;font-size:12px;cursor:pointer}
-.ocr-btn:disabled{opacity:.6}
-.crop-wrap{position:relative;display:inline-block;max-width:100%;line-height:0;touch-action:none;user-select:none;border-radius:12px;overflow:hidden}
-#cropImg{display:block;max-width:100%;max-height:56vh;width:auto;height:auto}
-.crop-shade{position:absolute;left:0;right:0;background:rgba(0,0,0,.55);pointer-events:none}
-#cropShadeTop{top:0}
-.crop-band{position:absolute;left:0;right:0;border-top:2px solid #fff;border-bottom:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4) inset;cursor:grab}
-.crop-h{position:absolute;left:0;right:0;height:30px;cursor:ns-resize;display:flex;align-items:center;justify-content:center}
-.crop-h::before{content:"";width:46px;height:6px;border-radius:999px;background:#fff;box-shadow:0 0 4px rgba(0,0,0,.5)}
-.crop-h-top{top:-16px}
-.crop-h-bot{bottom:-16px}
 .dice-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
@@ -470,7 +467,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v56 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v59 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -491,7 +488,7 @@ main,footer{position:relative;z-index:1}
   <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
   <div class="field"><label>Оценка</label><div class="rate" id="fRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
   <div class="field"><label>Комментарий <span style="font-weight:400">(увидят друзья)</span></label><textarea id="fNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
-  <div class="field"><label>Любимая цитата из книги <button type="button" class="ocr-btn" data-ocr="fQuote">📷 со страницы</button></label><textarea id="fQuote" placeholder="строчка, которую захотелось сохранить..."></textarea><input type="file" accept="image/*" capture="environment" id="fQuoteCam" hidden></div>
+  <div class="field"><label>Любимая цитата из книги</label><textarea id="fQuote" placeholder="строчка, которую захотелось сохранить..."></textarea></div>
   <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
 </div>
@@ -515,7 +512,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
-        <div class="field"><label>Любимая цитата из книги <button type="button" class="ocr-btn" data-ocr="iQuote">📷 со страницы</button></label><textarea id="iQuote" placeholder="строчка, которую захотелось сохранить..."></textarea><input type="file" accept="image/*" capture="environment" id="iQuoteCam" hidden></div>
+        <div class="field"><label>Любимая цитата из книги</label><textarea id="iQuote" placeholder="строчка, которую захотелось сохранить..."></textarea></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -628,25 +625,6 @@ main,footer{position:relative;z-index:1}
   <div class="wr-stage" id="wrStage"></div>
   <button class="wr-tap wr-tap-l" id="wrPrev" aria-label="назад"></button>
   <button class="wr-tap wr-tap-r" id="wrNext" aria-label="вперёд"></button>
-</div>
-
-<!-- обрезка фото перед распознаванием -->
-<div class="modal" id="cropModal" role="dialog" aria-modal="true" aria-label="Обрезка">
-  <button class="close" data-cropclose>×</button>
-  <h3>Выделите нужные строки 📖</h3>
-  <p class="mp" style="margin:0 0 12px">Поставьте рамку на <b>1–2 целые строки</b> (чтобы буквы не были срезаны сверху и снизу) — так распознаётся точнее всего.</p>
-  <div style="text-align:center">
-    <div class="crop-wrap" id="cropWrap">
-      <img id="cropImg" alt="">
-      <div class="crop-shade" id="cropShadeTop"></div>
-      <div class="crop-shade" id="cropShadeBot" style="bottom:0"></div>
-      <div class="crop-band" id="cropBand">
-        <span class="crop-h crop-h-top" data-h="top"></span>
-        <span class="crop-h crop-h-bot" data-h="bot"></span>
-      </div>
-    </div>
-  </div>
-  <div class="modal-foot"><button class="btn ghost" data-cropclose>Отмена</button><button class="btn" id="cropGo">Распознать</button></div>
 </div>
 
 <!-- регистрация при первом входе -->
@@ -1219,171 +1197,6 @@ main,footer{position:relative;z-index:1}
   $("#wrNext").addEventListener("click", ()=> wrGo(1));
   $("#wrPrev").addEventListener("click", ()=> wrGo(-1));
 
-  /* распознавание текста с фото страницы (OCR) — библиотека грузится только при первом использовании */
-  let tessReady = null;
-  function loadTesseract(){
-    if(tessReady) return tessReady;
-    tessReady = new Promise((res, rej)=>{
-      const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-      s.onload = ()=> res(window.Tesseract);
-      s.onerror = ()=>{ tessReady = null; rej(new Error("no net")); };
-      document.head.appendChild(s);
-    });
-    return tessReady;
-  }
-  // адаптивная бинаризация (метод Брэдли–Рота): порог считается локально для каждого участка,
-  // поэтому тени и неровный свет у сгиба страницы не превращаются в «кашу». Стандарт для сканов.
-  function ocrEnhance(ctx,w,h){
-    try{
-      const id = ctx.getImageData(0,0,w,h), d = id.data, n = w*h;
-      const gray = new Float64Array(n);
-      for(let i=0,p=0;i<d.length;i+=4,p++) gray[p] = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-      // интегральное изображение (быстрая сумма по прямоугольнику)
-      const I = new Float64Array(n);
-      for(let y=0;y<h;y++){
-        let rs = 0;
-        for(let x=0;x<w;x++){ const idx=y*w+x; rs += gray[idx]; I[idx] = (y>0 ? I[idx-w] : 0) + rs; }
-      }
-      const S = Math.max(8, Math.floor(w/24));   // половина окна
-      const T = 0.14;                            // насколько темнее окружения = текст
-      for(let y=0;y<h;y++){
-        const y1 = y-S<0?0:y-S, y2 = y+S>=h?h-1:y+S;
-        for(let x=0;x<w;x++){
-          const x1 = x-S<0?0:x-S, x2 = x+S>=w?w-1:x+S;
-          const count = (x2-x1+1)*(y2-y1+1);
-          const A = (y1>0&&x1>0) ? I[(y1-1)*w+(x1-1)] : 0;
-          const B = (y1>0)       ? I[(y1-1)*w+x2]     : 0;
-          const C = (x1>0)       ? I[y2*w+(x1-1)]     : 0;
-          const D = I[y2*w+x2];
-          const sum = D - B - C + A;
-          const idx = y*w+x, o = idx*4;
-          const val = (gray[idx]*count <= sum*(1-T)) ? 0 : 255;
-          d[o]=d[o+1]=d[o+2]=val;
-        }
-      }
-      ctx.putImageData(id,0,0);
-    }catch(e){}
-  }
-  const OCR_WHITELIST = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 .,!?:;-—()…'";
-  let tessWorker = null;
-  async function ocrWorker(T){
-    if(tessWorker) return tessWorker;
-    tessWorker = await T.createWorker("rus");                // только русский — точнее, чем смесь языков
-    try{ await tessWorker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1", user_defined_dpi: "300", tessedit_char_whitelist: OCR_WHITELIST }); }catch(e){}
-    return tessWorker;
-  }
-  let ocrFirst = true, ocrBusy = false;
-  async function recognizeSrc(src, targetId){
-    if(ocrBusy){ toast("Подождите, идёт распознавание…"); return; }   // не запускаем второй раз поверх
-    ocrBusy = true;
-    const ta = $("#"+targetId);
-    const btn = document.querySelector(`.ocr-btn[data-ocr="${targetId}"]`);
-    if(btn){ btn.disabled = true; btn.textContent = "распознаю…"; }
-    toast(ocrFirst ? "Готовлю распознавание (один раз качается ~15 МБ)…" : "Распознаю текст…");
-    try{
-      const T = await loadTesseract();
-      const worker = await ocrWorker(T);
-      // таймаут: если зависло дольше 40 сек — прерываем, перезапускаем движок, не блокируем приложение
-      const result = await Promise.race([
-        worker.recognize(src),
-        new Promise((_, rej)=> setTimeout(()=> rej(new Error("timeout")), 40000))
-      ]);
-      const { data } = result;
-      ocrFirst = false;
-      let txt = ((data && data.text) || "")
-        .replace(/(\S)[-­]\s*\n\s*/g, "$1")    // склеиваем перенос по дефису: сло-\nво → слово
-        .replace(/\s*\n\s*/g, " ")              // остальные переносы строк → пробел
-        .replace(/[«»"“”]+/g, "")               // убираем кавычки (свои добавим при показе)
-        .replace(/\s+([,.!?;:…])/g, "$1")       // пробел перед знаком препинания → убираем
-        .replace(/([,.!?;:…])(?=[А-Яа-яЁё])/g, "$1 ") // нет пробела после знака → добавляем
-        .replace(/\s{2,}/g, " ")
-        .replace(/^[^А-Яа-яЁё0-9]+/, "")        // мусор в начале
-        .replace(/[^А-Яа-яЁё0-9.!?…)]+$/, "")   // мусор в конце
-        .trim();
-      if(txt){
-        ta.value = ta.value.trim() ? (ta.value.trim() + " " + txt) : txt;
-        toast("Готово — проверьте и поправьте текст ✍️");
-      } else {
-        toast("Не вышло разобрать текст — попробуйте кадр чётче");
-      }
-    }catch(e){
-      if(e && e.message==="timeout"){
-        toast("Слишком долго — попробуйте полоску поменьше");
-        try{ if(tessWorker){ tessWorker.terminate(); tessWorker = null; } }catch(_){}   // сбрасываем зависший движок
-      } else {
-        toast("Для распознавания нужен интернет");
-      }
-    } finally {
-      ocrBusy = false;
-      if(btn){ btn.disabled = false; btn.textContent = "📷 со страницы"; }
-    }
-  }
-
-  /* шаг обрезки: тонкая рамка на нужные строки, чтобы лишний текст не попал */
-  let cropTargetId = null;
-  function openCrop(file, targetId){
-    cropTargetId = targetId;
-    const img = $("#cropImg");
-    img.onload = ()=>{ URL.revokeObjectURL(img.src); cropDefaultBand(); };
-    img.src = URL.createObjectURL(file);
-    overlay.classList.add("open"); $("#cropModal").classList.add("open");
-  }
-  // закрываем ТОЛЬКО окно обрезки — окно добавления книги под ним остаётся открытым
-  function closeCrop(){ $("#cropModal").classList.remove("open"); }
-  $("#cropModal").querySelectorAll("[data-cropclose]").forEach(b=> b.addEventListener("click", closeCrop));
-  const cropBand = $("#cropBand");
-  function cropImgH(){ return $("#cropImg").clientHeight || 1; }
-  function cropSet(top, bot){
-    const H = cropImgH(), minH = 22;
-    top = Math.max(0, Math.min(top, H-minH));
-    bot = Math.max(top+minH, Math.min(bot, H));
-    cropBand.style.top = top+"px"; cropBand.style.height = (bot-top)+"px";
-    cropBand.dataset.top = top; cropBand.dataset.bot = bot;
-    $("#cropShadeTop").style.height = top+"px";
-    $("#cropShadeBot").style.top = bot+"px";
-  }
-  function cropDefaultBand(){ const H = cropImgH(); cropSet(Math.round(H*0.42), Math.round(H*0.58)); }
-  (function(){
-    let mode=null, startY=0, t0=0, b0=0;
-    function down(e, m){ mode=m; startY=e.clientY; t0=+cropBand.dataset.top; b0=+cropBand.dataset.bot; if(e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId); e.preventDefault(); }
-    function move(e){ if(!mode) return; const dy=e.clientY-startY;
-      if(mode==="move") cropSet(t0+dy, b0+dy);
-      else if(mode==="top") cropSet(t0+dy, b0);
-      else if(mode==="bot") cropSet(t0, b0+dy);
-    }
-    cropBand.addEventListener("pointerdown", e=>{ if(e.target.dataset.h) return; down(e,"move"); });
-    cropBand.querySelectorAll(".crop-h").forEach(h=> h.addEventListener("pointerdown", e=> down(e, h.dataset.h)));
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", ()=>{ mode=null; });
-  })();
-  $("#cropGo").addEventListener("click", ()=>{
-    const img = $("#cropImg");
-    const ratio = img.naturalHeight / (img.clientHeight||1);
-    const top = +cropBand.dataset.top, bot = +cropBand.dataset.bot;
-    const sy = Math.max(0, Math.round(top*ratio));
-    const sh = Math.min(img.naturalHeight - sy, Math.round((bot-top)*ratio));
-    const sw = img.naturalWidth;
-    if(sh < 8){ toast("Слишком узкая полоса"); return; }
-    // нормализуем ширину к ~1400px. БЕЗ этого огромные фото раздувались до 9000px и телефон зависал
-    let scale = Math.max(0.5, Math.min(2, 1400/sw));
-    const cw = Math.min(1600, Math.round(sw*scale));
-    const ch = Math.max(1, Math.round(sh*scale));
-    const c = document.createElement("canvas"); c.width = cw; c.height = ch;
-    const ctx = c.getContext("2d");
-    ctx.drawImage(img, 0, sy, sw, sh, 0, 0, cw, ch);
-    ocrEnhance(ctx, cw, ch);
-    closeCrop();
-    recognizeSrc(c, cropTargetId);
-  });
-
-  document.querySelectorAll(".ocr-btn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{ const cam = $("#"+btn.dataset.ocr+"Cam"); if(cam) cam.click(); });
-  });
-  ["fQuote","iQuote"].forEach(id=>{
-    const cam = $("#"+id+"Cam");
-    if(cam) cam.addEventListener("change", e=>{ const f = e.target.files && e.target.files[0]; if(f) openCrop(f, id); e.target.value = ""; });
-  });
   $("#wishAddBtn").addEventListener("click", ()=>{
     const t=$("#wishTitle").value.trim(); if(!t) return;
     myWishlist.push({t, a:$("#wishAuthor").value.trim(), c:COLORS[myWishlist.length%COLORS.length]});
@@ -1551,11 +1364,13 @@ main,footer{position:relative;z-index:1}
   /* ---- темы оформления ---- */
   const THEMES = [
     {id:"coffee", name:"Кофе", c1:"#FFF8F1", c2:"#7B5B4B"},
-    {id:"rose",   name:"Роза", c1:"#ffe1e0", c2:"#db7f8e"},
-    {id:"night",  name:"Ночь", c1:"#2a1228", c2:"#5b4fb0"},
-    {id:"mint",   name:"Мята", c1:"#d6f5e3", c2:"#238689"}
+    {id:"rose",    name:"Роза", c1:"#F2EED8", c2:"#E09290"},
+    {id:"night",   name:"Ночь", c1:"#051F45", c2:"#F2C4CD"},
+    {id:"tiffany", name:"Тиффани", c1:"#99D5C9", c2:"#2D0320"},
+    {id:"matcha",  name:"Матча", c1:"#BAD797", c2:"#670626"}
   ];
   let myTheme = localStorage.getItem("polka_theme") || "coffee";
+  if(myTheme!=="coffee" && !THEMES.some(t=>t.id===myTheme)) myTheme = "coffee";   // убрали тему (напр. «мяту») → откат на кофе
   function applyTheme(id){
     myTheme = id;
     if(id==="coffee") document.body.removeAttribute("data-theme"); else document.body.setAttribute("data-theme", id);
