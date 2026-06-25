@@ -467,7 +467,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v52 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v53 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -631,7 +631,7 @@ main,footer{position:relative;z-index:1}
 <div class="modal" id="cropModal" role="dialog" aria-modal="true" aria-label="Обрезка">
   <button class="close" data-cropclose>×</button>
   <h3>Выделите нужные строки 📖</h3>
-  <p class="mp" style="margin:0 0 12px">Подвиньте рамку на строки цитаты — распознается только то, что внутри.</p>
+  <p class="mp" style="margin:0 0 12px">Поставьте рамку на <b>1–2 целые строки</b> (чтобы буквы не были срезаны сверху и снизу) — так распознаётся точнее всего.</p>
   <div style="text-align:center">
     <div class="crop-wrap" id="cropWrap">
       <img id="cropImg" alt="">
@@ -1229,28 +1229,17 @@ main,footer{position:relative;z-index:1}
     });
     return tessReady;
   }
-  // серый + контраст + бинаризация по Otsu — чёткий чёрный текст на белом, резко улучшает русский
+  // мягко: серый + умеренный контраст. Жёсткую бинаризацию НЕ делаем —
+  // у сгиба страницы она превращала тени в «кашу». Порог Tesseract считает сам (адаптивно).
   function ocrEnhance(ctx,w,h){
     try{
-      const id = ctx.getImageData(0,0,w,h), d = id.data, n = w*h;
-      const g = new Uint8Array(n), hist = new Array(256).fill(0);
-      const contrast = 1.5, inter = 128*(1-contrast);
-      for(let i=0,p=0;i<d.length;i+=4,p++){
+      const id = ctx.getImageData(0,0,w,h), d = id.data;
+      const contrast = 1.35, inter = 128*(1-contrast);
+      for(let i=0;i<d.length;i+=4){
         let v = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
-        v = v*contrast + inter; v = v<0?0:(v>255?255:v); v = v|0;
-        g[p] = v; hist[v]++;
+        v = v*contrast + inter; v = v<0?0:(v>255?255:v);
+        d[i]=d[i+1]=d[i+2]=v;
       }
-      // порог Otsu
-      let sum = 0; for(let t=0;t<256;t++) sum += t*hist[t];
-      let sumB=0, wB=0, maxVar=0, thr=128;
-      for(let t=0;t<256;t++){
-        wB += hist[t]; if(!wB) continue; const wF = n - wB; if(!wF) break;
-        sumB += t*hist[t];
-        const mB = sumB/wB, mF = (sum-sumB)/wF, vbtw = wB*wF*(mB-mF)*(mB-mF);
-        if(vbtw > maxVar){ maxVar = vbtw; thr = t; }
-      }
-      const T = thr + 8;                       // лёгкий сдвиг — сохраняем тонкие штрихи букв
-      for(let i=0,p=0;i<d.length;i+=4,p++){ const val = g[p] < T ? 0 : 255; d[i]=d[i+1]=d[i+2]=val; }
       ctx.putImageData(id,0,0);
     }catch(e){}
   }
@@ -1341,7 +1330,7 @@ main,footer{position:relative;z-index:1}
     const sh = Math.min(img.naturalHeight - sy, Math.round((bot-top)*ratio));
     const sw = img.naturalWidth;
     if(sh < 8){ toast("Слишком узкая полоса"); return; }
-    const scale = Math.max(1, Math.min(4, 260/sh));          // тонкую полосу увеличиваем для чёткости букв
+    const scale = Math.max(1, Math.min(3, 190/sh));          // тонкую полосу слегка увеличиваем для чёткости
     const c = document.createElement("canvas"); c.width = Math.round(sw*scale); c.height = Math.round(sh*scale);
     const ctx = c.getContext("2d");
     ctx.drawImage(img, 0, sy, sw, sh, 0, 0, c.width, c.height);
