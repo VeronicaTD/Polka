@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<meta name="theme-color" content="#7B5B4B">
+<meta name="theme-color" content="#FFF8F1">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -30,6 +30,7 @@
   --line:#e7d9c8;
   --accent:#7B5B4B; --accent-deep:#5e4538;
   --gold:#b8893f;
+  --star-1:#b8493a; --star-2:#c98a3c; --star-3:#8a6a57;
   --radius:14px;
   --display:"Fredoka",sans-serif;
   --shadow:0 16px 34px -22px rgba(40,25,10,.6);
@@ -38,21 +39,25 @@
 body[data-theme="rose"]{
   --paper:#F2EED8; --paper-2:#ece0c8; --ink:#6f4b49; --ink-soft:#9d7470; --line:#e4d7bf;
   --accent:#E09290; --accent-deep:#c66f6d; --gold:#c89a57; --wood-1:#d6a098; --wood-2:#a96f68;
+  --star-1:#E09290; --star-2:#c89a57; --star-3:#c66f6d;
 }
 /* Ночь — сапфир + песочно-розовый */
 body[data-theme="night"]{
   --paper:#051F45; --paper-2:#0d2c58; --ink:#f2c4cd; --ink-soft:#c096a0; --line:#1d3a66;
   --accent:#cf7287; --accent-deep:#b85c73; --gold:#e7c06f; --wood-1:#15345f; --wood-2:#07203f;
+  --star-1:#f2c4cd; --star-2:#e7c06f; --star-3:#cf7287;
 }
 /* Тиффани — тиффани-блю + тёмно-фиолетовый */
 body[data-theme="tiffany"]{
   --paper:#bfe6dd; --paper-2:#99D5C9; --ink:#2D0320; --ink-soft:#6e3a55; --line:#a6dbd0;
   --accent:#3f0a2b; --accent-deep:#2D0320; --gold:#c2a25a; --wood-1:#6a2f4e; --wood-2:#2D0320;
+  --star-1:#3f0a2b; --star-2:#c2a25a; --star-3:#6a9c91;
 }
 /* Вишнёвая матча — матча + вишня */
 body[data-theme="matcha"]{
   --paper:#d3e8b8; --paper-2:#BAD797; --ink:#670626; --ink-soft:#8f4a5c; --line:#c3db9f;
   --accent:#670626; --accent-deep:#4d041c; --gold:#a98a3f; --wood-1:#8a2a40; --wood-2:#670626;
+  --star-1:#670626; --star-2:#a98a3f; --star-3:#7a9c52;
 }
 *{box-sizing:border-box}
 #splash{position:fixed;inset:0;z-index:200;background:#FFF8F1;display:grid;place-items:center;text-align:center}
@@ -280,19 +285,19 @@ footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--ink-soft
 .decor{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .decor svg{position:absolute;display:block;transform:rotate(var(--r,0deg));animation:bob 8s ease-in-out infinite}
 .d-star{opacity:.62;width:128px;height:128px}
-.s1{top:-34px;left:-32px;color:#b8493a;--r:-12deg}
-.s2{top:54px;right:-40px;color:#7B5B4B;--r:14deg;width:156px;height:156px}
-.s3{bottom:-34px;left:-28px;color:#c98a3c;--r:10deg;width:146px;height:146px}
-.s4{bottom:90px;right:34px;color:#b8493a;--r:-8deg;width:96px;height:96px;opacity:.5}
-.s5{top:44%;left:-44px;color:#8a6a57;--r:18deg;width:110px;height:110px;opacity:.42}
-.s6{top:30%;right:5%;color:#c98a3c;--r:-14deg;width:92px;height:92px;opacity:.4}
-.s7{bottom:22%;left:9%;color:#b8493a;--r:12deg;width:84px;height:84px;opacity:.36}
+.s1{top:-34px;left:-32px;color:var(--star-1);--r:-12deg}
+.s2{top:54px;right:-40px;color:var(--star-3);--r:14deg;width:156px;height:156px}
+.s3{bottom:-34px;left:-28px;color:var(--star-2);--r:10deg;width:146px;height:146px}
+.s4{bottom:90px;right:34px;color:var(--star-1);--r:-8deg;width:96px;height:96px;opacity:.5}
+.s5{top:44%;left:-44px;color:var(--star-3);--r:18deg;width:110px;height:110px;opacity:.42}
+.s6{top:30%;right:5%;color:var(--star-2);--r:-14deg;width:92px;height:92px;opacity:.4}
+.s7{bottom:22%;left:9%;color:var(--star-1);--r:12deg;width:84px;height:84px;opacity:.36}
 .d-spark{width:32px;height:32px;opacity:.6}
-.k1{top:17%;left:13%;color:#b8893f}
-.k2{top:68%;right:16%;color:#b8493a;width:24px;height:24px}
-.k3{top:39%;left:45%;color:#c98a3c;width:22px;height:22px;opacity:.45}
-.k4{bottom:13%;right:38%;color:#b8893f}
-.k5{top:11%;right:28%;color:#b8493a;width:20px;height:20px;opacity:.5}
+.k1{top:17%;left:13%;color:var(--star-2)}
+.k2{top:68%;right:16%;color:var(--star-1);width:24px;height:24px}
+.k3{top:39%;left:45%;color:var(--star-2);width:22px;height:22px;opacity:.45}
+.k4{bottom:13%;right:38%;color:var(--star-2)}
+.k5{top:11%;right:28%;color:var(--star-1);width:20px;height:20px;opacity:.5}
 .decor svg:nth-of-type(2){animation-delay:-2s}.decor svg:nth-of-type(3){animation-delay:-4s}
 .decor svg:nth-of-type(4){animation-delay:-1s}.decor svg:nth-of-type(5){animation-delay:-3s}
 .decor svg:nth-of-type(6){animation-delay:-5s}.decor svg:nth-of-type(7){animation-delay:-1.5s}
@@ -467,7 +472,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v59 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v61 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1375,6 +1380,13 @@ main,footer{position:relative;z-index:1}
     myTheme = id;
     if(id==="coffee") document.body.removeAttribute("data-theme"); else document.body.setAttribute("data-theme", id);
     try{ localStorage.setItem("polka_theme", id); }catch(e){}
+    // верхняя плашка телефона (статус-бар браузера) в цвет фона темы
+    try{
+      const bar = getComputedStyle(document.body).getPropertyValue("--paper").trim();
+      let m = document.querySelector('meta[name="theme-color"]');
+      if(!m){ m = document.createElement("meta"); m.setAttribute("name","theme-color"); document.head.appendChild(m); }
+      if(bar) m.setAttribute("content", bar);
+    }catch(e){}
   }
   function renderThemes(){
     $("#themeList").innerHTML = THEMES.map(t=>`<button class="theme-opt ${t.id===myTheme?'on':''}" data-t="${t.id}"><span class="theme-sw" style="background:${t.c1};border:4px solid ${t.c2}"></span>${t.name}</button>`).join("");
