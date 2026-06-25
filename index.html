@@ -163,7 +163,39 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .case-ind{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin:6px 0 10px;display:none}
 .case-top{display:flex;justify-content:center;margin:4px 0 8px}
 .case-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;margin-bottom:30px}
+.wrapped{background:#b8493a;transition:background .5s ease;color:#fff;overflow:hidden}
+.wr-bars{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:6px;z-index:3}
+.wr-seg{flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.32);overflow:hidden}
+.wr-seg i{display:block;height:100%;width:0;background:#fff;border-radius:999px}
+.wr-seg.done i{width:100%}
+.wr-seg.active i{width:100%}
+.wr-x{position:absolute;top:26px;right:16px;z-index:4;width:38px;height:38px;border:none;background:rgba(0,0,0,.18);color:#fff;border-radius:50%;font-size:22px;line-height:1;cursor:pointer}
+.wr-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:64px 28px 56px;text-align:center}
+.wr-slide{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:64px 28px 56px}
+.wr-slide.show{display:flex}
+.wr-slide.show .wr-anim{animation:wrPop .6s cubic-bezier(.16,1,.3,1) both}
+.wr-slide.show .wr-anim.d1{animation-delay:.12s}
+.wr-slide.show .wr-anim.d2{animation-delay:.24s}
+@keyframes wrPop{from{opacity:0;transform:translateY(22px) scale(.92)}to{opacity:1;transform:none}}
+.wr-kick{font-size:60px;margin-bottom:14px}
+.wr-lab{font-size:15px;letter-spacing:.12em;text-transform:uppercase;opacity:.85;font-weight:700}
+.wr-huge{font-family:var(--head);font-weight:700;font-size:120px;line-height:.95;margin:6px 0}
+.wr-big{font-family:var(--head);font-weight:700;font-size:46px;line-height:1.05;margin:8px 0;max-width:9em}
+.wr-mid{font-family:var(--head);font-weight:700;font-size:40px;line-height:1.1;max-width:9em}
+.wr-sub{font-size:17px;opacity:.92;margin-top:10px;max-width:16em}
+.wr-quote{font-style:italic;font-size:22px;line-height:1.4;max-width:14em;margin-top:6px}
+.wr-tap{position:absolute;top:0;bottom:0;z-index:2;border:none;background:transparent;cursor:pointer;padding:0}
+.wr-tap-l{left:0;width:32%}
+.wr-tap-r{right:0;width:68%}
+.wr-final{background:rgba(255,255,255,.14);border-radius:22px;padding:22px 24px;backdrop-filter:blur(2px)}
+.wr-final h4{font-family:var(--head);font-weight:700;font-size:24px;margin:0 0 14px}
+.wr-frow{display:flex;justify-content:space-between;gap:18px;font-size:16px;padding:7px 0;border-top:1px solid rgba(255,255,255,.22)}
+.wr-frow:first-of-type{border-top:none}
+.wr-frow b{font-weight:700}
+.wr-foot{margin-top:16px;font-size:13px;opacity:.8}
 .dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px}
+.ocr-btn{float:right;border:1px solid var(--line);background:var(--paper-2);color:var(--accent-deep);border-radius:999px;padding:3px 11px;font-weight:700;font-size:12px;cursor:pointer}
+.ocr-btn:disabled{opacity:.6}
 .dice-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
@@ -419,13 +451,14 @@ main,footer{position:relative;z-index:1}
     <div class="case-actions">
       <button class="dice-btn" id="quotesBtn">💬 мои цитаты</button>
       <button class="dice-btn" id="wishBtn">📌 хотелки</button>
+      <button class="dice-btn" id="yearBtn" style="display:none">✨ мой книжный год</button>
     </div>
   </section>
 
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v43 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v47 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -446,7 +479,7 @@ main,footer{position:relative;z-index:1}
   <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
   <div class="field"><label>Оценка</label><div class="rate" id="fRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
   <div class="field"><label>Комментарий <span style="font-weight:400">(увидят друзья)</span></label><textarea id="fNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
-  <div class="field"><label>Любимая цитата из книги</label><textarea id="fQuote" placeholder="строчка, которую захотелось сохранить..."></textarea></div>
+  <div class="field"><label>Любимая цитата из книги <button type="button" class="ocr-btn" data-ocr="fQuote">📷 со страницы</button></label><textarea id="fQuote" placeholder="строчка, которую захотелось сохранить..."></textarea><input type="file" accept="image/*" capture="environment" id="fQuoteCam" hidden></div>
   <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
 </div>
@@ -470,7 +503,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
-        <div class="field"><label>Любимая цитата из книги</label><textarea id="iQuote" placeholder="строчка, которую захотелось сохранить..."></textarea></div>
+        <div class="field"><label>Любимая цитата из книги <button type="button" class="ocr-btn" data-ocr="iQuote">📷 со страницы</button></label><textarea id="iQuote" placeholder="строчка, которую захотелось сохранить..."></textarea><input type="file" accept="image/*" capture="environment" id="iQuoteCam" hidden></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -570,6 +603,15 @@ main,footer{position:relative;z-index:1}
       <button class="btn" id="wishAddBtn" style="margin-top:10px">Добавить</button>
     </div>
   </div>
+</div>
+
+<!-- мой книжный год — истории как в Spotify Wrapped -->
+<div class="fullpage wrapped" id="yearPage" aria-label="Книжный год">
+  <div class="wr-bars" id="wrBars"></div>
+  <button class="wr-x" data-close aria-label="закрыть">×</button>
+  <div class="wr-stage" id="wrStage"></div>
+  <button class="wr-tap wr-tap-l" id="wrPrev" aria-label="назад"></button>
+  <button class="wr-tap wr-tap-r" id="wrNext" aria-label="вперёд"></button>
 </div>
 
 <!-- регистрация при первом входе -->
@@ -884,6 +926,8 @@ main,footer{position:relative;z-index:1}
     $("#diceBtn").style.display = meV ? "" : "none";
     $("#quotesBtn").innerHTML = meV ? "💬 мои цитаты" : "💬 цитаты друга";
     $("#wishBtn").innerHTML = meV ? "📌 хотелки" : "📌 хотелки друга";
+    $("#yearBtn").innerHTML = meV ? "✨ мой книжный год" : "✨ книжный год друга";
+    $("#yearBtn").style.display = wrappedSeason() ? "" : "none";
     renderMyStickers();
   }
   function renderMyStickers(){
@@ -1061,6 +1105,122 @@ main,footer{position:relative;z-index:1}
     $("#wishSub").textContent = me ? "То, что хочется прочитать. Прочитали — нажмите на книгу, чтобы поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
     $("#wishAddForm").style.display = me ? "" : "none";
     $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish();
+  });
+  // «книжный год» доступен только в новогоднюю неделю: 31 дек — 6 янв
+  function wrappedSeason(){ const d=new Date(), m=d.getMonth(), day=d.getDate(); return (m===11 && day>=31) || (m===0 && day<=6); }
+  function readWord(n){ const a=n%100,b=n%10; if(a>=11&&a<=14) return "книг прочитано"; if(b===1) return "книга прочитана"; if(b>=2&&b<=4) return "книги прочитано"; return "книг прочитано"; }
+  function genreWord(n){ const a=n%100,b=n%10; if(a>=11&&a<=14) return "книг"; if(b===1) return "книга"; if(b>=2&&b<=4) return "книги"; return "книг"; }
+  const WR_BG = [
+    "linear-gradient(160deg,#f7c59f,#b8493a)",
+    "linear-gradient(160deg,#a8c4a2,#52734d)",
+    "linear-gradient(160deg,#c3a6e0,#6f4d8f)",
+    "linear-gradient(160deg,#f3b6c4,#bd4d68)",
+    "linear-gradient(160deg,#9ec6e8,#3f6d9c)",
+    "linear-gradient(160deg,#e8c47a,#b07d2a)"
+  ];
+  let wrSlides = [], wrIdx = 0;
+  function buildWrapped(){
+    const me = isMe(), who = me ? "" : friend().name.split(" ")[0];
+    const books = currentBooks();
+    wrSlides = [];
+    if(!books.length){
+      wrSlides.push(`<div class="wr-kick wr-anim">🌱</div><div class="wr-mid wr-anim d1">${me?"Полка пока пустая":"У друга пусто"}</div><div class="wr-sub wr-anim d2">${me?"Добавьте первую книгу — и здесь оживёт ваш книжный год":"тут появится статистика, когда друг начнёт читать"}</div>`);
+      return;
+    }
+    const total = books.length;
+    const favs = books.filter(isFav).length;
+    const quotes = books.filter(b=>b.qt);
+    const rated = books.filter(b=>b.r>0);
+    const avg = rated.length ? (rated.reduce((s,b)=>s+b.r,0)/rated.length) : 0;
+    const gc = {}; books.forEach(b=>{ const g=b.g||GENRES[0]; gc[g]=(gc[g]||0)+1; });
+    const genres = Object.entries(gc).sort((a,b)=>b[1]-a[1]);
+    const ac = {}; books.forEach(b=>{ const a=(b.a||"").trim(); if(a) ac[a]=(ac[a]||0)+1; });
+    const authors = Object.entries(ac).sort((a,b)=>b[1]-a[1]);
+    // intro
+    wrSlides.push(`<div class="wr-kick wr-anim">📚</div><div class="wr-mid wr-anim d1">${me?"Твой книжный год":who+" — книжный год"}</div><div class="wr-sub wr-anim d2">листай дальше →</div>`);
+    // всего книг
+    wrSlides.push(`<div class="wr-lab wr-anim">${me?"ты прочитала":who+" прочитал(а)"}</div><div class="wr-huge wr-anim d1">${total}</div><div class="wr-sub wr-anim d2">${readWord(total)} 🤍</div>`);
+    // любимый жанр
+    wrSlides.push(`<div class="wr-lab wr-anim">любимый жанр</div><div class="wr-big wr-anim d1">${esc(genres[0][0])}</div><div class="wr-sub wr-anim d2">${genres[0][1]} ${genreWord(genres[0][1])} в этом жанре</div>`);
+    // любимый автор
+    if(authors.length){
+      const topN = authors[0][1];
+      wrSlides.push(`<div class="wr-lab wr-anim">любимый автор</div><div class="wr-big wr-anim d1">${esc(authors[0][0])}</div><div class="wr-sub wr-anim d2">${topN>1?topN+" "+genreWord(topN)+" этого автора":"первый в вашем сердце"}</div>`);
+    }
+    // оценка
+    if(avg) wrSlides.push(`<div class="wr-lab wr-anim">средняя оценка</div><div class="wr-huge wr-anim d1">${avg.toFixed(1)}</div><div class="wr-sub wr-anim d2">★ из пяти возможных</div>`);
+    // цитаты
+    if(quotes.length){
+      const q = quotes[(total)%quotes.length];
+      wrSlides.push(`<div class="wr-lab wr-anim">сохранено цитат</div><div class="wr-huge wr-anim d1">${quotes.length}</div><div class="wr-quote wr-anim d2">«${esc(q.qt)}»</div>`);
+    }
+    // финал
+    wrSlides.push(`<div class="wr-final wr-anim"><h4>${me?"Твой год в Polka":who+" в Polka"} 📖</h4>
+      <div class="wr-frow"><span>Прочитано</span><b>${total}</b></div>
+      <div class="wr-frow"><span>Любимых</span><b>❤️ ${favs}</b></div>
+      <div class="wr-frow"><span>Любимый жанр</span><b>${esc(genres[0][0])}</b></div>
+      ${authors.length?`<div class="wr-frow"><span>Любимый автор</span><b>${esc(lastName(authors[0][0]))}</b></div>`:""}
+      <div class="wr-frow"><span>Цитат сохранено</span><b>💬 ${quotes.length}</b></div>
+      <div class="wr-foot">собрано на полке Polka 🤍</div></div>`);
+  }
+  function wrRender(){
+    const stage = $("#wrStage"), bars = $("#wrBars");
+    stage.innerHTML = wrSlides.map((h,i)=>`<div class="wr-slide${i===wrIdx?" show":""}">${h}</div>`).join("");
+    bars.innerHTML = wrSlides.map((_,i)=>`<span class="wr-seg ${i<wrIdx?"done":(i===wrIdx?"active":"")}"><i></i></span>`).join("");
+    $("#yearPage").style.background = WR_BG[wrIdx % WR_BG.length];
+  }
+  function wrGo(d){
+    const n = wrIdx + d;
+    if(n < 0) return;
+    if(n >= wrSlides.length){ closeModals(); return; }   // дальше последнего — закрываем
+    wrIdx = n; wrRender();
+  }
+  $("#yearBtn").addEventListener("click", ()=>{ buildWrapped(); wrIdx = 0; openPage("yearPage"); wrRender(); });
+  $("#wrNext").addEventListener("click", ()=> wrGo(1));
+  $("#wrPrev").addEventListener("click", ()=> wrGo(-1));
+
+  /* распознавание текста с фото страницы (OCR) — библиотека грузится только при первом использовании */
+  let tessReady = null;
+  function loadTesseract(){
+    if(tessReady) return tessReady;
+    tessReady = new Promise((res, rej)=>{
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+      s.onload = ()=> res(window.Tesseract);
+      s.onerror = ()=>{ tessReady = null; rej(new Error("no net")); };
+      document.head.appendChild(s);
+    });
+    return tessReady;
+  }
+  let ocrFirst = true;
+  async function runOcr(file, targetId){
+    const ta = $("#"+targetId);
+    const btn = document.querySelector(`.ocr-btn[data-ocr="${targetId}"]`);
+    if(btn){ btn.disabled = true; btn.textContent = "распознаю…"; }
+    toast(ocrFirst ? "Готовлю распознавание (один раз качается ~15 МБ)…" : "Распознаю текст с фото…");
+    try{
+      const T = await loadTesseract();
+      const { data } = await T.recognize(file, "rus+eng");
+      ocrFirst = false;
+      let txt = ((data && data.text) || "").replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").trim();
+      if(txt){
+        ta.value = ta.value.trim() ? (ta.value.trim() + " " + txt) : txt;
+        toast("Готово — проверьте и поправьте текст ✍️");
+      } else {
+        toast("Не вышло разобрать текст — попробуйте кадр чётче и крупнее");
+      }
+    }catch(e){
+      toast("Для распознавания нужен интернет");
+    } finally {
+      if(btn){ btn.disabled = false; btn.textContent = "📷 со страницы"; }
+    }
+  }
+  document.querySelectorAll(".ocr-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ const cam = $("#"+btn.dataset.ocr+"Cam"); if(cam) cam.click(); });
+  });
+  ["fQuote","iQuote"].forEach(id=>{
+    const cam = $("#"+id+"Cam");
+    if(cam) cam.addEventListener("change", e=>{ const f = e.target.files && e.target.files[0]; if(f) runOcr(f, id); e.target.value = ""; });
   });
   $("#wishAddBtn").addEventListener("click", ()=>{
     const t=$("#wishTitle").value.trim(); if(!t) return;
