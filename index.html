@@ -196,6 +196,15 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px}
 .ocr-btn{float:right;border:1px solid var(--line);background:var(--paper-2);color:var(--accent-deep);border-radius:999px;padding:3px 11px;font-weight:700;font-size:12px;cursor:pointer}
 .ocr-btn:disabled{opacity:.6}
+.crop-wrap{position:relative;display:inline-block;max-width:100%;line-height:0;touch-action:none;user-select:none;border-radius:12px;overflow:hidden}
+#cropImg{display:block;max-width:100%;max-height:56vh;width:auto;height:auto}
+.crop-shade{position:absolute;left:0;right:0;background:rgba(0,0,0,.55);pointer-events:none}
+#cropShadeTop{top:0}
+.crop-band{position:absolute;left:0;right:0;border-top:2px solid #fff;border-bottom:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4) inset;cursor:grab}
+.crop-h{position:absolute;left:0;right:0;height:30px;cursor:ns-resize;display:flex;align-items:center;justify-content:center}
+.crop-h::before{content:"";width:46px;height:6px;border-radius:999px;background:#fff;box-shadow:0 0 4px rgba(0,0,0,.5)}
+.crop-h-top{top:-16px}
+.crop-h-bot{bottom:-16px}
 .dice-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
@@ -458,7 +467,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v48 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v49 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -612,6 +621,25 @@ main,footer{position:relative;z-index:1}
   <div class="wr-stage" id="wrStage"></div>
   <button class="wr-tap wr-tap-l" id="wrPrev" aria-label="назад"></button>
   <button class="wr-tap wr-tap-r" id="wrNext" aria-label="вперёд"></button>
+</div>
+
+<!-- обрезка фото перед распознаванием -->
+<div class="modal" id="cropModal" role="dialog" aria-modal="true" aria-label="Обрезка">
+  <button class="close" data-cropclose>×</button>
+  <h3>Выделите нужные строки 📖</h3>
+  <p class="mp" style="margin:0 0 12px">Подвиньте рамку на строки цитаты — распознается только то, что внутри.</p>
+  <div style="text-align:center">
+    <div class="crop-wrap" id="cropWrap">
+      <img id="cropImg" alt="">
+      <div class="crop-shade" id="cropShadeTop"></div>
+      <div class="crop-shade" id="cropShadeBot" style="bottom:0"></div>
+      <div class="crop-band" id="cropBand">
+        <span class="crop-h crop-h-top" data-h="top"></span>
+        <span class="crop-h crop-h-bot" data-h="bot"></span>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn ghost" data-cropclose>Отмена</button><button class="btn" id="cropGo">Распознать</button></div>
 </div>
 
 <!-- регистрация при первом входе -->
@@ -1192,37 +1220,17 @@ main,footer{position:relative;z-index:1}
     });
     return tessReady;
   }
-  // предобработка фото: оттенки серого + контраст + апскейл мелких кадров — резко улучшает русский
-  function ocrPreprocess(file){
-    return new Promise(res=>{
-      const img = new Image();
-      img.onload = ()=>{
-        let w = img.naturalWidth, h = img.naturalHeight; if(!w||!h){ res(null); return; }
-        const big = Math.max(w,h);
-        let scale = 1;
-        if(big > 2400) scale = 2400/big;        // огромные фото уменьшаем
-        else if(big < 1500) scale = 1500/big;   // мелкие — увеличиваем для чёткости букв
-        const cw = Math.round(w*scale), ch = Math.round(h*scale);
-        const c = document.createElement("canvas"); c.width = cw; c.height = ch;
-        const ctx = c.getContext("2d");
-        ctx.drawImage(img, 0, 0, cw, ch);
-        try{
-          const id = ctx.getImageData(0,0,cw,ch), d = id.data;
-          const contrast = 1.7, inter = 128*(1-contrast);
-          for(let i=0;i<d.length;i+=4){
-            let g = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];   // в серый
-            g = g*contrast + inter;                          // контраст
-            g = g<0?0:(g>255?255:g);
-            d[i]=d[i+1]=d[i+2]=g;
-          }
-          ctx.putImageData(id,0,0);
-        }catch(e){}
-        URL.revokeObjectURL(img.src);
-        res(c);
-      };
-      img.onerror = ()=> res(null);
-      img.src = URL.createObjectURL(file);
-    });
+  // серый + контраст прямо на canvas — резко улучшает русский
+  function ocrEnhance(ctx,w,h){
+    try{
+      const id = ctx.getImageData(0,0,w,h), d = id.data, contrast = 1.7, inter = 128*(1-contrast);
+      for(let i=0;i<d.length;i+=4){
+        let g = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+        g = g*contrast + inter; g = g<0?0:(g>255?255:g);
+        d[i]=d[i+1]=d[i+2]=g;
+      }
+      ctx.putImageData(id,0,0);
+    }catch(e){}
   }
   let tessWorker = null;
   async function ocrWorker(T){
@@ -1232,15 +1240,14 @@ main,footer{position:relative;z-index:1}
     return tessWorker;
   }
   let ocrFirst = true;
-  async function runOcr(file, targetId){
+  async function recognizeSrc(src, targetId){
     const ta = $("#"+targetId);
     const btn = document.querySelector(`.ocr-btn[data-ocr="${targetId}"]`);
     if(btn){ btn.disabled = true; btn.textContent = "распознаю…"; }
-    toast(ocrFirst ? "Готовлю распознавание (один раз качается ~15 МБ)…" : "Распознаю текст с фото…");
+    toast(ocrFirst ? "Готовлю распознавание (один раз качается ~15 МБ)…" : "Распознаю текст…");
     try{
       const T = await loadTesseract();
       const worker = await ocrWorker(T);
-      const src = (await ocrPreprocess(file)) || file;
       const { data } = await worker.recognize(src);
       ocrFirst = false;
       let txt = ((data && data.text) || "")
@@ -1252,7 +1259,7 @@ main,footer{position:relative;z-index:1}
         ta.value = ta.value.trim() ? (ta.value.trim() + " " + txt) : txt;
         toast("Готово — проверьте и поправьте текст ✍️");
       } else {
-        toast("Не вышло разобрать текст — попробуйте кадр чётче и крупнее");
+        toast("Не вышло разобрать текст — попробуйте кадр чётче");
       }
     }catch(e){
       toast("Для распознавания нужен интернет");
@@ -1260,12 +1267,67 @@ main,footer{position:relative;z-index:1}
       if(btn){ btn.disabled = false; btn.textContent = "📷 со страницы"; }
     }
   }
+
+  /* шаг обрезки: тонкая рамка на нужные строки, чтобы лишний текст не попал */
+  let cropTargetId = null;
+  function openCrop(file, targetId){
+    cropTargetId = targetId;
+    const img = $("#cropImg");
+    img.onload = ()=>{ URL.revokeObjectURL(img.src); cropDefaultBand(); };
+    img.src = URL.createObjectURL(file);
+    overlay.classList.add("open"); $("#cropModal").classList.add("open");
+  }
+  // закрываем ТОЛЬКО окно обрезки — окно добавления книги под ним остаётся открытым
+  function closeCrop(){ $("#cropModal").classList.remove("open"); }
+  $("#cropModal").querySelectorAll("[data-cropclose]").forEach(b=> b.addEventListener("click", closeCrop));
+  const cropBand = $("#cropBand");
+  function cropImgH(){ return $("#cropImg").clientHeight || 1; }
+  function cropSet(top, bot){
+    const H = cropImgH(), minH = 22;
+    top = Math.max(0, Math.min(top, H-minH));
+    bot = Math.max(top+minH, Math.min(bot, H));
+    cropBand.style.top = top+"px"; cropBand.style.height = (bot-top)+"px";
+    cropBand.dataset.top = top; cropBand.dataset.bot = bot;
+    $("#cropShadeTop").style.height = top+"px";
+    $("#cropShadeBot").style.top = bot+"px";
+  }
+  function cropDefaultBand(){ const H = cropImgH(); cropSet(Math.round(H*0.42), Math.round(H*0.58)); }
+  (function(){
+    let mode=null, startY=0, t0=0, b0=0;
+    function down(e, m){ mode=m; startY=e.clientY; t0=+cropBand.dataset.top; b0=+cropBand.dataset.bot; if(e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId); e.preventDefault(); }
+    function move(e){ if(!mode) return; const dy=e.clientY-startY;
+      if(mode==="move") cropSet(t0+dy, b0+dy);
+      else if(mode==="top") cropSet(t0+dy, b0);
+      else if(mode==="bot") cropSet(t0, b0+dy);
+    }
+    cropBand.addEventListener("pointerdown", e=>{ if(e.target.dataset.h) return; down(e,"move"); });
+    cropBand.querySelectorAll(".crop-h").forEach(h=> h.addEventListener("pointerdown", e=> down(e, h.dataset.h)));
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", ()=>{ mode=null; });
+  })();
+  $("#cropGo").addEventListener("click", ()=>{
+    const img = $("#cropImg");
+    const ratio = img.naturalHeight / (img.clientHeight||1);
+    const top = +cropBand.dataset.top, bot = +cropBand.dataset.bot;
+    const sy = Math.max(0, Math.round(top*ratio));
+    const sh = Math.min(img.naturalHeight - sy, Math.round((bot-top)*ratio));
+    const sw = img.naturalWidth;
+    if(sh < 8){ toast("Слишком узкая полоса"); return; }
+    const scale = sh < 130 ? Math.min(3, 130/sh) : 1;        // тонкую полосу увеличиваем для чёткости
+    const c = document.createElement("canvas"); c.width = Math.round(sw*scale); c.height = Math.round(sh*scale);
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, sy, sw, sh, 0, 0, c.width, c.height);
+    ocrEnhance(ctx, c.width, c.height);
+    closeCrop();
+    recognizeSrc(c, cropTargetId);
+  });
+
   document.querySelectorAll(".ocr-btn").forEach(btn=>{
     btn.addEventListener("click", ()=>{ const cam = $("#"+btn.dataset.ocr+"Cam"); if(cam) cam.click(); });
   });
   ["fQuote","iQuote"].forEach(id=>{
     const cam = $("#"+id+"Cam");
-    if(cam) cam.addEventListener("change", e=>{ const f = e.target.files && e.target.files[0]; if(f) runOcr(f, id); e.target.value = ""; });
+    if(cam) cam.addEventListener("change", e=>{ const f = e.target.files && e.target.files[0]; if(f) openCrop(f, id); e.target.value = ""; });
   });
   $("#wishAddBtn").addEventListener("click", ()=>{
     const t=$("#wishTitle").value.trim(); if(!t) return;
