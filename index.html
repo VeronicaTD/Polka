@@ -470,7 +470,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v55 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v56 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1232,16 +1232,35 @@ main,footer{position:relative;z-index:1}
     });
     return tessReady;
   }
-  // мягко: серый + умеренный контраст. Жёсткую бинаризацию НЕ делаем —
-  // у сгиба страницы она превращала тени в «кашу». Порог Tesseract считает сам (адаптивно).
+  // адаптивная бинаризация (метод Брэдли–Рота): порог считается локально для каждого участка,
+  // поэтому тени и неровный свет у сгиба страницы не превращаются в «кашу». Стандарт для сканов.
   function ocrEnhance(ctx,w,h){
     try{
-      const id = ctx.getImageData(0,0,w,h), d = id.data;
-      const contrast = 1.35, inter = 128*(1-contrast);
-      for(let i=0;i<d.length;i+=4){
-        let v = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
-        v = v*contrast + inter; v = v<0?0:(v>255?255:v);
-        d[i]=d[i+1]=d[i+2]=v;
+      const id = ctx.getImageData(0,0,w,h), d = id.data, n = w*h;
+      const gray = new Float64Array(n);
+      for(let i=0,p=0;i<d.length;i+=4,p++) gray[p] = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      // интегральное изображение (быстрая сумма по прямоугольнику)
+      const I = new Float64Array(n);
+      for(let y=0;y<h;y++){
+        let rs = 0;
+        for(let x=0;x<w;x++){ const idx=y*w+x; rs += gray[idx]; I[idx] = (y>0 ? I[idx-w] : 0) + rs; }
+      }
+      const S = Math.max(8, Math.floor(w/24));   // половина окна
+      const T = 0.14;                            // насколько темнее окружения = текст
+      for(let y=0;y<h;y++){
+        const y1 = y-S<0?0:y-S, y2 = y+S>=h?h-1:y+S;
+        for(let x=0;x<w;x++){
+          const x1 = x-S<0?0:x-S, x2 = x+S>=w?w-1:x+S;
+          const count = (x2-x1+1)*(y2-y1+1);
+          const A = (y1>0&&x1>0) ? I[(y1-1)*w+(x1-1)] : 0;
+          const B = (y1>0)       ? I[(y1-1)*w+x2]     : 0;
+          const C = (x1>0)       ? I[y2*w+(x1-1)]     : 0;
+          const D = I[y2*w+x2];
+          const sum = D - B - C + A;
+          const idx = y*w+x, o = idx*4;
+          const val = (gray[idx]*count <= sum*(1-T)) ? 0 : 255;
+          d[o]=d[o+1]=d[o+2]=val;
+        }
       }
       ctx.putImageData(id,0,0);
     }catch(e){}
@@ -1251,7 +1270,7 @@ main,footer{position:relative;z-index:1}
   async function ocrWorker(T){
     if(tessWorker) return tessWorker;
     tessWorker = await T.createWorker("rus");                // только русский — точнее, чем смесь языков
-    try{ await tessWorker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1", tessedit_char_whitelist: OCR_WHITELIST }); }catch(e){}
+    try{ await tessWorker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1", user_defined_dpi: "300", tessedit_char_whitelist: OCR_WHITELIST }); }catch(e){}
     return tessWorker;
   }
   let ocrFirst = true, ocrBusy = false;
