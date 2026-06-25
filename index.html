@@ -458,7 +458,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v47 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v48 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1192,6 +1192,45 @@ main,footer{position:relative;z-index:1}
     });
     return tessReady;
   }
+  // предобработка фото: оттенки серого + контраст + апскейл мелких кадров — резко улучшает русский
+  function ocrPreprocess(file){
+    return new Promise(res=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w = img.naturalWidth, h = img.naturalHeight; if(!w||!h){ res(null); return; }
+        const big = Math.max(w,h);
+        let scale = 1;
+        if(big > 2400) scale = 2400/big;        // огромные фото уменьшаем
+        else if(big < 1500) scale = 1500/big;   // мелкие — увеличиваем для чёткости букв
+        const cw = Math.round(w*scale), ch = Math.round(h*scale);
+        const c = document.createElement("canvas"); c.width = cw; c.height = ch;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, cw, ch);
+        try{
+          const id = ctx.getImageData(0,0,cw,ch), d = id.data;
+          const contrast = 1.7, inter = 128*(1-contrast);
+          for(let i=0;i<d.length;i+=4){
+            let g = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];   // в серый
+            g = g*contrast + inter;                          // контраст
+            g = g<0?0:(g>255?255:g);
+            d[i]=d[i+1]=d[i+2]=g;
+          }
+          ctx.putImageData(id,0,0);
+        }catch(e){}
+        URL.revokeObjectURL(img.src);
+        res(c);
+      };
+      img.onerror = ()=> res(null);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  let tessWorker = null;
+  async function ocrWorker(T){
+    if(tessWorker) return tessWorker;
+    tessWorker = await T.createWorker("rus");                // только русский — точнее, чем смесь языков
+    try{ await tessWorker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" }); }catch(e){}
+    return tessWorker;
+  }
   let ocrFirst = true;
   async function runOcr(file, targetId){
     const ta = $("#"+targetId);
@@ -1200,9 +1239,15 @@ main,footer{position:relative;z-index:1}
     toast(ocrFirst ? "Готовлю распознавание (один раз качается ~15 МБ)…" : "Распознаю текст с фото…");
     try{
       const T = await loadTesseract();
-      const { data } = await T.recognize(file, "rus+eng");
+      const worker = await ocrWorker(T);
+      const src = (await ocrPreprocess(file)) || file;
+      const { data } = await worker.recognize(src);
       ocrFirst = false;
-      let txt = ((data && data.text) || "").replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").trim();
+      let txt = ((data && data.text) || "")
+        .replace(/(\S)[-­]\s*\n\s*/g, "$1")   // склеиваем перенос по дефису: сло-\nво → слово
+        .replace(/\s*\n\s*/g, " ")             // остальные переносы строк → пробел
+        .replace(/[«»"“”]+/g, "")              // убираем кавычки (свои добавим при показе)
+        .replace(/\s{2,}/g, " ").trim();
       if(txt){
         ta.value = ta.value.trim() ? (ta.value.trim() + " " + txt) : txt;
         toast("Готово — проверьте и поправьте текст ✍️");
