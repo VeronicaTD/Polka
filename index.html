@@ -470,7 +470,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v54 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v55 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1254,8 +1254,10 @@ main,footer{position:relative;z-index:1}
     try{ await tessWorker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1", tessedit_char_whitelist: OCR_WHITELIST }); }catch(e){}
     return tessWorker;
   }
-  let ocrFirst = true;
+  let ocrFirst = true, ocrBusy = false;
   async function recognizeSrc(src, targetId){
+    if(ocrBusy){ toast("Подождите, идёт распознавание…"); return; }   // не запускаем второй раз поверх
+    ocrBusy = true;
     const ta = $("#"+targetId);
     const btn = document.querySelector(`.ocr-btn[data-ocr="${targetId}"]`);
     if(btn){ btn.disabled = true; btn.textContent = "распознаю…"; }
@@ -1263,7 +1265,12 @@ main,footer{position:relative;z-index:1}
     try{
       const T = await loadTesseract();
       const worker = await ocrWorker(T);
-      const { data } = await worker.recognize(src);
+      // таймаут: если зависло дольше 40 сек — прерываем, перезапускаем движок, не блокируем приложение
+      const result = await Promise.race([
+        worker.recognize(src),
+        new Promise((_, rej)=> setTimeout(()=> rej(new Error("timeout")), 40000))
+      ]);
+      const { data } = result;
       ocrFirst = false;
       let txt = ((data && data.text) || "")
         .replace(/(\S)[-­]\s*\n\s*/g, "$1")    // склеиваем перенос по дефису: сло-\nво → слово
@@ -1282,8 +1289,14 @@ main,footer{position:relative;z-index:1}
         toast("Не вышло разобрать текст — попробуйте кадр чётче");
       }
     }catch(e){
-      toast("Для распознавания нужен интернет");
+      if(e && e.message==="timeout"){
+        toast("Слишком долго — попробуйте полоску поменьше");
+        try{ if(tessWorker){ tessWorker.terminate(); tessWorker = null; } }catch(_){}   // сбрасываем зависший движок
+      } else {
+        toast("Для распознавания нужен интернет");
+      }
     } finally {
+      ocrBusy = false;
       if(btn){ btn.disabled = false; btn.textContent = "📷 со страницы"; }
     }
   }
@@ -1333,11 +1346,14 @@ main,footer{position:relative;z-index:1}
     const sh = Math.min(img.naturalHeight - sy, Math.round((bot-top)*ratio));
     const sw = img.naturalWidth;
     if(sh < 8){ toast("Слишком узкая полоса"); return; }
-    const scale = Math.max(1, Math.min(3, 190/sh));          // тонкую полосу слегка увеличиваем для чёткости
-    const c = document.createElement("canvas"); c.width = Math.round(sw*scale); c.height = Math.round(sh*scale);
+    // нормализуем ширину к ~1400px. БЕЗ этого огромные фото раздувались до 9000px и телефон зависал
+    let scale = Math.max(0.5, Math.min(2, 1400/sw));
+    const cw = Math.min(1600, Math.round(sw*scale));
+    const ch = Math.max(1, Math.round(sh*scale));
+    const c = document.createElement("canvas"); c.width = cw; c.height = ch;
     const ctx = c.getContext("2d");
-    ctx.drawImage(img, 0, sy, sw, sh, 0, 0, c.width, c.height);
-    ocrEnhance(ctx, c.width, c.height);
+    ctx.drawImage(img, 0, sy, sw, sh, 0, 0, cw, ch);
+    ocrEnhance(ctx, cw, ch);
     closeCrop();
     recognizeSrc(c, cropTargetId);
   });
