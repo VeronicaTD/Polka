@@ -467,7 +467,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v49 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v51 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -576,6 +576,10 @@ main,footer{position:relative;z-index:1}
   <a class="btn" id="buyBtn" href="#" target="_blank" rel="noopener" style="display:flex;justify-content:center;text-decoration:none">Получить доступ в Telegram</a>
   <div class="field" style="margin-top:16px"><label>У меня есть код доступа</label><input id="accessCode" placeholder="код из бота" /></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Позже</button><button class="btn" id="redeemBtn">Активировать</button></div>
+  <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px;text-align:center">
+    <p class="mp" style="margin:0 0 8px">Уже есть своя полка?</p>
+    <button class="btn ghost" id="accessLogin" type="button" style="width:100%;display:flex;justify-content:center">🔑 Войти по коду полки</button>
+  </div>
 </div>
 
 <!-- тема оформления -->
@@ -1009,16 +1013,15 @@ main,footer{position:relative;z-index:1}
   function bookWidth(per){ const innerW = bookcase.clientWidth - 40; const fill = Math.floor((innerW - 5*(per-1))/per); return Math.min(phone()?38:50, Math.max(26, fill)); }
 
   function spineDims(b){
-    const len = (b.t||"").length;
+    // шрифт у всех книг одинаковый; от длины названия зависит только высота книги
+    const len = Math.max(3, (b.t||"").trim().length);
     if(phone()){
-      const w = Math.max(26, Math.min(50, Math.round(24 + len*1.6)));
-      const font = Math.min(15, Math.max(11, Math.round(w*0.34)));
-      const h = Math.min(210, Math.max(116, Math.round(len*font*0.9 + 28)));
+      const font = 12, w = 30;
+      const h = Math.min(196, Math.max(92, Math.round(len*font*0.62 + 26)));
       return {w,h,font};
     }
-    const w = Math.max(34, Math.min(68, Math.round(30 + len*2)));
-    const font = Math.min(18, Math.max(12, Math.round(w*0.32)));
-    const h = Math.min(240, Math.max(122, Math.round(len*font*0.88 + 30)));
+    const font = 15, w = 38;
+    const h = Math.min(232, Math.max(108, Math.round(len*font*0.60 + 30)));
     return {w,h,font};
   }
   function spineHTML(b, i, d){
@@ -1220,23 +1223,37 @@ main,footer{position:relative;z-index:1}
     });
     return tessReady;
   }
-  // серый + контраст прямо на canvas — резко улучшает русский
+  // серый + контраст + бинаризация по Otsu — чёткий чёрный текст на белом, резко улучшает русский
   function ocrEnhance(ctx,w,h){
     try{
-      const id = ctx.getImageData(0,0,w,h), d = id.data, contrast = 1.7, inter = 128*(1-contrast);
-      for(let i=0;i<d.length;i+=4){
-        let g = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
-        g = g*contrast + inter; g = g<0?0:(g>255?255:g);
-        d[i]=d[i+1]=d[i+2]=g;
+      const id = ctx.getImageData(0,0,w,h), d = id.data, n = w*h;
+      const g = new Uint8Array(n), hist = new Array(256).fill(0);
+      const contrast = 1.5, inter = 128*(1-contrast);
+      for(let i=0,p=0;i<d.length;i+=4,p++){
+        let v = 0.3*d[i] + 0.59*d[i+1] + 0.11*d[i+2];
+        v = v*contrast + inter; v = v<0?0:(v>255?255:v); v = v|0;
+        g[p] = v; hist[v]++;
       }
+      // порог Otsu
+      let sum = 0; for(let t=0;t<256;t++) sum += t*hist[t];
+      let sumB=0, wB=0, maxVar=0, thr=128;
+      for(let t=0;t<256;t++){
+        wB += hist[t]; if(!wB) continue; const wF = n - wB; if(!wF) break;
+        sumB += t*hist[t];
+        const mB = sumB/wB, mF = (sum-sumB)/wF, vbtw = wB*wF*(mB-mF)*(mB-mF);
+        if(vbtw > maxVar){ maxVar = vbtw; thr = t; }
+      }
+      const T = thr + 8;                       // лёгкий сдвиг — сохраняем тонкие штрихи букв
+      for(let i=0,p=0;i<d.length;i+=4,p++){ const val = g[p] < T ? 0 : 255; d[i]=d[i+1]=d[i+2]=val; }
       ctx.putImageData(id,0,0);
     }catch(e){}
   }
+  const OCR_WHITELIST = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 .,!?:;-—()…'";
   let tessWorker = null;
   async function ocrWorker(T){
     if(tessWorker) return tessWorker;
     tessWorker = await T.createWorker("rus");                // только русский — точнее, чем смесь языков
-    try{ await tessWorker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" }); }catch(e){}
+    try{ await tessWorker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1", tessedit_char_whitelist: OCR_WHITELIST }); }catch(e){}
     return tessWorker;
   }
   let ocrFirst = true;
@@ -1251,10 +1268,15 @@ main,footer{position:relative;z-index:1}
       const { data } = await worker.recognize(src);
       ocrFirst = false;
       let txt = ((data && data.text) || "")
-        .replace(/(\S)[-­]\s*\n\s*/g, "$1")   // склеиваем перенос по дефису: сло-\nво → слово
-        .replace(/\s*\n\s*/g, " ")             // остальные переносы строк → пробел
-        .replace(/[«»"“”]+/g, "")              // убираем кавычки (свои добавим при показе)
-        .replace(/\s{2,}/g, " ").trim();
+        .replace(/(\S)[-­]\s*\n\s*/g, "$1")    // склеиваем перенос по дефису: сло-\nво → слово
+        .replace(/\s*\n\s*/g, " ")              // остальные переносы строк → пробел
+        .replace(/[«»"“”]+/g, "")               // убираем кавычки (свои добавим при показе)
+        .replace(/\s+([,.!?;:…])/g, "$1")       // пробел перед знаком препинания → убираем
+        .replace(/([,.!?;:…])(?=[А-Яа-яЁё])/g, "$1 ") // нет пробела после знака → добавляем
+        .replace(/\s{2,}/g, " ")
+        .replace(/^[^А-Яа-яЁё0-9]+/, "")        // мусор в начале
+        .replace(/[^А-Яа-яЁё0-9.!?…)]+$/, "")   // мусор в конце
+        .trim();
       if(txt){
         ta.value = ta.value.trim() ? (ta.value.trim() + " " + txt) : txt;
         toast("Готово — проверьте и поправьте текст ✍️");
@@ -1313,7 +1335,7 @@ main,footer{position:relative;z-index:1}
     const sh = Math.min(img.naturalHeight - sy, Math.round((bot-top)*ratio));
     const sw = img.naturalWidth;
     if(sh < 8){ toast("Слишком узкая полоса"); return; }
-    const scale = sh < 130 ? Math.min(3, 130/sh) : 1;        // тонкую полосу увеличиваем для чёткости
+    const scale = Math.max(1, Math.min(4, 260/sh));          // тонкую полосу увеличиваем для чёткости букв
     const c = document.createElement("canvas"); c.width = Math.round(sw*scale); c.height = Math.round(sh*scale);
     const ctx = c.getContext("2d");
     ctx.drawImage(img, 0, sy, sw, sh, 0, 0, c.width, c.height);
@@ -1485,6 +1507,13 @@ main,footer{position:relative;z-index:1}
     if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }
     else toast("Код неверный или уже использован");
   }));
+  // «уже есть полка» → вход по коду полки (вернёт профиль и оплату из облака)
+  $("#accessLogin").addEventListener("click", ()=>{
+    closeModals(); hideSplash();
+    welShow("welLogin"); $("#welLoginInput").value = "";
+    overlay.classList.add("open"); $("#welModal").classList.add("open");
+    setTimeout(()=>$("#welLoginInput").focus(), 60);
+  });
 
   /* ---- темы оформления ---- */
   const THEMES = [
