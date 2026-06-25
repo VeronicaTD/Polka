@@ -155,8 +155,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
   font-size:13px;line-height:1.05;max-height:82%;overflow:hidden;text-align:left}
-.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.02em;opacity:.8;
-  border-top:1px solid currentColor;padding-top:4px}
+.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.01em;opacity:.8;
+  border-top:1px solid currentColor;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} }
 .s-foot{width:100%;display:flex;flex-direction:column;align-items:center;gap:1px}
 .s-heart{display:block;margin:0 auto 2px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
@@ -211,6 +211,11 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .wr-foot{margin-top:16px;font-size:13px;opacity:.8}
 .dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px}
 .dice-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
+.quotes-edit{display:flex;flex-direction:column;gap:8px}
+.q-edit{display:flex;gap:8px;align-items:flex-start}
+.q-edit textarea{flex:1;margin:0}
+.q-del{flex:none;width:30px;height:30px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);border-radius:50%;font-size:18px;line-height:1;cursor:pointer;margin-top:4px}
+.add-quote{display:inline-block;margin-top:8px}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
 .fp-head{position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);
@@ -472,7 +477,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v61 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v62 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -493,7 +498,7 @@ main,footer{position:relative;z-index:1}
   <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
   <div class="field"><label>Оценка</label><div class="rate" id="fRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
   <div class="field"><label>Комментарий <span style="font-weight:400">(увидят друзья)</span></label><textarea id="fNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
-  <div class="field"><label>Любимая цитата из книги</label><textarea id="fQuote" placeholder="строчка, которую захотелось сохранить..."></textarea></div>
+  <div class="field"><label>Любимые цитаты из книги</label><div id="fQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="fAddQuote">+ ещё цитата</button></div>
   <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
 </div>
@@ -517,7 +522,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
-        <div class="field"><label>Любимая цитата из книги</label><textarea id="iQuote" placeholder="строчка, которую захотелось сохранить..."></textarea></div>
+        <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -848,7 +853,7 @@ main,footer{position:relative;z-index:1}
   function encodeCode(p){
     const gi = g => { const k = GENRES.indexOf(g); return k<0?0:k; };
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
-    const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", bk.qt||""]);
+    const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk)]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
     return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[], p.pd?1:0, p.wl||[]]));
   }
@@ -859,7 +864,7 @@ main,footer{position:relative;z-index:1}
       return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[], pd:a[7]||0, wl:a[8]||[],
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
-            r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(x[8]||""):"" }; }) };
+            r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[] }; }) };
     }
     raw = raw.replace(/^PLK1/,"");
     const d = JSON.parse(b64d(raw));
@@ -894,6 +899,22 @@ main,footer{position:relative;z-index:1}
   const currentList = () => currentBooks();
   const currentStickers = () => isMe() ? myStickers : (friend().stickers || []);
   const currentWishlist = () => isMe() ? myWishlist : (friend().wishlist || []);
+  // цитаты книги — всегда массив (поддержка старого формата, где была одна строка)
+  const quotesOf = b => Array.isArray(b.qt) ? b.qt.filter(Boolean) : (b.qt ? [b.qt] : []);
+  function quoteRow(q){ return `<div class="q-edit"><textarea class="q-input" placeholder="строчка, которую захотелось сохранить...">${esc(q||"")}</textarea><button type="button" class="q-del" title="убрать">×</button></div>`; }
+  function renderQuoteEditor(containerId, quotes){
+    const list = (quotes && quotes.length) ? quotes : [""];
+    $("#"+containerId).innerHTML = list.map(q=>quoteRow(q)).join("");
+  }
+  function collectQuotes(containerId){
+    return [...$("#"+containerId).querySelectorAll(".q-input")].map(t=>t.value.trim()).filter(Boolean);
+  }
+  function wireQuoteEditor(containerId, addBtnId){
+    $("#"+addBtnId).addEventListener("click", ()=>{ $("#"+containerId).insertAdjacentHTML("beforeend", quoteRow("")); });
+    $("#"+containerId).addEventListener("click", e=>{ const d=e.target.closest(".q-del"); if(d) d.closest(".q-edit").remove(); });
+  }
+  wireQuoteEditor("fQuotes", "fAddQuote");
+  wireQuoteEditor("iQuotes", "iAddQuote");
 
   const bookcase = $("#bookcase");
   const overlay = $("#overlay");
@@ -1017,12 +1038,15 @@ main,footer{position:relative;z-index:1}
     return {w,h,font};
   }
   function spineHTML(b, i, d){
-    const bandFont = Math.max(6, Math.round(d.font*0.55));
+    const name = lastName(b.a);
+    // подгоняем размер фамилии под ширину корешка, чтобы она не обрезалась
+    const fit = Math.floor((d.w - 6) * 1.9 / Math.max(1, name.length));
+    const bandFont = Math.max(5, Math.min(Math.round(d.font*0.55), fit));
     const heart = Math.min(16, Math.max(11, Math.round(d.w*0.36)));
     const bg = spineBg(b);
     return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${d.w}px;height:${d.h}px;background:${bg};color:${pickFg(bg)}">
       <div class="s-title" style="font-size:${d.font}px">${esc(b.t)}</div>
-      <div class="s-foot">${isFav(b)?pixelHeartSVG(heart):''}<div class="s-band" style="font-size:${bandFont}px">${esc(lastName(b.a))}</div></div>
+      <div class="s-foot">${isFav(b)?pixelHeartSVG(heart):''}<div class="s-band" style="font-size:${bandFont}px">${esc(name)}</div></div>
     </div>`;
   }
 
@@ -1036,10 +1060,11 @@ main,footer{position:relative;z-index:1}
     if(isMe() && books.length===0) cells.unshift({ html:`<span class="placeholder">Поставьте сюда первый прочитанный томик →</span>`, w:innerW });
     else if(!cells.length) cells.push({ html:`<span class="placeholder">Полка пока пустая 🤍</span>`, w:innerW });
 
+    const MAX_PER_SHELF = 8;                       // не больше 8 книг на одной полке
     const shelvesAll = []; let row=[], used=0;
     for(const c of cells){
       const add = c.w + (row.length? gap : 0);
-      if(row.length && used + add > innerW){ shelvesAll.push(row); row=[c]; used=c.w; }
+      if(row.length && (used + add > innerW || row.length >= MAX_PER_SHELF)){ shelvesAll.push(row); row=[c]; used=c.w; }
       else { row.push(c); used += add; }
     }
     if(row.length) shelvesAll.push(row);
@@ -1091,9 +1116,10 @@ main,footer{position:relative;z-index:1}
     const me = isMe(), fn = me ? "" : friend().name;
     $("#quotesTitle").textContent = me ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
     $("#quotesSub").textContent = me ? "Цитаты, которые вы сохранили из своих книг." : `Любимые цитаты из книг — ${fn}.`;
-    const items = currentBooks().filter(b=>b.qt);
+    const items = [];
+    currentBooks().forEach(b=> quotesOf(b).forEach(q=> items.push({q, b})));
     $("#quotesList").innerHTML = items.length
-      ? items.map(b=>`<div class="q-row"><span class="q-text">«${esc(b.qt)}»</span><div class="q-side"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
+      ? items.map(({q,b})=>`<div class="q-row"><span class="q-text">«${esc(q)}»</span><div class="q-side"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
       : `<p class="mp">${me ? "Пока нет цитат. Откройте книгу и впишите любимую цитату из неё." : "У друга пока нет сохранённых цитат."}</p>`;
     openPage("quotesPage");
   });
@@ -1152,7 +1178,7 @@ main,footer{position:relative;z-index:1}
     }
     const total = books.length;
     const favs = books.filter(isFav).length;
-    const quotes = books.filter(b=>b.qt);
+    const quotes = books.flatMap(b=>quotesOf(b));
     const rated = books.filter(b=>b.r>0);
     const avg = rated.length ? (rated.reduce((s,b)=>s+b.r,0)/rated.length) : 0;
     const gc = {}; books.forEach(b=>{ const g=b.g||GENRES[0]; gc[g]=(gc[g]||0)+1; });
@@ -1175,7 +1201,7 @@ main,footer{position:relative;z-index:1}
     // цитаты
     if(quotes.length){
       const q = quotes[(total)%quotes.length];
-      wrSlides.push(`<div class="wr-lab wr-anim">сохранено цитат</div><div class="wr-huge wr-anim d1">${quotes.length}</div><div class="wr-quote wr-anim d2">«${esc(q.qt)}»</div>`);
+      wrSlides.push(`<div class="wr-lab wr-anim">сохранено цитат</div><div class="wr-huge wr-anim d1">${quotes.length}</div><div class="wr-quote wr-anim d2">«${esc(q)}»</div>`);
     }
     // финал
     wrSlides.push(`<div class="wr-final wr-anim"><h4>${me?"Твой год в Polka":who+" в Polka"} 📖</h4>
@@ -1248,14 +1274,14 @@ main,footer{position:relative;z-index:1}
   let pendingWish = null;
   function openAdd(pre){
     if(!requirePaid()) return;
-    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; $("#fNote").value=""; $("#fQuote").value="";
+    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; $("#fNote").value=""; renderQuoteEditor("fQuotes", []);
     selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
   $("#saveBook").addEventListener("click", ()=>{
     const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
     myBooks.push({ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
-      c:selColor, fav:favNew, r:rateNew, note:$("#fNote").value.trim(), qt:$("#fQuote").value.trim() });
+      c:selColor, fav:favNew, r:rateNew, note:$("#fNote").value.trim(), qt:collectQuotes("fQuotes") });
     if(pendingWish!=null){ myWishlist.splice(pendingWish,1); pendingWish=null; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     saveMine(); syncUp();
     casePage=9999; slideDir=0; closeModals(); renderAll();
@@ -1278,14 +1304,14 @@ main,footer{position:relative;z-index:1}
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
-      $("#iNote").value = b.note||""; $("#iQuote").value = b.qt||"";
+      $("#iNote").value = b.note||""; renderQuoteEditor("iQuotes", quotesOf(b));
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
       $("#infoStars").textContent = (b.r? starsStr(b.r):"") + (isFav(b)?"  ♥":"");
       const note=$("#infoNote");
       const parts = [];
-      if(b.qt) parts.push(`<div style="font-style:italic">«${esc(b.qt)}»</div>`);
+      quotesOf(b).forEach(q=> parts.push(`<div style="font-style:italic;margin-bottom:4px">«${esc(q)}»</div>`));
       if(b.note) parts.push(`<div style="margin-top:6px">${esc(b.note)}</div>`);
       if(parts.length){ note.style.display=""; note.innerHTML = parts.join(""); } else note.style.display="none";
     }
@@ -1297,7 +1323,7 @@ main,footer{position:relative;z-index:1}
       infoBook.t = $("#iTitle").value.trim() || infoBook.t;
       infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
       infoBook.g = $("#iGenre").value;
-      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.note = $("#iNote").value.trim(); infoBook.qt = $("#iQuote").value.trim();
+      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.note = $("#iNote").value.trim(); infoBook.qt = collectQuotes("iQuotes");
       saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
     }
   });
