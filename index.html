@@ -136,10 +136,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 
 /* книжный шкаф */
 .bookcase{background:linear-gradient(180deg,var(--wood-1),var(--wood-2));border-radius:var(--radius);
-  padding:14px 16px 4px;margin:14px 0 14px;
+  padding:14px 16px 4px;margin:14px auto;max-width:860px;
   box-shadow:var(--shadow), inset 0 0 0 3px rgba(0,0,0,.12), inset 0 0 60px rgba(0,0,0,.25);
   position:relative;perspective:1400px;overflow:hidden}
-.shelf{position:relative;display:flex;align-items:flex-end;gap:5px;min-height:182px;padding:0 5px 11px;margin-bottom:11px}
+.shelf{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:5px;min-height:182px;padding:0 5px 11px;margin-bottom:11px}
 .shelf::after{content:"";position:absolute;left:-12px;right:-12px;bottom:0;height:16px;
   background:linear-gradient(180deg,#3c2614,#2a1a0c);border-radius:3px;
   box-shadow:0 8px 14px -6px rgba(0,0,0,.6), inset 0 2px 0 rgba(255,255,255,.06)}
@@ -154,7 +154,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
-  font-size:13px;line-height:1.05;max-height:82%;overflow:hidden;text-align:left}
+  font-size:13px;line-height:1.05;max-height:calc(100% - 30px);overflow:hidden;text-align:left}
 .spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.01em;opacity:.8;
   border-top:1px solid currentColor;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} .shelf{min-height:150px} }
@@ -477,7 +477,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v63 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v64 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1026,19 +1026,20 @@ main,footer{position:relative;z-index:1}
   function bookWidth(per){ const innerW = bookcase.clientWidth - 40; const fill = Math.floor((innerW - 5*(per-1))/per); return Math.min(phone()?38:50, Math.max(26, fill)); }
 
   function spineDims(b, i){
-    // живой стеллаж: книги разной толщины и высоты (по названию + лёгкий разброс), шрифт одинаковый
+    // живой стеллаж: книги разной толщины и высоты. Высота зависит от длины названия (чтобы оно влезало),
+    // плюс лёгкий случайный разброс. Шрифт одинаковый.
     const t = (b.t||"").trim();
-    const len = Math.max(3, Math.min(t.length, 22));
-    const seed = (t.charCodeAt(0)||7) + t.length*5 + (i||0)*11;
-    const jw = (seed % 7) - 3;   // разброс толщины  -3..+3
-    const jh = (seed % 5) - 2;   // разброс высоты   -2..+2
+    const len = Math.max(3, Math.min(t.length, 26));
+    const seed = (t.charCodeAt(0)||7) + (t.charCodeAt(1)||3) + t.length*5 + (i||0)*11;
+    const jw = (seed % 9) - 4;   // разброс толщины  -4..+4
+    const jh = seed % 6;         // доп. высота      0..5
     if(phone()){
-      const w = Math.max(24, Math.min(44, Math.round(28 + len*0.8 + jw*2)));
-      const h = Math.max(78, Math.min(128, Math.round(84 + len*2.5 + jh*7)));
+      const w = Math.max(22, Math.min(46, Math.round(28 + len*0.5 + jw*3)));
+      const h = Math.max(80, Math.min(150, Math.round(len*12*0.6 + 50 + jh*6)));
       return {w, h, font:12};
     }
-    const w = Math.max(32, Math.min(60, Math.round(36 + len*1.1 + jw*3)));
-    const h = Math.max(104, Math.min(160, Math.round(112 + len*2.6 + jh*9)));
+    const w = Math.max(30, Math.min(66, Math.round(36 + len*0.7 + jw*4)));
+    const h = Math.max(104, Math.min(196, Math.round(len*15*0.6 + 56 + jh*8)));
     return {w, h, font:15};
   }
   function spineHTML(b, i, d){
@@ -1055,11 +1056,17 @@ main,footer{position:relative;z-index:1}
   }
 
   /* шкаф: книги разной ширины упаковываются по полкам, листание по страницам */
+  // сколько книг помещается на одной полке: телефон — 7, планшет/компьютер — больше (по ширине)
+  function maxPerShelf(){
+    if(phone()) return 7;
+    const innerW = Math.max(120, bookcase.clientWidth - 36);
+    return Math.max(8, Math.min(11, Math.floor(innerW / 88)));
+  }
   function renderCase(){
     const books = currentList();
     const me = isMe();
     const innerW = Math.max(120, bookcase.clientWidth - 36);
-    const gap = 5, addW = phone()?30:40, MAX = 8;
+    const gap = 5, addW = phone()?30:40, MAX = maxPerShelf(), maxW = phone()?56:108;
 
     let shelvesAll = [];
     if(!books.length){
@@ -1079,10 +1086,10 @@ main,footer{position:relative;z-index:1}
       shelvesAll = rows.map(row=>{
         const n = row.length, avail = innerW - gap*(n-1);
         let sumBase = 0; row.forEach(c=> sumBase += (c.add?addW:c.d.w));
-        const scale = sumBase>0 ? Math.min(avail/sumBase, 2.2) : 1;   // <2.2 — чтобы пара книг не растягивалась на весь экран
+        const scale = sumBase>0 ? avail/sumBase : 1;
         return row.map(c=>{
-          if(c.add){ const w=Math.round(addW*scale); return `<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${w}px">+</button>`; }
-          const w = Math.round(c.d.w * scale);
+          if(c.add){ const w=Math.min(maxW, Math.round(addW*scale)); return `<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${w}px">+</button>`; }
+          const w = Math.min(maxW, Math.round(c.d.w * scale));   // растягиваем, но ограничиваем ширину книги
           return spineHTML(c.b, c.i, {...c.d, w});
         }).join("");
       });
