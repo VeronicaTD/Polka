@@ -139,7 +139,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   padding:14px 16px 4px;margin:14px 0 14px;
   box-shadow:var(--shadow), inset 0 0 0 3px rgba(0,0,0,.12), inset 0 0 60px rgba(0,0,0,.25);
   position:relative;perspective:1400px;overflow:hidden}
-.shelf{position:relative;display:flex;align-items:flex-end;gap:5px;min-height:122px;padding:0 5px 11px;margin-bottom:11px}
+.shelf{position:relative;display:flex;align-items:flex-end;gap:5px;min-height:182px;padding:0 5px 11px;margin-bottom:11px}
 .shelf::after{content:"";position:absolute;left:-12px;right:-12px;bottom:0;height:16px;
   background:linear-gradient(180deg,#3c2614,#2a1a0c);border-radius:3px;
   box-shadow:0 8px 14px -6px rgba(0,0,0,.6), inset 0 2px 0 rgba(255,255,255,.06)}
@@ -157,7 +157,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   font-size:13px;line-height:1.05;max-height:82%;overflow:hidden;text-align:left}
 .spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.01em;opacity:.8;
   border-top:1px solid currentColor;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} }
+@media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} .shelf{min-height:150px} }
 .s-foot{width:100%;display:flex;flex-direction:column;align-items:center;gap:1px}
 .s-heart{display:block;margin:0 auto 2px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
 .spine:hover{transform:translateY(-16px) rotateZ(-1.5deg);box-shadow:4px 14px 22px -8px rgba(0,0,0,.6);z-index:5}
@@ -477,7 +477,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v62 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v63 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1025,17 +1025,21 @@ main,footer{position:relative;z-index:1}
   function perShelf(){ const w = bookcase.clientWidth - 40; const unit = phone()?44:58; return Math.min(7, Math.max(3, Math.floor(w/unit))); }
   function bookWidth(per){ const innerW = bookcase.clientWidth - 40; const fill = Math.floor((innerW - 5*(per-1))/per); return Math.min(phone()?38:50, Math.max(26, fill)); }
 
-  function spineDims(b){
-    // шрифт у всех книг одинаковый; от длины названия зависит только высота книги
-    const len = Math.max(3, (b.t||"").trim().length);
+  function spineDims(b, i){
+    // живой стеллаж: книги разной толщины и высоты (по названию + лёгкий разброс), шрифт одинаковый
+    const t = (b.t||"").trim();
+    const len = Math.max(3, Math.min(t.length, 22));
+    const seed = (t.charCodeAt(0)||7) + t.length*5 + (i||0)*11;
+    const jw = (seed % 7) - 3;   // разброс толщины  -3..+3
+    const jh = (seed % 5) - 2;   // разброс высоты   -2..+2
     if(phone()){
-      const font = 12, w = 30;
-      const h = Math.min(196, Math.max(92, Math.round(len*font*0.62 + 26)));
-      return {w,h,font};
+      const w = Math.max(24, Math.min(44, Math.round(28 + len*0.8 + jw*2)));
+      const h = Math.max(78, Math.min(128, Math.round(84 + len*2.5 + jh*7)));
+      return {w, h, font:12};
     }
-    const font = 15, w = 38;
-    const h = Math.min(232, Math.max(108, Math.round(len*font*0.60 + 30)));
-    return {w,h,font};
+    const w = Math.max(32, Math.min(60, Math.round(36 + len*1.1 + jw*3)));
+    const h = Math.max(104, Math.min(160, Math.round(112 + len*2.6 + jh*9)));
+    return {w, h, font:15};
   }
   function spineHTML(b, i, d){
     const name = lastName(b.a);
@@ -1053,29 +1057,44 @@ main,footer{position:relative;z-index:1}
   /* шкаф: книги разной ширины упаковываются по полкам, листание по страницам */
   function renderCase(){
     const books = currentList();
+    const me = isMe();
     const innerW = Math.max(120, bookcase.clientWidth - 36);
-    const gap = 5, addW = phone()?28:38;
-    const cells = books.map((b,i)=>{ const d=spineDims(b); return { html: spineHTML(b,i,d), w:d.w }; });
-    if(isMe()) cells.push({ html:`<button class="add-slot" id="quickAdd" title="Добавить книгу">+</button>`, w:addW });
-    if(isMe() && books.length===0) cells.unshift({ html:`<span class="placeholder">Поставьте сюда первый прочитанный томик →</span>`, w:innerW });
-    else if(!cells.length) cells.push({ html:`<span class="placeholder">Полка пока пустая 🤍</span>`, w:innerW });
+    const gap = 5, addW = phone()?30:40, MAX = 8;
 
-    const MAX_PER_SHELF = 8;                       // не больше 8 книг на одной полке
-    const shelvesAll = []; let row=[], used=0;
-    for(const c of cells){
-      const add = c.w + (row.length? gap : 0);
-      if(row.length && (used + add > innerW || row.length >= MAX_PER_SHELF)){ shelvesAll.push(row); row=[c]; used=c.w; }
-      else { row.push(c); used += add; }
+    let shelvesAll = [];
+    if(!books.length){
+      const ph = `<span class="placeholder">${me?"Поставьте сюда первый прочитанный томик →":"Полка пока пустая 🤍"}</span>`;
+      const add = me?`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`:"";
+      shelvesAll = [ph + add];
+    } else {
+      // строки максимум по 8 книг
+      const rows = [];
+      for(let i=0;i<books.length;i+=MAX) rows.push(books.slice(i,i+MAX).map((b,k)=>({b, i:i+k, d:spineDims(b, i+k)})));
+      // кнопка «+» — в последнюю строку, если там <8, иначе на новую полку
+      if(me){
+        if(rows[rows.length-1].length < MAX) rows[rows.length-1].push({add:true});
+        else rows.push([{add:true}]);
+      }
+      // растягиваем каждую строку на всю ширину полки (8 книг заполняют её целиком)
+      shelvesAll = rows.map(row=>{
+        const n = row.length, avail = innerW - gap*(n-1);
+        let sumBase = 0; row.forEach(c=> sumBase += (c.add?addW:c.d.w));
+        const scale = sumBase>0 ? Math.min(avail/sumBase, 2.2) : 1;   // <2.2 — чтобы пара книг не растягивалась на весь экран
+        return row.map(c=>{
+          if(c.add){ const w=Math.round(addW*scale); return `<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${w}px">+</button>`; }
+          const w = Math.round(c.d.w * scale);
+          return spineHTML(c.b, c.i, {...c.d, w});
+        }).join("");
+      });
     }
-    if(row.length) shelvesAll.push(row);
 
     const pages = [];
     for(let i=0;i<shelvesAll.length;i+=SHELVES_PER_CASE) pages.push(shelvesAll.slice(i,i+SHELVES_PER_CASE));
     if(!pages.length) pages.push([]);
     casePage = Math.min(Math.max(0,casePage), pages.length-1);
     const pageShelves = pages[casePage].slice();
-    while(pageShelves.length < SHELVES_PER_CASE) pageShelves.push([]);
-    bookcase.innerHTML = pageShelves.map(rw=>`<div class="shelf">${rw.map(c=>c.html).join("")}</div>`).join("");
+    while(pageShelves.length < SHELVES_PER_CASE) pageShelves.push("");
+    bookcase.innerHTML = pageShelves.map(html=>`<div class="shelf">${html}</div>`).join("");
 
     $("#casePrev").classList.toggle("show", casePage>0);
     $("#caseNext").classList.toggle("show", casePage<pages.length-1);
