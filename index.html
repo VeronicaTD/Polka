@@ -467,7 +467,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v51 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v52 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -731,7 +731,13 @@ main,footer{position:relative;z-index:1}
   const BUY_URL = "https://t.me/veronica_182";   // твой Telegram
   /* ============================================== */
   const isPaid = () => localStorage.getItem("polka_paid")==="1";
-  function requirePaid(){ if(isPaid()) return true; openAccess(); return false; }
+  // у тебя уже есть своя полка (вошёл/создал) → редактировать можно без повторной оплаты
+  function ownsShelf(){ return !!(localStorage.getItem("polka_registered") && (myCode || localStorage.getItem("polka_code"))); }
+  function requirePaid(){
+    if(isPaid()) return true;
+    if(ownsShelf()){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} return true; }
+    openAccess(); return false;
+  }
   async function sbRedeem(code){
     if(!CLOUD()) return false;
     try{
