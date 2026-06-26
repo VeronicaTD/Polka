@@ -155,7 +155,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
-  font-size:13px;line-height:1.05;max-height:84%;overflow:hidden;text-align:left}
+  font-size:13px;line-height:1.06;max-height:90%;overflow:hidden;text-align:center}
 .spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:-0.3px;opacity:.8;
   border-top:1px solid currentColor;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} .shelf{min-height:150px} }
@@ -483,7 +483,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v71 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v72 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1026,27 +1026,27 @@ main,footer{position:relative;z-index:1}
   });
 
   /* размеры корешка */
-  const phone = () => window.innerWidth <= 640;
-  /* книг на полке: максимум 7, шире книги — крупнее текст */
-  function perShelf(){ const w = bookcase.clientWidth - 40; const unit = phone()?44:58; return Math.min(7, Math.max(3, Math.floor(w/unit))); }
-  function bookWidth(per){ const innerW = bookcase.clientWidth - 40; const fill = Math.floor((innerW - 5*(per-1))/per); return Math.min(phone()?38:50, Math.max(26, fill)); }
+  const phone = () => window.innerWidth <= 760;
 
   function spineDims(b, i){
-    // живой стеллаж: книги разной толщины и высоты. Высота зависит от длины названия (чтобы оно влезало),
-    // плюс лёгкий случайный разброс. Шрифт одинаковый.
+    // живой стеллаж: разная толщина и высота. Буквы названия стоят вертикально стоймя,
+    // поэтому высота считается под реальный текст; длинное название — шрифт чуть мельче, чтобы влезть целиком.
     const t = (b.t||"").trim();
-    const len = Math.max(3, Math.min(t.length, 26));
+    const len = Math.max(1, Math.min(t.length, 30));
     const seed = (t.charCodeAt(0)||7) + (t.charCodeAt(1)||3) + t.length*5 + (i||0)*11;
-    const jw = (seed % 9) - 4;   // разброс толщины  -4..+4
-    const jh = seed % 6;         // доп. высота      0..5
-    if(phone()){
-      const w = Math.max(26, Math.min(48, Math.round(30 + len*0.5 + jw*3)));
-      const h = Math.max(86, Math.min(168, Math.round(len*12*0.72 + 46 + jh*6)));
-      return {w, h, font:12};
-    }
-    const w = Math.max(34, Math.min(68, Math.round(38 + len*0.7 + jw*4)));
-    const h = Math.max(112, Math.min(214, Math.round(len*15*0.72 + 52 + jh*8)));
-    return {w, h, font:15};
+    const jw = (seed % 9) - 4;       // разброс толщины -4..+4
+    const extra = (seed % 4) * 6;    // лёгкий разброс высоты 0..18
+    const ph = phone();
+    const baseFont = ph ? 12 : 15;
+    const foot = ph ? 34 : 40;                         // место под фамилию автора снизу
+    const minH = ph ? 86 : 112, maxH = ph ? 204 : 256;
+    const h = Math.max(minH, Math.min(maxH, Math.round(len*baseFont*1.1 + foot + extra)));
+    const avail = h - foot - 6;                         // высота под вертикальное название
+    const font = Math.max(7, Math.min(baseFont, Math.floor(avail / (len * 1.12))));
+    const w = ph
+      ? Math.max(26, Math.min(48, Math.round(30 + len*0.4 + jw*3)))
+      : Math.max(34, Math.min(68, Math.round(38 + len*0.6 + jw*4)));
+    return {w, h, font};
   }
   function spineHTML(b, i, d){
     const name = lastName(b.a);
