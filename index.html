@@ -155,7 +155,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
-  font-size:13px;line-height:1.22;overflow:hidden;text-align:center;overflow-wrap:anywhere;word-break:break-word}
+  font-size:13px;line-height:1.33;overflow:hidden;text-align:center;overflow-wrap:anywhere;word-break:break-word}
 .spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:-0.3px;opacity:.8;
   border-top:1px solid currentColor;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} .shelf{min-height:150px} }
@@ -483,7 +483,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v79 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v80 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1037,16 +1037,16 @@ main,footer{position:relative;z-index:1}
     const jw = (seed % 11) - 5;      // разброс толщины -5..+5 (для реализма)
     const jh = (seed % 5) * 5;       // доп. высота 0..20
     const ph = phone();
-    const F = ph ? 13 : 16;                       // читаемый размер шрифта названия
-    const foot = ph ? 30 : 36;                    // место под фамилию автора снизу
-    const lineH = Math.ceil(F * 1.22) + 1;        // высота одной буквы в столбике
-    const perCol = ph ? 9 : 10;                   // букв в колонке, дальше — перенос
-    const cols = Math.max(1, Math.ceil(L / perCol));        // на сколько колонок переносим
-    const usedCol = Math.min(L, perCol);                    // букв в самой длинной колонке
+    const F = ph ? 12 : 15;                       // читаемый размер шрифта названия (чуть меньше)
+    const foot = ph ? 28 : 34;                    // место под фамилию автора снизу
+    const lineH = Math.ceil(F * 1.33);            // высота одной буквы в столбике
+    const maxPerCol = ph ? 8 : 9;                 // макс. букв в колонке, дальше — перенос
+    const cols = Math.max(1, Math.ceil(L / maxPerCol));     // на сколько колонок
+    const usedCol = Math.ceil(L / cols);          // делим поровну → колонки короче (книга ниже)
     const h = foot + usedCol*lineH + 10 + jh;     // высота по тексту + разброс
-    const titleMax = usedCol*lineH + 5;           // ограничение высоты → перенос в колонки
-    const colW = Math.round(F * 1.2);             // ширина одной колонки
-    const w = Math.max(ph?24:30, cols*colW + 10 + jw);      // толще, если больше колонок + разброс
+    const titleMax = usedCol*lineH + 4;           // ограничение высоты → перенос поровну
+    const colW = Math.round(F * 1.15);            // ширина одной колонки
+    const w = Math.max(ph?22:28, cols*colW + 8 + jw);       // толще, если больше колонок + разброс
     return {w, h, font:F, titleMax};
   }
   function spineHTML(b, i, d){
