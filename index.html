@@ -482,7 +482,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v66 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v67 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1060,18 +1060,12 @@ main,footer{position:relative;z-index:1}
     </div>`;
   }
 
-  /* шкаф: книги разной ширины упаковываются по полкам, листание по страницам */
-  // сколько книг помещается на одной полке: телефон — 7, планшет/компьютер — больше (по ширине)
-  function maxPerShelf(){
-    if(phone()) return 7;
-    const innerW = Math.max(120, bookcase.clientWidth - 36);
-    return Math.max(8, Math.min(11, Math.floor(innerW / 88)));
-  }
+  /* шкаф: книги натурального размера, упаковываются по ширине полки слева направо */
   function renderCase(){
     const books = currentList();
     const me = isMe();
     const innerW = Math.max(120, bookcase.clientWidth - 36);
-    const gap = 5, addW = phone()?30:40, MAX = maxPerShelf(), maxW = phone()?56:108;
+    const gap = 5, addW = phone()?30:40;
 
     let shelvesAll = [];
     if(!books.length){
@@ -1079,25 +1073,18 @@ main,footer{position:relative;z-index:1}
       const add = me?`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`:"";
       shelvesAll = [ph + add];
     } else {
-      // строки максимум по 8 книг
-      const rows = [];
-      for(let i=0;i<books.length;i+=MAX) rows.push(books.slice(i,i+MAX).map((b,k)=>({b, i:i+k, d:spineDims(b, i+k)})));
-      // кнопка «+» — в последнюю строку, если там <8, иначе на новую полку
-      if(me){
-        if(rows[rows.length-1].length < MAX) rows[rows.length-1].push({add:true});
-        else rows.push([{add:true}]);
+      // натуральные размеры книг
+      const cells = books.map((b,i)=>{ const d=spineDims(b,i); return { html: spineHTML(b,i,d), w:d.w }; });
+      if(me) cells.push({ html:`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`, w:addW });
+      // сколько влезает по ширине — столько и ставим, остальное на следующую полку
+      const rows=[]; let row=[], used=0;
+      for(const c of cells){
+        const add = c.w + (row.length?gap:0);
+        if(row.length && used+add > innerW){ rows.push(row); row=[c]; used=c.w; }
+        else { row.push(c); used+=add; }
       }
-      // растягиваем каждую строку на всю ширину полки (8 книг заполняют её целиком)
-      shelvesAll = rows.map(row=>{
-        const n = row.length, avail = innerW - gap*(n-1);
-        let sumBase = 0; row.forEach(c=> sumBase += (c.add?addW:c.d.w));
-        const scale = sumBase>0 ? avail/sumBase : 1;
-        return row.map(c=>{
-          if(c.add){ const w=Math.min(maxW, Math.round(addW*scale)); return `<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${w}px">+</button>`; }
-          const w = Math.min(maxW, Math.round(c.d.w * scale));   // растягиваем, но ограничиваем ширину книги
-          return spineHTML(c.b, c.i, {...c.d, w});
-        }).join("");
-      });
+      if(row.length) rows.push(row);
+      shelvesAll = rows.map(r=> r.map(c=>c.html).join(""));
     }
 
     const pages = [];
