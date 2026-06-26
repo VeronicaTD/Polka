@@ -155,7 +155,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   linear-gradient(90deg, rgba(255,255,255,.22), transparent 22%, transparent 78%, rgba(0,0,0,.25));pointer-events:none}
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
-  font-size:13px;line-height:1.05;max-height:calc(100% - 30px);overflow:hidden;text-align:left}
+  font-size:13px;line-height:1.05;max-height:calc(100% - 24px);overflow:hidden;text-align:left;min-height:18px}
 .spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:-0.3px;opacity:.8;
   border-top:1px solid currentColor;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} .shelf{min-height:150px} }
@@ -483,7 +483,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v69 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v70 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1041,11 +1041,11 @@ main,footer{position:relative;z-index:1}
     const jh = seed % 6;         // доп. высота      0..5
     if(phone()){
       const w = Math.max(26, Math.min(48, Math.round(30 + len*0.5 + jw*3)));
-      const h = Math.max(80, Math.min(150, Math.round(len*12*0.6 + 50 + jh*6)));
+      const h = Math.max(86, Math.min(168, Math.round(len*12*0.72 + 46 + jh*6)));
       return {w, h, font:12};
     }
     const w = Math.max(34, Math.min(68, Math.round(38 + len*0.7 + jw*4)));
-    const h = Math.max(104, Math.min(196, Math.round(len*15*0.6 + 56 + jh*8)));
+    const h = Math.max(112, Math.min(214, Math.round(len*15*0.72 + 52 + jh*8)));
     return {w, h, font:15};
   }
   function spineHTML(b, i, d){
