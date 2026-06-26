@@ -363,7 +363,12 @@ main,footer{position:relative;z-index:1}
 .bookinfo .del{margin-top:18px;background:none;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--ink-soft)}
 .bookinfo .del:hover{border-color:#a23b2a;color:#a23b2a}
 
-@media(max-width:620px){.profile{flex-wrap:wrap;gap:16px}.stats{margin-left:0;width:100%;gap:22px}}
+@media(max-width:760px){
+  .profile{flex-wrap:wrap;gap:14px 16px;padding:24px 0 8px}
+  .pmeta{flex:1 1 100%;min-width:0}
+  .profile .sub{max-width:none}
+  .stats{margin-left:0;width:100%;gap:22px}
+}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}.spine:hover{transform:translateY(-8px)!important}}
 </style>
 </head>
@@ -429,7 +434,7 @@ main,footer{position:relative;z-index:1}
 
   <section class="profile">
     <div class="polaroid"><div class="ava" id="ava">М</div><div class="my-stickers" id="myStickers"></div></div>
-    <div>
+    <div class="pmeta">
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
@@ -477,7 +482,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v65 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v66 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
