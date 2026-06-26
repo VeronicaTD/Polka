@@ -483,7 +483,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v75 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v76 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1028,32 +1028,25 @@ main,footer{position:relative;z-index:1}
   /* размеры корешка */
   const phone = () => window.innerWidth <= 760;
 
-  // адаптивный масштаб: книги подстраиваются под ширину экрана, чтобы на любом айфоне
-  // композиция смотрелась одинаково (не мельчала и не разъезжалась)
-  function uiScale(){
-    if(!phone()) return 1;
-    const w = bookcase.clientWidth || (window.innerWidth - 72);
-    return Math.max(1, Math.min(1.32, w / 320));   // эталон ~320px, шире экран → крупнее книги
-  }
   function spineDims(b, i){
     // как на настоящей полке: шрифт читаемый. Буквы названия стоят стоймя,
     // длинное название переносится в 2-3 колонки (книга толще), а не мельчает.
+    // Размеры фиксированные → книга одинакового размера на любом айфоне.
     const t = (b.t||"").trim();
     const L = Math.max(1, Math.min(t.length, 32));
     const seed = (t.charCodeAt(0)||7) + (t.charCodeAt(1)||3) + t.length*5 + (i||0)*11;
     const jw = (seed % 7) - 3;       // лёгкий разброс толщины
     const ph = phone();
-    const s = uiScale();
-    const F = Math.round((ph ? 13 : 16) * s);     // читаемый размер шрифта названия
-    const foot = Math.round((ph ? 32 : 38) * s);  // место под фамилию автора снизу
+    const F = ph ? 13 : 16;                       // читаемый размер шрифта названия
+    const foot = ph ? 32 : 38;                    // место под фамилию автора снизу
     const lineH = Math.ceil(F * 1.22) + 1;        // высота одной буквы в столбике (с запасом)
     const perCol = 11;                            // до 11 букв в одну колонку, дальше — перенос
     const cols = Math.max(1, Math.ceil(L / perCol));        // на сколько колонок переносим
     const usedCol = Math.min(L, perCol);                    // букв в самой длинной колонке
-    const h = foot + usedCol*lineH + Math.round(12*s);      // высота зависит от длины названия
+    const h = foot + usedCol*lineH + 12;          // высота книги зависит от длины названия
     const titleMax = usedCol*lineH + 5;           // ограничение высоты названия → перенос в колонки
     const colW = Math.round(F * 1.2);             // ширина одной колонки
-    const w = Math.max(Math.round((ph?26:32)*s), cols*colW + Math.round(12*s) + jw);
+    const w = Math.max(ph?26:32, cols*colW + 12 + jw);
     return {w, h, font:F, titleMax};
   }
   function spineHTML(b, i, d){
