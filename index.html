@@ -80,7 +80,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .bw{font-family:var(--display);font-size:28px;line-height:1;color:var(--ink)}
 .bar .sp{flex:1}
 .bar .tagline{color:var(--ink-soft);font-size:14px}
-.bell{position:relative;border:1px solid var(--line);background:var(--paper);border-radius:50%;width:42px;height:42px;font-size:18px;display:grid;place-items:center;margin-left:12px}
+.bell{position:relative;border:1px solid var(--line);background:var(--paper);border-radius:50%;width:42px;height:42px;font-size:18px;display:grid;place-items:center;margin-left:12px;flex:0 0 auto}
+.brand{flex:0 0 auto}
 .bell:hover{border-color:var(--ink);background:var(--paper-2)}
 .bell-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
 .themes{display:flex;gap:16px;flex-wrap:wrap}
@@ -88,7 +89,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .theme-opt.on{color:var(--ink)}
 .theme-sw{width:56px;height:56px;border-radius:50%}
 .theme-opt.on .theme-sw{box-shadow:0 0 0 3px var(--accent)}
-@media(max-width:640px){ .bar .tagline{display:none} }
+@media(max-width:760px){ .bar .tagline{display:none} }
 .btn{border:none;background:var(--accent);color:#fff;border-radius:999px;padding:12px 20px;font-weight:700;font-size:14px;transition:.2s}
 .btn:hover{background:var(--accent-deep);transform:translateY(-1px)}
 .btn:disabled{opacity:.6;cursor:default;transform:none}
@@ -122,7 +123,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .tabs::-webkit-scrollbar{display:none}
 .tab{border:1px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:999px;flex:0 0 auto;white-space:nowrap;
   padding:9px 16px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:9px;transition:.2s}
-@media(max-width:640px){
+@media(max-width:760px){
   .tabs .lbl{display:none}
   .tab{padding:6px 11px;font-size:12.5px;gap:6px}
   .tab .face{width:18px;height:18px;font-size:10px}
@@ -155,7 +156,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .spine{padding:7px 3px}
 .spine .s-title{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;
   font-size:13px;line-height:1.05;max-height:calc(100% - 30px);overflow:hidden;text-align:left}
-.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:.01em;opacity:.8;
+.spine .s-band{width:100%;text-align:center;font-size:8px;letter-spacing:-0.3px;opacity:.8;
   border-top:1px solid currentColor;padding-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:640px){ .spine .s-title{font-size:10px} .spine .s-band{font-size:6.5px} .shelf{min-height:150px} }
 .s-foot{width:100%;display:flex;flex-direction:column;align-items:center;gap:1px}
@@ -482,7 +483,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v67 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v69 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1039,19 +1040,19 @@ main,footer{position:relative;z-index:1}
     const jw = (seed % 9) - 4;   // разброс толщины  -4..+4
     const jh = seed % 6;         // доп. высота      0..5
     if(phone()){
-      const w = Math.max(22, Math.min(46, Math.round(28 + len*0.5 + jw*3)));
+      const w = Math.max(26, Math.min(48, Math.round(30 + len*0.5 + jw*3)));
       const h = Math.max(80, Math.min(150, Math.round(len*12*0.6 + 50 + jh*6)));
       return {w, h, font:12};
     }
-    const w = Math.max(30, Math.min(66, Math.round(36 + len*0.7 + jw*4)));
+    const w = Math.max(34, Math.min(68, Math.round(38 + len*0.7 + jw*4)));
     const h = Math.max(104, Math.min(196, Math.round(len*15*0.6 + 56 + jh*8)));
     return {w, h, font:15};
   }
   function spineHTML(b, i, d){
     const name = lastName(b.a);
-    // подгоняем размер фамилии под ширину корешка, чтобы она не обрезалась
-    const fit = Math.floor((d.w - 6) * 1.9 / Math.max(1, name.length));
-    const bandFont = Math.max(5, Math.min(Math.round(d.font*0.55), fit));
+    // подгоняем размер фамилии под ширину корешка, чтобы она помещалась целиком (а не обрезалась)
+    const fit = Math.floor((d.w - 7) / (Math.max(1, name.length) * 0.6));
+    const bandFont = Math.max(4, Math.min(Math.round(d.font*0.55), fit));
     const heart = Math.min(16, Math.max(11, Math.round(d.w*0.36)));
     const bg = spineBg(b);
     return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${d.w}px;height:${d.h}px;background:${bg};color:${pickFg(bg)}">
