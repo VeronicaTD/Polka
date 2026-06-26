@@ -483,7 +483,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v77 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v78 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1034,7 +1034,8 @@ main,footer{position:relative;z-index:1}
     const t = (b.t||"").trim();
     const L = Math.max(1, Math.min(t.length, 34));
     const seed = (t.charCodeAt(0)||7) + (t.charCodeAt(1)||3) + t.length*5 + (i||0)*11;
-    const jw = (seed % 7) - 3;       // лёгкий разброс толщины
+    const jw = (seed % 11) - 5;      // разброс толщины -5..+5 (для реализма)
+    const jh = (seed % 5) * 6;       // доп. высота 0..24 (книги выше своего текста)
     const ph = phone();
     const baseFont = ph ? 12 : 15;
     const foot = ph ? 30 : 36;                    // место под фамилию автора снизу
@@ -1042,10 +1043,10 @@ main,footer{position:relative;z-index:1}
     const availMax = maxH - foot - 6;             // максимум высоты под текст названия
     const font = Math.max(8, Math.min(baseFont, Math.floor(availMax / (L * 1.1))));  // длинное → мельче, но не меньше 8
     const titleH = Math.round(L * font * 1.08);   // высота вертикального названия
-    const h = Math.max(minH, Math.min(maxH, titleH + foot + 8));   // высота книги по длине названия
+    const h = Math.max(minH, Math.min(maxH, titleH + foot + 8 + jh));   // высота: по тексту + разброс
     const titleMax = h - foot - 4;
-    const w = ph ? Math.max(26, Math.min(46, Math.round(30 + jw*3)))
-                 : Math.max(32, Math.min(60, Math.round(40 + jw*4)));
+    const w = ph ? Math.max(24, Math.min(54, Math.round(34 + jw*4)))    // толстые и тонкие
+                 : Math.max(30, Math.min(72, Math.round(44 + jw*5)));
     return {w, h, font, titleMax};
   }
   function spineHTML(b, i, d){
