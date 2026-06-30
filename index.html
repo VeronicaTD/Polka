@@ -10,7 +10,7 @@
 <meta name="description" content="Личная библиотека прочитанных книг в виде уютных книжных шкафов. Заполняйте полки и ходите в гости к друзьям по коду." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#FFF8F1">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon.png">
@@ -72,8 +72,9 @@ button{font-family:inherit;cursor:pointer}
 .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
 
 /* header */
-header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper) 82%,transparent);
-  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper) 60%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
 .bar{display:flex;align-items:center;gap:14px;height:64px}
 .brand{display:flex;align-items:center;gap:9px}
 .brand svg{flex:0 0 auto}
@@ -110,7 +111,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
   color:var(--ink-soft);font-size:14px}
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
-.profile .sub{color:var(--ink-soft);font-size:15px;margin-top:2px;max-width:46ch}
+.profile .sub{color:var(--ink-soft);font-family:"Fraunces",serif;font-style:italic;font-weight:400;
+  font-size:16px;line-height:1.4;margin-top:4px;max-width:46ch}
 .reading{margin-top:7px;font-size:14px;color:var(--ink-soft)}
 .reading b{color:var(--ink);font-weight:600}
 .reading.editable{cursor:pointer}
@@ -121,8 +123,9 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 /* вкладки */
 .tabs{display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;padding:22px 0 10px;align-items:center;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{border:1px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:999px;flex:0 0 auto;white-space:nowrap;
-  padding:9px 16px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:9px;transition:.2s}
+.tab{border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);border-radius:10px;flex:0 0 auto;white-space:nowrap;
+  padding:9px 16px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:9px;transition:.2s;
+  box-shadow:0 3px 7px -3px rgba(60,40,20,.25), inset 0 1px 0 rgba(255,255,255,.4)}
 @media(max-width:760px){
   .tabs .lbl{display:none}
   .tab{padding:6px 11px;font-size:12.5px;gap:6px}
@@ -138,14 +141,14 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 /* книжный шкаф */
 .bookcase{background:linear-gradient(180deg,var(--wood-1),var(--wood-2));border-radius:var(--radius);
   padding:14px 16px 4px;margin:14px auto;max-width:860px;
-  box-shadow:var(--shadow), inset 0 0 0 3px rgba(0,0,0,.12), inset 0 0 60px rgba(0,0,0,.25);
+  box-shadow:var(--shadow), inset 0 0 0 3px rgba(0,0,0,.08), inset 0 0 50px rgba(0,0,0,.1);
   position:relative;perspective:1400px;overflow:hidden}
 .shelf{position:relative;display:flex;align-items:flex-end;justify-content:flex-start;gap:5px;min-height:182px;padding:0 5px 11px;margin-bottom:11px}
 .shelf::after{content:"";position:absolute;left:-12px;right:-12px;bottom:0;height:16px;
-  background:linear-gradient(180deg,#3c2614,#2a1a0c);border-radius:3px;
-  box-shadow:0 8px 14px -6px rgba(0,0,0,.6), inset 0 2px 0 rgba(255,255,255,.06)}
+  background:linear-gradient(180deg, color-mix(in srgb,var(--wood-2) 78%,#000), color-mix(in srgb,var(--wood-2) 58%,#000));border-radius:3px;
+  box-shadow:0 8px 14px -6px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.08)}
 .shelf::before{content:"";position:absolute;left:-12px;right:-12px;top:-6px;bottom:16px;
-  background:linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,.05));border-radius:4px;z-index:0}
+  background:linear-gradient(180deg, rgba(0,0,0,.13), rgba(0,0,0,.02));border-radius:4px;z-index:0}
 
 .spine{position:relative;z-index:1;flex:0 0 auto;border-radius:2px 4px 4px 2px;color:#fff;cursor:pointer;
   display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:9px 4px;overflow:hidden;
@@ -210,7 +213,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .wr-frow:first-of-type{border-top:none}
 .wr-frow b{font-weight:700}
 .wr-foot{margin-top:16px;font-size:13px;opacity:.8}
-.dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px}
+.dice-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px;
+  box-shadow:0 3px 7px -3px rgba(60,40,20,.28), inset 0 1px 0 rgba(255,255,255,.4)}
 .dice-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--paper-2)}
 .quotes-edit{display:flex;flex-direction:column;gap:8px}
 .q-edit{display:flex;gap:8px;align-items:flex-start}
@@ -225,8 +229,14 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .fp-back{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 16px;font-weight:600;color:var(--ink)}
 .fp-back:hover{border-color:var(--ink)}
 .fp-body{max-width:760px;margin:0 auto;padding:20px}
-.q-row{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
-.q-row .q-text{flex:1;font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;color:var(--ink);line-height:1.4}
+.q-row{position:relative;display:flex;align-items:flex-start;gap:14px;padding:20px 18px 16px;margin:0 4px 20px;
+  background:var(--paper-2);border-radius:3px;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+  box-shadow:0 7px 18px -9px rgba(40,25,10,.45)}
+.q-row:nth-child(odd){transform:rotate(-.7deg)}
+.q-row:nth-child(even){transform:rotate(.7deg)}
+.q-row::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(-3deg);
+  width:66px;height:18px;background:color-mix(in srgb,var(--gold) 42%,transparent);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.q-row .q-text{flex:1;font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;color:var(--ink);line-height:1.45}
 .q-side{flex:0 0 auto;width:74px;text-align:center}
 .q-side .q-spine{width:40px;height:56px;border-radius:2px 4px 4px 2px;margin:0 auto;box-shadow:var(--shadow)}
 .q-side .q-bk{font-size:11px;margin-top:5px;color:var(--ink-soft);line-height:1.2}
@@ -243,8 +253,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .tape-l{left:-14px;transform:rotate(-7deg)}
 .bow{position:absolute;top:-22px;right:14px;z-index:5;transform:rotate(8deg);filter:drop-shadow(0 4px 6px rgba(0,0,0,.22))}
 .hand-note{position:absolute;z-index:5;bottom:90px;left:-10px;transform:rotate(-4deg);
-  background:var(--paper);font-family:var(--display);color:var(--ink);padding:5px 14px;border-radius:4px;
-  box-shadow:var(--shadow);font-size:18px;border:1px solid var(--line);white-space:nowrap}
+  background:var(--paper);font-family:var(--display);color:var(--ink);padding:7px 16px;border-radius:12px;
+  font-size:18px;white-space:nowrap;
+  border:3px solid #fff;outline:1px solid var(--line);
+  box-shadow:0 6px 14px -5px rgba(40,25,10,.5)}
 @media(max-width:640px){
   .bow{width:52px;top:-14px;right:6px}
   .hand-note{font-size:15px;padding:4px 10px;bottom:auto;top:-12px;left:6px}
@@ -483,7 +495,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v81 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v82 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
