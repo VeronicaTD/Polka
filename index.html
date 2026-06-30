@@ -489,14 +489,13 @@ main,footer{position:relative;z-index:1}
       <button class="dice-btn" id="quotesBtn">💬 мои цитаты</button>
       <button class="dice-btn" id="wishBtn">📌 хотелки</button>
       <button class="dice-btn" id="yearBtn" style="display:none">✨ мой книжный год</button>
-      <button class="dice-btn" id="shareBtn">📤 поделиться полкой</button>
     </div>
   </section>
 
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v84 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v85 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -992,7 +991,6 @@ main,footer{position:relative;z-index:1}
     $("#wishBtn").innerHTML = meV ? "📌 хотелки" : "📌 хотелки друга";
     $("#yearBtn").innerHTML = meV ? "✨ мой книжный год" : "✨ книжный год друга";
     $("#yearBtn").style.display = wrappedSeason() ? "" : "none";
-    $("#shareBtn").style.display = meV ? "" : "none";
     renderMyStickers();
   }
   function renderMyStickers(){
@@ -1248,7 +1246,6 @@ main,footer{position:relative;z-index:1}
     for(const w of words){ const test=line?line+" "+w:w; if(ctx.measureText(test).width>maxW && line){ ctx.fillText(line,x,yy); line=w; yy+=lh; } else line=test; }
     if(line){ ctx.fillText(line,x,yy); } return yy;
   }
-  $("#shareBtn").addEventListener("click", shareShelf);
 
   /* мои цитаты */
   function openPage(id){ $("#"+id).classList.add("open"); }
