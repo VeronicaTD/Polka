@@ -489,13 +489,14 @@ main,footer{position:relative;z-index:1}
       <button class="dice-btn" id="quotesBtn">💬 мои цитаты</button>
       <button class="dice-btn" id="wishBtn">📌 хотелки</button>
       <button class="dice-btn" id="yearBtn" style="display:none">✨ мой книжный год</button>
+      <button class="dice-btn" id="shareBtn">📤 поделиться полкой</button>
     </div>
   </section>
 
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v82 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v83 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -991,6 +992,7 @@ main,footer{position:relative;z-index:1}
     $("#wishBtn").innerHTML = meV ? "📌 хотелки" : "📌 хотелки друга";
     $("#yearBtn").innerHTML = meV ? "✨ мой книжный год" : "✨ книжный год друга";
     $("#yearBtn").style.display = wrappedSeason() ? "" : "none";
+    $("#shareBtn").style.display = meV ? "" : "none";
     renderMyStickers();
   }
   function renderMyStickers(){
@@ -1141,6 +1143,101 @@ main,footer{position:relative;z-index:1}
     const p = list[slot % list.length];
     toast("Совет почитать: «"+p.t+"» — "+p.a);
   });
+
+  /* ---- красивая карточка «поделиться полкой» (рисуем на canvas) ---- */
+  const loadImg = src => new Promise(res=>{ if(!src) return res(null); const im=new Image(); im.crossOrigin="anonymous"; im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; });
+  function rrect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function drawSpark(ctx,cx,cy,R,color,alpha){ const r=R*0.32; ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=color; ctx.beginPath();
+    for(let i=0;i<8;i++){ const rad=(i%2===0)?R:r; const a=Math.PI*i/4 - Math.PI/2; const x=cx+Math.cos(a)*rad, y=cy+Math.sin(a)*rad; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.closePath(); ctx.fill(); ctx.restore(); }
+  function gradCols(g){ const m=String(g).match(/#[0-9a-fA-F]{6}/g); return (m&&m.length>=2)?[m[0],m[1]]:[m?m[0]:"#9a8", m?m[0]:"#9a8"]; }
+  function drawBookSpine(ctx,x,y,w,h,b){
+    const cols=gradCols(spineBg(b)); const g=ctx.createLinearGradient(x,y,x+w,y); g.addColorStop(0,cols[0]); g.addColorStop(1,cols[1]);
+    rrect(ctx,x,y,w,h,7); ctx.save(); ctx.shadowColor="rgba(0,0,0,.35)"; ctx.shadowBlur=18; ctx.shadowOffsetY=8; ctx.fillStyle=g; ctx.fill(); ctx.restore();
+    const fg=pickFg(spineBg(b)); ctx.fillStyle=fg; ctx.textAlign="center"; ctx.textBaseline="middle";
+    const fs=Math.round(w*0.5); ctx.font=`600 ${fs}px Fraunces, Georgia, serif`;
+    const chars=[...(b.t||"")]; const lh=fs*1.04; let ty=y+fs*0.9+10; const limit=y+h-14;
+    for(let i=0;i<chars.length;i++){ if(ty>limit){ ctx.fillText("…",x+w/2,limit-fs*0.3); break; } ctx.fillText(chars[i],x+w/2,ty); ty+=lh; }
+  }
+  async function shareShelf(){
+    toast("Готовлю карточку…");
+    const btn=$("#shareBtn"); if(btn) btn.disabled=true;
+    try{
+      try{ await Promise.all([document.fonts.load('700 80px Fredoka'),document.fonts.load('500 40px Fredoka'),document.fonts.load('italic 400 42px Fraunces')]); }catch(e){}
+      const cs=getComputedStyle(document.body);
+      const V=k=>cs.getPropertyValue(k).trim();
+      const paper=V("--paper")||"#FFF8F1", paper2=V("--paper-2")||"#f3e7da", ink=V("--ink")||"#4a382e",
+            inkSoft=V("--ink-soft")||"#7a6253", accent=V("--accent")||"#7B5B4B", accentDeep=V("--accent-deep")||"#5e4538",
+            gold=V("--gold")||"#b8893f", wood1=V("--wood-1")||"#8a6a57", wood2=V("--wood-2")||"#5e4538",
+            star1=V("--star-1")||gold, star2=V("--star-2")||accent, line=V("--line")||"#e7d9c8";
+      const W=1080,H=1350; const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
+      // фон
+      ctx.fillStyle=paper; ctx.fillRect(0,0,W,H);
+      // звёзды
+      const stars=[[120,210,70],[960,170,96],[1000,520,54],[70,760,80],[150,1150,60],[940,1120,72],[520,1240,40],[860,820,46]];
+      stars.forEach((s,i)=>drawSpark(ctx,s[0],s[1],s[2],[star1,star2,gold][i%3],0.5));
+      // аватар-полароид
+      const px=90,py=120,ps=300;
+      ctx.save(); ctx.translate(px+ps/2,py+ps/2); ctx.rotate(-3*Math.PI/180); ctx.translate(-(px+ps/2),-(py+ps/2));
+      ctx.shadowColor="rgba(40,25,10,.35)"; ctx.shadowBlur=26; ctx.shadowOffsetY=12;
+      ctx.fillStyle="#fff"; rrect(ctx,px-14,py-14,ps+28,ps+54,10); ctx.fill(); ctx.shadowColor="transparent";
+      const photo=await loadImg(myPhoto);
+      rrect(ctx,px,py,ps,ps,6); ctx.save(); ctx.clip();
+      if(photo){ const r=Math.max(ps/photo.width,ps/photo.height); const dw=photo.width*r,dh=photo.height*r; ctx.drawImage(photo,px+(ps-dw)/2,py+(ps-dh)/2,dw,dh); }
+      else { ctx.fillStyle=accent; ctx.fillRect(px,py,ps,ps); ctx.fillStyle="#fff"; ctx.font="700 150px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText((myName[0]||"П").toUpperCase(),px+ps/2,py+ps/2+8); }
+      ctx.restore(); ctx.restore();
+      // имя
+      let ty=py+ps+120;
+      ctx.fillStyle=ink; ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.font="700 84px Fredoka, sans-serif";
+      ctx.fillText((myName||"Моя полка").slice(0,22), 90, ty);
+      // стикеры рядом с именем
+      const stImgs=(await Promise.all((myStickers||[]).slice(0,3).map(id=>{ const s=STK[id]||customStickers.find(x=>x.id===id); return loadImg(s&&s.img); }))).filter(Boolean);
+      let sx=110+ctx.measureText((myName||"Моя полка").slice(0,22)).width+30;
+      stImgs.forEach(im=>{ ctx.drawImage(im,sx,ty-72,76,76); sx+=84; });
+      // цитата
+      ty+=70; ctx.fillStyle=inkSoft; ctx.font="italic 400 42px Fraunces, Georgia, serif";
+      const q=(myQuote||"").trim(); if(q){ ty=wrapText(ctx,"«"+q+"»",90,ty,W-180,54)+20; }
+      // сейчас читаю
+      if((myReading||"").trim()){ ctx.fillStyle=ink; ctx.font="500 38px Fredoka, sans-serif";
+        ty=wrapText(ctx,"📖 сейчас читаю: "+myReading.trim(),90,ty+10,W-180,50)+10; }
+      // полка с 3 любимыми книгами
+      const favs=myBooks.filter(isFav); const pick=(favs.length?favs:myBooks).slice(0,3);
+      const shelfY=H-330, shelfX=90, shelfW=W-180;
+      // деревянная планка
+      const wg=ctx.createLinearGradient(0,shelfY-200,0,shelfY+40); wg.addColorStop(0,wood1); wg.addColorStop(1,wood2);
+      rrect(ctx,shelfX,shelfY-210,shelfW,250,16); ctx.fillStyle=wg; ctx.fill();
+      ctx.fillStyle="rgba(0,0,0,.35)"; rrect(ctx,shelfX,shelfY+18,shelfW,20,5); ctx.fill();
+      // книги
+      if(pick.length){
+        const bw=150, gap=46, total=pick.length*bw+(pick.length-1)*gap, startX=shelfX+(shelfW-total)/2;
+        pick.forEach((b,i)=>{ const bh=170+(i%2)*26; drawBookSpine(ctx,startX+i*(bw+gap),shelfY+8-bh,bw,bh,b); });
+      } else {
+        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="italic 36px Fraunces, serif"; ctx.textAlign="center"; ctx.fillText("полка только начинается ✨",W/2,shelfY-90); ctx.textAlign="left";
+      }
+      // подпись-бренд
+      ctx.textAlign="center"; ctx.fillStyle=accentDeep; ctx.font="700 50px Fredoka, sans-serif"; ctx.fillText("📚 Polka",W/2,H-58);
+      ctx.fillStyle=inkSoft; ctx.font="400 30px Fredoka, sans-serif"; ctx.fillText("собери свою книжную полку",W/2,H-22);
+      // отдать картинку
+      cv.toBlob(async (blob)=>{
+        if(!blob){ toast("Не получилось создать картинку"); return; }
+        const file=new File([blob],"polka-polka.png",{type:"image/png"});
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          try{ await navigator.share({files:[file], title:"Моя полка в Polka", text:"Моя книжная полка 📚"}); }
+          catch(e){ /* отменили — ничего */ }
+        } else {
+          const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="polka.png"; document.body.appendChild(a); a.click(); a.remove();
+          toast("Карточка сохранена 🤍");
+        }
+      },"image/png");
+    }catch(e){ toast("Ошибка: "+(e.message||e)); }
+    finally{ if(btn) btn.disabled=false; }
+  }
+  function wrapText(ctx,text,x,y,maxW,lh){
+    const words=String(text).split(/\s+/); let line="", yy=y;
+    for(const w of words){ const test=line?line+" "+w:w; if(ctx.measureText(test).width>maxW && line){ ctx.fillText(line,x,yy); line=w; yy+=lh; } else line=test; }
+    if(line){ ctx.fillText(line,x,yy); } return yy;
+  }
+  $("#shareBtn").addEventListener("click", shareShelf);
 
   /* мои цитаты */
   function openPage(id){ $("#"+id).classList.add("open"); }
