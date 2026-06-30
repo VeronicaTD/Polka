@@ -496,7 +496,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v83 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v84 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1154,10 +1154,17 @@ main,footer{position:relative;z-index:1}
   function drawBookSpine(ctx,x,y,w,h,b){
     const cols=gradCols(spineBg(b)); const g=ctx.createLinearGradient(x,y,x+w,y); g.addColorStop(0,cols[0]); g.addColorStop(1,cols[1]);
     rrect(ctx,x,y,w,h,7); ctx.save(); ctx.shadowColor="rgba(0,0,0,.35)"; ctx.shadowBlur=18; ctx.shadowOffsetY=8; ctx.fillStyle=g; ctx.fill(); ctx.restore();
-    const fg=pickFg(spineBg(b)); ctx.fillStyle=fg; ctx.textAlign="center"; ctx.textBaseline="middle";
-    const fs=Math.round(w*0.5); ctx.font=`600 ${fs}px Fraunces, Georgia, serif`;
-    const chars=[...(b.t||"")]; const lh=fs*1.04; let ty=y+fs*0.9+10; const limit=y+h-14;
-    for(let i=0;i<chars.length;i++){ if(ty>limit){ ctx.fillText("…",x+w/2,limit-fs*0.3); break; } ctx.fillText(chars[i],x+w/2,ty); ty+=lh; }
+    const fg=pickFg(spineBg(b)); ctx.fillStyle=fg; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+    const title=(b.t||"").trim(); const chars=[...title]; const len=Math.max(1,chars.length);
+    const padTop=26, padBot=22;
+    let fs=Math.min(Math.round(w*0.34), Math.floor((h-padTop-padBot)/(len*1.02)));  // шрифт подгоняется под высоту
+    fs=Math.max(13, fs);
+    ctx.font=`600 ${fs}px Fraunces, Georgia, serif`;
+    const lh=fs*1.04;
+    const fitN=Math.max(1,Math.floor((h-padTop-padBot)/lh));
+    const show=chars.slice(0,fitN);
+    let ty=y+padTop+fs*0.8;
+    for(let i=0;i<show.length;i++){ const ch=(i===show.length-1 && show.length<chars.length)?"…":show[i]; ctx.fillText(ch,x+w/2,ty); ty+=lh; }
   }
   async function shareShelf(){
     toast("Готовлю карточку…");
@@ -1194,26 +1201,30 @@ main,footer{position:relative;z-index:1}
       const stImgs=(await Promise.all((myStickers||[]).slice(0,3).map(id=>{ const s=STK[id]||customStickers.find(x=>x.id===id); return loadImg(s&&s.img); }))).filter(Boolean);
       let sx=110+ctx.measureText((myName||"Моя полка").slice(0,22)).width+30;
       stImgs.forEach(im=>{ ctx.drawImage(im,sx,ty-72,76,76); sx+=84; });
-      // цитата
-      ty+=70; ctx.fillStyle=inkSoft; ctx.font="italic 400 42px Fraunces, Georgia, serif";
-      const q=(myQuote||"").trim(); if(q){ ty=wrapText(ctx,"«"+q+"»",90,ty,W-180,54)+20; }
+      // цитата (убираем уже имеющиеся кавычки, ставим одни)
+      ty+=66; ctx.fillStyle=inkSoft; ctx.font="italic 400 42px Fraunces, Georgia, serif";
+      const q=(myQuote||"").trim().replace(/^[«»"'`\s]+|[«»"'`\s]+$/g,"");
+      if(q){ ty=wrapText(ctx,"«"+q+"»",90,ty,W-180,54)+18; }
       // сейчас читаю
       if((myReading||"").trim()){ ctx.fillStyle=ink; ctx.font="500 38px Fredoka, sans-serif";
         ty=wrapText(ctx,"📖 сейчас читаю: "+myReading.trim(),90,ty+10,W-180,50)+10; }
       // полка с 3 любимыми книгами
       const favs=myBooks.filter(isFav); const pick=(favs.length?favs:myBooks).slice(0,3);
-      const shelfY=H-330, shelfX=90, shelfW=W-180;
-      // деревянная планка
-      const wg=ctx.createLinearGradient(0,shelfY-200,0,shelfY+40); wg.addColorStop(0,wood1); wg.addColorStop(1,wood2);
-      rrect(ctx,shelfX,shelfY-210,shelfW,250,16); ctx.fillStyle=wg; ctx.fill();
-      ctx.fillStyle="rgba(0,0,0,.35)"; rrect(ctx,shelfX,shelfY+18,shelfW,20,5); ctx.fill();
-      // книги
+      const shelfX=90, shelfW=W-180, boxTop=H-420, boxBottom=H-150;
+      // задняя стенка-полка (дерево темы)
+      const wg=ctx.createLinearGradient(0,boxTop,0,boxBottom); wg.addColorStop(0,wood1); wg.addColorStop(1,wood2);
+      ctx.save(); ctx.shadowColor="rgba(40,25,10,.3)"; ctx.shadowBlur=24; ctx.shadowOffsetY=10; rrect(ctx,shelfX,boxTop,shelfW,boxBottom-boxTop,18); ctx.fillStyle=wg; ctx.fill(); ctx.restore();
+      ctx.fillStyle="rgba(0,0,0,.1)"; rrect(ctx,shelfX,boxTop,shelfW,42,18); ctx.fill();
+      const standY=boxBottom-26;   // верх нижней планки, на ней стоят книги
       if(pick.length){
-        const bw=150, gap=46, total=pick.length*bw+(pick.length-1)*gap, startX=shelfX+(shelfW-total)/2;
-        pick.forEach((b,i)=>{ const bh=170+(i%2)*26; drawBookSpine(ctx,startX+i*(bw+gap),shelfY+8-bh,bw,bh,b); });
+        const bw=120, gap=40, total=pick.length*bw+(pick.length-1)*gap, startX=shelfX+(shelfW-total)/2;
+        pick.forEach((b,i)=>{ const bh=200+(i%2)*26; drawBookSpine(ctx,startX+i*(bw+gap),standY-bh,bw,bh,b); });
       } else {
-        ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font="italic 36px Fraunces, serif"; ctx.textAlign="center"; ctx.fillText("полка только начинается ✨",W/2,shelfY-90); ctx.textAlign="left";
+        ctx.fillStyle="rgba(255,255,255,.78)"; ctx.font="italic 40px Fraunces, serif"; ctx.textAlign="center"; ctx.fillText("полка только начинается ✨",W/2,(boxTop+boxBottom)/2); ctx.textAlign="left";
       }
+      // нижняя планка
+      const pg=ctx.createLinearGradient(0,standY,0,boxBottom); pg.addColorStop(0,"rgba(0,0,0,.28)"); pg.addColorStop(1,"rgba(0,0,0,.5)");
+      rrect(ctx,shelfX,standY,shelfW,boxBottom-standY,6); ctx.fillStyle=pg; ctx.fill();
       // подпись-бренд
       ctx.textAlign="center"; ctx.fillStyle=accentDeep; ctx.font="700 50px Fredoka, sans-serif"; ctx.fillText("📚 Polka",W/2,H-58);
       ctx.fillStyle=inkSoft; ctx.font="400 30px Fredoka, sans-serif"; ctx.fillText("собери свою книжную полку",W/2,H-22);
