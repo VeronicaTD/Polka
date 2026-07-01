@@ -506,7 +506,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v90 test: Читать (Литрес+Букмейт), в т.ч. в хотелках --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v91 test: Букмейт → books.yandex.ru --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1415,7 +1415,7 @@ main,footer{position:relative;z-index:1}
     $("#waAuthor").textContent = w.a || "";
     const bq = encodeURIComponent(w.t + " " + (w.a||""));
     $("#waLitres").href = "https://www.litres.ru/search/?q=" + bq;
-    $("#waBookmate").href = "https://bookmate.ru/search?query=" + bq;
+    $("#waBookmate").href = "https://books.yandex.ru/search?query=" + bq;
     $("#waBack").classList.add("open"); $("#wishActModal").classList.add("open");
   }
   function closeWishAct(){ $("#waBack").classList.remove("open"); $("#wishActModal").classList.remove("open"); }
@@ -1484,7 +1484,7 @@ main,footer{position:relative;z-index:1}
     $("#infoMeta").textContent = `${b.a} · ${b.g}`;
     const bq = encodeURIComponent(b.t + " " + (b.a||""));
     $("#readLitres").href = "https://www.litres.ru/search/?q=" + bq;
-    $("#readBookmate").href = "https://bookmate.ru/search?query=" + bq;
+    $("#readBookmate").href = "https://books.yandex.ru/search?query=" + bq;
     if(isMe()){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
