@@ -373,6 +373,10 @@ main,footer{position:relative;z-index:1}
 .bookinfo .big-spine{width:70px;height:170px;border-radius:3px 6px 6px 3px;flex-shrink:0;box-shadow:var(--shadow)}
 .bookinfo .meta{color:var(--ink-soft);font-size:14px;margin:4px 0 10px}
 .bookinfo .note{background:var(--paper-2);border-radius:10px;padding:12px 14px;font-size:14.5px;font-style:italic;color:var(--ink);margin-top:4px}
+#infoComment,#infoQuotes{margin-top:14px}
+.ir-label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.ir-quote{background:var(--paper-2);border-left:3px solid var(--accent);border-radius:6px;padding:10px 14px;margin-bottom:8px;
+  font-family:"Fraunces",serif;font-style:italic;font-size:15px;color:var(--ink);line-height:1.4}
 .bookinfo .del{margin-top:18px;background:none;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--ink-soft)}
 .bookinfo .del:hover{border-color:#a23b2a;color:#a23b2a}
 
@@ -495,7 +499,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v85 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v86 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -546,7 +550,8 @@ main,footer{position:relative;z-index:1}
 
       <div id="infoRead">
         <div class="stars" id="infoStars"></div>
-        <div class="note" id="infoNote"></div>
+        <div id="infoComment"></div>
+        <div id="infoQuotes"></div>
       </div>
     </div>
   </div>
@@ -920,9 +925,14 @@ main,footer{position:relative;z-index:1}
   // цитаты книги — всегда массив (поддержка старого формата, где была одна строка)
   const quotesOf = b => Array.isArray(b.qt) ? b.qt.filter(Boolean) : (b.qt ? [b.qt] : []);
   function quoteRow(q){ return `<div class="q-edit"><textarea class="q-input" placeholder="строчка, которую захотелось сохранить...">${esc(q||"")}</textarea><button type="button" class="q-del" title="убрать">×</button></div>`; }
+  // окошки растут по мере текста
+  function autoGrow(ta){ if(!ta) return; ta.style.height="auto"; ta.style.height=Math.min(ta.scrollHeight+2, 460)+"px"; }
+  function growAll(sel){ document.querySelectorAll(sel).forEach(autoGrow); }
+  document.addEventListener("input", e=>{ if(e.target && e.target.tagName==="TEXTAREA") autoGrow(e.target); });
   function renderQuoteEditor(containerId, quotes){
     const list = (quotes && quotes.length) ? quotes : [""];
     $("#"+containerId).innerHTML = list.map(q=>quoteRow(q)).join("");
+    growAll("#"+containerId+" textarea");
   }
   function collectQuotes(containerId){
     return [...$("#"+containerId).querySelectorAll(".q-input")].map(t=>t.value.trim()).filter(Boolean);
@@ -1411,7 +1421,7 @@ main,footer{position:relative;z-index:1}
   let pendingWish = null;
   function openAdd(pre){
     if(!requirePaid()) return;
-    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; $("#fNote").value=""; renderQuoteEditor("fQuotes", []);
+    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; $("#fNote").value=""; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
     selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
@@ -1441,16 +1451,18 @@ main,footer{position:relative;z-index:1}
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
-      $("#iNote").value = b.note||""; renderQuoteEditor("iQuotes", quotesOf(b));
+      $("#iNote").value = b.note||""; renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
       $("#infoStars").textContent = (b.r? starsStr(b.r):"") + (isFav(b)?"  ♥":"");
-      const note=$("#infoNote");
-      const parts = [];
-      quotesOf(b).forEach(q=> parts.push(`<div style="font-style:italic;margin-bottom:4px">«${esc(q)}»</div>`));
-      if(b.note) parts.push(`<div style="margin-top:6px">${esc(b.note)}</div>`);
-      if(parts.length){ note.style.display=""; note.innerHTML = parts.join(""); } else note.style.display="none";
+      // комментарий и цитаты — раздельно
+      const cmt=$("#infoComment");
+      if((b.note||"").trim()){ cmt.style.display=""; cmt.innerHTML = `<div class="ir-label">Комментарий</div><div class="note">${esc(b.note)}</div>`; }
+      else cmt.style.display="none";
+      const qs=quotesOf(b), qb=$("#infoQuotes");
+      if(qs.length){ qb.style.display=""; qb.innerHTML = `<div class="ir-label">Любимые цитаты</div>` + qs.map(q=>`<div class="ir-quote">«${esc(q)}»</div>`).join(""); }
+      else qb.style.display="none";
     }
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
@@ -1472,7 +1484,7 @@ main,footer{position:relative;z-index:1}
   const profileModal = $("#profileModal"); let tempPhoto="";
   function paintPhoto(){ const p=$("#photoPrev"); if(tempPhoto){ p.style.backgroundImage=`url(${tempPhoto})`; p.textContent=""; } else { p.style.backgroundImage="none"; p.textContent=(myName[0]||"М"); } }
   function openProfile(){
-    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pReadingInput").value=myReading; tempPhoto=myPhoto; paintPhoto();
+    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pReadingInput").value=myReading; tempPhoto=myPhoto; paintPhoto(); growAll("#profileModal textarea");
     $("#myCode").value = myShareCode();
     $("#myLink").value = loginLink();
     overlay.classList.add("open"); profileModal.classList.add("open");
