@@ -513,7 +513,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v87 test: поиск книг + ссылка Читать --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v88 test: поиск книг (OpenLibrary) + ссылка Читать --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1445,12 +1445,14 @@ main,footer{position:relative;z-index:1}
   }
   async function searchBooks(q){
     try{
-      const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=6&printType=books&orderBy=relevance`);
+      // OpenLibrary — открытая база, без ключей и лимитов, есть русские книги
+      const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=8&fields=title,author_name,cover_i`);
       if(!r.ok) return hideSuggest();
       const d = await r.json();
-      const items = (d.items||[]).map(it=>{ const v=it.volumeInfo||{}; const img=v.imageLinks||{};
-        return { t:v.title||"", a:(v.authors&&v.authors[0])||"", cover:(img.thumbnail||img.smallThumbnail||"").replace(/^http:/,"https:") }; }).filter(x=>x.t);
-      showSuggest(items);
+      const seen = new Set(); const items = [];
+      (d.docs||[]).forEach(v=>{ const t=(v.title||"").trim(); if(!t) return; const k=t.toLowerCase(); if(seen.has(k)) return; seen.add(k);
+        items.push({ t, a:(v.author_name&&v.author_name[0])||"", cover:v.cover_i?`https://covers.openlibrary.org/b/id/${v.cover_i}-S.jpg`:"" }); });
+      showSuggest(items.slice(0,6));
     }catch(e){ hideSuggest(); }
   }
   $("#fTitle").addEventListener("input", ()=>{
