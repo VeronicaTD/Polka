@@ -221,6 +221,13 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .q-edit textarea{flex:1;margin:0}
 .q-del{flex:none;width:30px;height:30px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);border-radius:50%;font-size:18px;line-height:1;cursor:pointer;margin-top:4px}
 .add-quote{display:inline-block;margin-top:8px}
+.wa-back{display:none;position:fixed;inset:0;z-index:150;background:rgba(20,10,5,.45)}
+.wa-back.open{display:block}
+.wa-modal{z-index:151}
+.read-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.read-link{display:inline-block;font-size:13px;font-weight:700;color:var(--accent-deep);
+  text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 15px;background:var(--paper-2)}
+.read-link:hover{border-color:var(--accent);color:var(--accent)}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
 .fp-head{position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);
@@ -499,7 +506,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v86 --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v92 test: Букмейт копирует название в буфер --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -533,6 +540,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
+      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -641,7 +649,7 @@ main,footer{position:relative;z-index:1}
 <div class="fullpage" id="wishPage" aria-label="Хотелки">
   <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
   <div class="fp-body">
-    <p class="mp" id="wishSub">То, что хочется прочитать. Прочитали — нажмите на книгу, чтобы поставить на полку.</p>
+    <p class="mp" id="wishSub">То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку.</p>
     <div class="wish-stack" id="wishStack"></div>
     <div class="field" id="wishAddForm" style="margin-top:20px;max-width:440px"><label>Добавить в хотелки</label>
       <input id="wishTitle" placeholder="название" />
@@ -649,6 +657,17 @@ main,footer{position:relative;z-index:1}
       <button class="btn" id="wishAddBtn" style="margin-top:10px">Добавить</button>
     </div>
   </div>
+</div>
+
+<!-- выбор действия для книги из хотелок -->
+<div id="waBack" class="wa-back"></div>
+<div class="modal wa-modal" id="wishActModal" role="dialog" aria-modal="true">
+  <button class="close" id="waClose">×</button>
+  <h3 id="waTitle" style="margin-bottom:2px"></h3>
+  <p class="mp" id="waAuthor" style="margin-top:0"></p>
+  <button class="btn" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Прочитала — поставить на полку</button>
+  <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
+  <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
 </div>
 
 <!-- мой книжный год — истории как в Spotify Wrapped -->
@@ -1298,7 +1317,7 @@ main,footer{position:relative;z-index:1}
   $("#wishBtn").addEventListener("click", ()=>{
     const me = isMe(), fn = me ? "" : friend().name;
     $("#wishTitleH").textContent = me ? "Книжные хотелки 📌" : `Хотелки · ${fn} 📌`;
-    $("#wishSub").textContent = me ? "То, что хочется прочитать. Прочитали — нажмите на книгу, чтобы поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
+    $("#wishSub").textContent = me ? "То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
     $("#wishAddForm").style.display = me ? "" : "none";
     $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish();
   });
@@ -1386,8 +1405,30 @@ main,footer{position:relative;z-index:1}
     if(del){ myWishlist.splice(+del.dataset.del,1); saveWish(); renderWish(); return; }
     const el = e.target.closest(".wish-spine"); if(!el) return;
     const i=+el.dataset.i, w=myWishlist[i]; if(!w) return;
-    closeModals(); pendingWish=i; openAdd({t:w.t, a:w.a});
+    openWishAct(i, w);
   });
+  // окошко выбора для книги из хотелок
+  let waIdx = null, waBook = null;
+  function openWishAct(i, w){
+    waIdx = i; waBook = w;
+    $("#waTitle").textContent = w.t;
+    $("#waAuthor").textContent = w.a || "";
+    const bq = encodeURIComponent(w.t + " " + (w.a||""));
+    $("#waLitres").href = "https://www.litres.ru/search/?q=" + bq;
+    $("#waBookmate").href = "https://books.yandex.ru/search?query=" + bq;
+    $("#waBack").classList.add("open"); $("#wishActModal").classList.add("open");
+  }
+  function closeWishAct(){ $("#waBack").classList.remove("open"); $("#wishActModal").classList.remove("open"); }
+  $("#waClose").addEventListener("click", closeWishAct);
+  $("#waBack").addEventListener("click", closeWishAct);
+  $("#waShelf").addEventListener("click", ()=>{
+    const i=waIdx, w=waBook; closeWishAct(); closeModals();
+    if(w){ pendingWish=i; openAdd({t:w.t, a:w.a}); }
+  });
+  // Букмейт открывает приложение на главной — копируем название, чтобы вставить в поиск
+  function copyForSearch(t){ try{ if(navigator.clipboard && t) navigator.clipboard.writeText(t); toast("Название скопировано — вставьте в поиск 📋"); }catch(e){} }
+  $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
+  $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
 
   /* свайп */
   let sx=null;
@@ -1445,6 +1486,9 @@ main,footer{position:relative;z-index:1}
     const b = currentList()[i]; if(!b) return; infoBook=b;
     $("#infoTitle").textContent = b.t;
     $("#infoMeta").textContent = `${b.a} · ${b.g}`;
+    const bq = encodeURIComponent(b.t + " " + (b.a||""));
+    $("#readLitres").href = "https://www.litres.ru/search/?q=" + bq;
+    $("#readBookmate").href = "https://books.yandex.ru/search?query=" + bq;
     if(isMe()){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
@@ -1616,7 +1660,7 @@ main,footer{position:relative;z-index:1}
 
   /* ---- закрытие модалок ---- */
   function welcomeLocked(){ return $("#welModal").classList.contains("open") && !localStorage.getItem("polka_registered"); }
-  function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".modal.open, .fullpage.open").forEach(m=>m.classList.remove("open")); }
+  function closeModals(){ overlay.classList.remove("open"); const wb=$("#waBack"); if(wb) wb.classList.remove("open"); document.querySelectorAll(".modal.open, .fullpage.open").forEach(m=>m.classList.remove("open")); }
   overlay.addEventListener("click", ()=>{ if(welcomeLocked()) return; closeModals(); });
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", closeModals));
   document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !welcomeLocked()) closeModals(); });
