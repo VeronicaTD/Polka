@@ -221,19 +221,9 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .q-edit textarea{flex:1;margin:0}
 .q-del{flex:none;width:30px;height:30px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);border-radius:50%;font-size:18px;line-height:1;cursor:pointer;margin-top:4px}
 .add-quote{display:inline-block;margin-top:8px}
-.suggest{display:none;position:absolute;left:0;right:0;top:100%;margin-top:6px;z-index:20;
-  background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 28px -10px rgba(40,25,10,.5);
-  overflow:hidden;max-height:300px;overflow-y:auto}
-.sug-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:none;background:transparent;
-  padding:8px 12px;cursor:pointer;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
-.sug-item:last-child{border-bottom:none}
-.sug-item:hover{background:var(--paper-2)}
-.sug-item img{width:34px;height:48px;object-fit:cover;border-radius:3px;flex:0 0 auto;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.sug-item .sug-noimg{width:34px;height:48px;display:grid;place-items:center;background:var(--paper-2);border-radius:3px;flex:0 0 auto;font-size:16px}
-.sug-item .sug-txt{font-size:13px;color:var(--ink-soft);line-height:1.25;overflow:hidden}
-.sug-item .sug-txt b{display:block;color:var(--ink);font-weight:600;font-size:14px}
-.read-link{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:var(--accent-deep);
-  text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 14px;background:var(--paper-2)}
+.read-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.read-link{display:inline-block;font-size:13px;font-weight:700;color:var(--accent-deep);
+  text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 15px;background:var(--paper-2)}
 .read-link:hover{border-color:var(--accent);color:var(--accent)}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
@@ -513,7 +503,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v88 test: поиск книг (OpenLibrary) + ссылка Читать --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v89 test: Читать на Литрес + Букмейт --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -526,7 +516,7 @@ main,footer{position:relative;z-index:1}
     <div class="big-spine" id="prevSpine" style="width:46px;height:120px;border-radius:2px 4px 4px 2px"></div>
     <div class="pl">Так будет выглядеть корешок.<br>Выберите цвет ниже.</div>
   </div>
-  <div class="field" style="position:relative"><label>Название</label><input id="fTitle" placeholder="начните вводить — подскажем 🔎" autocomplete="off" /><div id="fSuggest" class="suggest"></div></div>
+  <div class="field"><label>Название</label><input id="fTitle" placeholder="например, Над пропастью во ржи" /></div>
   <div class="field"><label>Автор</label><input id="fAuthor" placeholder="например, Дж. Сэлинджер" /></div>
   <div class="field"><label>Жанр</label>
     <select id="fGenre"><option>Проза</option><option>Фантастика</option><option>Нон-фикшн</option><option>Поэзия</option><option>Детектив</option><option>Классика</option></select>
@@ -547,7 +537,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <a id="readLink" class="read-link" target="_blank" rel="noopener">📖 Читать на Литрес</a>
+      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -1434,44 +1424,10 @@ main,footer{position:relative;z-index:1}
   $("#fFav").addEventListener("click", ()=>{ favNew=!favNew; paintFav(); });
   $("#fRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; rateNew=+b.dataset.r; paintRate($("#fRate"),rateNew); });
   let pendingWish = null;
-  /* ---- поиск книг (Google Books) — подсказки при вводе названия ---- */
-  const fSuggest = $("#fSuggest"); let sugTimer=null, sugItems=[];
-  function hideSuggest(){ fSuggest.style.display="none"; fSuggest.innerHTML=""; sugItems=[]; }
-  function showSuggest(items){
-    sugItems=items;
-    if(!items.length){ hideSuggest(); return; }
-    fSuggest.innerHTML = items.map((x,i)=>`<button type="button" class="sug-item" data-i="${i}">${x.cover?`<img src="${esc(x.cover)}" alt="" onerror="this.remove()">`:`<span class="sug-noimg">📖</span>`}<span class="sug-txt"><b>${esc(x.t)}</b>${esc(x.a||"неизвестный автор")}</span></button>`).join("");
-    fSuggest.style.display="block";
-  }
-  async function searchBooks(q){
-    try{
-      // OpenLibrary — открытая база, без ключей и лимитов, есть русские книги
-      const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=8&fields=title,author_name,cover_i`);
-      if(!r.ok) return hideSuggest();
-      const d = await r.json();
-      const seen = new Set(); const items = [];
-      (d.docs||[]).forEach(v=>{ const t=(v.title||"").trim(); if(!t) return; const k=t.toLowerCase(); if(seen.has(k)) return; seen.add(k);
-        items.push({ t, a:(v.author_name&&v.author_name[0])||"", cover:v.cover_i?`https://covers.openlibrary.org/b/id/${v.cover_i}-S.jpg`:"" }); });
-      showSuggest(items.slice(0,6));
-    }catch(e){ hideSuggest(); }
-  }
-  $("#fTitle").addEventListener("input", ()=>{
-    const q=$("#fTitle").value.trim(); clearTimeout(sugTimer);
-    if(q.length<3){ hideSuggest(); return; }
-    sugTimer=setTimeout(()=>searchBooks(q), 350);
-  });
-  fSuggest.addEventListener("click", e=>{
-    const btn=e.target.closest(".sug-item"); if(!btn) return;
-    const x=sugItems[+btn.dataset.i]; if(!x) return;
-    $("#fTitle").value=x.t; if(x.a) $("#fAuthor").value=x.a;
-    hideSuggest(); $("#fAuthor").focus();
-  });
-  document.addEventListener("click", e=>{ if(!e.target.closest("#fSuggest") && e.target!==$("#fTitle")) hideSuggest(); });
-
   function openAdd(pre){
     if(!requirePaid()) return;
     $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; $("#fNote").value=""; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
-    selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0); hideSuggest();
+    selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
   $("#saveBook").addEventListener("click", ()=>{
@@ -1494,7 +1450,9 @@ main,footer{position:relative;z-index:1}
     const b = currentList()[i]; if(!b) return; infoBook=b;
     $("#infoTitle").textContent = b.t;
     $("#infoMeta").textContent = `${b.a} · ${b.g}`;
-    $("#readLink").href = "https://www.litres.ru/pages/biblio_search/?q=" + encodeURIComponent(b.t + " " + (b.a||""));
+    const bq = encodeURIComponent(b.t + " " + (b.a||""));
+    $("#readLitres").href = "https://www.litres.ru/pages/biblio_search/?q=" + bq;
+    $("#readBookmate").href = "https://bookmate.com/search?query=" + bq;
     if(isMe()){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
