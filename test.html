@@ -506,7 +506,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v91 test: Букмейт → books.yandex.ru --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v92 test: Букмейт копирует название в буфер --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1425,6 +1425,10 @@ main,footer{position:relative;z-index:1}
     const i=waIdx, w=waBook; closeWishAct(); closeModals();
     if(w){ pendingWish=i; openAdd({t:w.t, a:w.a}); }
   });
+  // Букмейт открывает приложение на главной — копируем название, чтобы вставить в поиск
+  function copyForSearch(t){ try{ if(navigator.clipboard && t) navigator.clipboard.writeText(t); toast("Название скопировано — вставьте в поиск 📋"); }catch(e){} }
+  $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
+  $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
 
   /* свайп */
   let sx=null;
