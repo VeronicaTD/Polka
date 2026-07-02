@@ -253,9 +253,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:6px;line-height:1.2;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cat-book .cat-a{font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.2}
-.cat-wishbtn{margin-top:7px;border:1px solid var(--line);background:var(--paper-2);color:var(--accent-deep);
-  border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer}
-.cat-wishbtn:hover{border-color:var(--accent);color:var(--accent)}
+.cat-acts{display:flex;flex-direction:column;gap:5px;margin-top:7px;align-items:stretch}
+.cat-mini{border:1px solid var(--line);background:var(--paper-2);color:var(--accent-deep);text-decoration:none;
+  border-radius:999px;padding:5px 8px;font-size:11.5px;font-weight:700;cursor:pointer;text-align:center;display:block}
+.cat-mini:hover{border-color:var(--accent);color:var(--accent)}
 .cat-arrow{display:none;position:absolute;top:60px;z-index:3;width:38px;height:38px;border-radius:50%;
   border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;
   box-shadow:0 4px 12px -4px rgba(40,25,10,.5);align-items:center;justify-content:center}
@@ -564,7 +565,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v95 test: меню=мои, кнопки друга внизу, обложки+описание, без рецензий --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v96 test: обложки (q=), кнопки Литрес/Букмейт под книгой --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1594,25 +1595,37 @@ main,footer{position:relative;z-index:1}
       `<div class="cat-genre">${esc(genre)}</div>
        <div class="cat-scroll"><button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>
        <div class="cat-row">` +
-      books.map((b,i)=>{ const bg=COLORS[i%COLORS.length];
+      books.map((b,i)=>{ const bg=COLORS[i%COLORS.length]; const bq=encodeURIComponent(b.t+" "+b.a);
         return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
-          <div class="cat-cover" style="background:${bg};color:${pickFg(bg)}"><span class="cat-ph">${esc(b.t)}</span><img class="cat-img" data-k="${esc(bookKey(b.t,b.a))}" alt="" onload="this.classList.add('loaded')" onerror="this.remove()"></div>
-          <div class="cat-t">${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
-          <button class="cat-wishbtn" data-wish>📌 в хотелки</button></div>`;
+          <div class="cat-cover" data-open style="background:${bg};color:${pickFg(bg)}"><span class="cat-ph">${esc(b.t)}</span><img class="cat-img" data-k="${esc(bookKey(b.t,b.a))}" alt="" onload="this.classList.add('loaded')" onerror="this.remove()"></div>
+          <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+          <div class="cat-acts">
+            <button class="cat-mini" data-wish title="в хотелки">📌 хотелки</button>
+            <a class="cat-mini" data-litres href="https://www.litres.ru/search/?q=${bq}" target="_blank" rel="noopener">📖 Литрес</a>
+            <a class="cat-mini" data-bookmate href="https://books.yandex.ru/search?query=${bq}" target="_blank" rel="noopener">📗 Букмейт</a>
+          </div></div>`;
       }).join("") + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div>`
     ).join("");
     fetchCovers();
   }
   function applyCover(k,url){ if(!url) return; document.querySelectorAll(".cat-img").forEach(im=>{ if(im.dataset.k===k && !im.src) im.src=url; }); }
   function fetchCovers(){
-    const seen=new Set();
-    Object.values(CATALOG).forEach(arr=>arr.forEach(b=>{
-      const k=bookKey(b.t,b.a); if(seen.has(k)) return; seen.add(k);
-      if(coverCache[k]!==undefined){ applyCover(k, coverCache[k]); return; }
-      fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(b.t)}&author=${encodeURIComponent(b.a)}&limit=1&fields=cover_i`)
-        .then(r=>r.json()).then(d=>{ const ci=d.docs&&d.docs[0]&&d.docs[0].cover_i; const url=ci?`https://covers.openlibrary.org/b/id/${ci}-M.jpg`:""; coverCache[k]=url; applyCover(k,url); })
-        .catch(()=>{ coverCache[k]=""; });
-    }));
+    const jobs=[]; const seen=new Set();
+    Object.values(CATALOG).forEach(arr=>arr.forEach(b=>{ const k=bookKey(b.t,b.a); if(seen.has(k)) return; seen.add(k); jobs.push(b); }));
+    let idx=0, active=0;
+    function next(){
+      while(active<4 && idx<jobs.length){
+        const b=jobs[idx++], k=bookKey(b.t,b.a);
+        if(coverCache[k]!==undefined){ applyCover(k, coverCache[k]); continue; }
+        active++;
+        fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(b.t+" "+b.a)}&limit=1&fields=cover_i`)
+          .then(r=> r.ok ? r.json() : null)
+          .then(d=>{ const ci=d&&d.docs&&d.docs[0]&&d.docs[0].cover_i; const url=ci?`https://covers.openlibrary.org/b/id/${ci}-M.jpg`:""; coverCache[k]=url; applyCover(k,url); })
+          .catch(()=>{ coverCache[k]=""; })
+          .finally(()=>{ active--; next(); });
+      }
+    }
+    next();
   }
   function addCatToWish(t,a){
     if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
@@ -1625,7 +1638,9 @@ main,footer{position:relative;z-index:1}
     if(ar){ const row=ar.parentElement.querySelector(".cat-row"); if(row) row.scrollBy({left:(+ar.dataset.dir)*row.clientWidth*0.8, behavior:"smooth"}); return; }
     const c=e.target.closest(".cat-book"); if(!c) return;
     if(e.target.closest("[data-wish]")){ addCatToWish(c.dataset.t, c.dataset.a); return; }
-    openCatBook(c.dataset.t, c.dataset.a);
+    if(e.target.closest("[data-bookmate]")){ copyForSearch(c.dataset.t); return; }   // ссылка откроется сама, название скопируется
+    if(e.target.closest("[data-litres]")) return;                                     // ссылка откроется сама
+    if(e.target.closest("[data-open]")){ openCatBook(c.dataset.t, c.dataset.a); return; }
   });
 
   let cbBook=null;
@@ -1645,7 +1660,7 @@ main,footer{position:relative;z-index:1}
   }
   async function loadAnnotation(t,a){
     try{
-      const r=await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(t)}&author=${encodeURIComponent(a)}&limit=1&fields=key`);
+      const r=await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(t+" "+a)}&limit=1&fields=key`);
       const d=await r.json(); const key=d.docs&&d.docs[0]&&d.docs[0].key;
       if(cbBook && bookKey(cbBook.t,cbBook.a)!==bookKey(t,a)) return;
       if(!key){ $("#cbAnno").innerHTML=""; return; }
