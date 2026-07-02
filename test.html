@@ -75,14 +75,26 @@ button{font-family:inherit;cursor:pointer}
 header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper) 60%,transparent);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
-.bar{display:flex;align-items:center;gap:14px;height:64px}
-.brand{display:flex;align-items:center;gap:9px}
+.bar{display:flex;align-items:center;gap:10px;height:64px}
+.bar-side{flex:1 1 0;display:flex;align-items:center;min-width:0}
+.bar-side.right{justify-content:flex-end}
+.brand{display:flex;align-items:center;gap:9px;flex:0 0 auto}
 .brand svg{flex:0 0 auto}
 .bw{font-family:var(--display);font-size:28px;line-height:1;color:var(--ink)}
-.bar .sp{flex:1}
-.bar .tagline{color:var(--ink-soft);font-size:14px}
-.bell{position:relative;border:1px solid var(--line);background:var(--paper);border-radius:50%;width:42px;height:42px;font-size:18px;display:grid;place-items:center;margin-left:12px;flex:0 0 auto}
-.brand{flex:0 0 auto}
+.bell{position:relative;border:1px solid var(--line);background:var(--paper);border-radius:50%;width:42px;height:42px;font-size:18px;display:grid;place-items:center;margin-left:10px;flex:0 0 auto}
+.bar-side.left .bell{margin-left:0}
+.menu-btn{font-size:22px;font-weight:700}
+/* боковое меню */
+.menu-back{display:none;position:fixed;inset:0;z-index:60;background:rgba(20,10,5,.4)}
+.menu-back.open{display:block}
+.side-menu{position:fixed;top:0;left:0;bottom:0;width:min(280px,80vw);z-index:61;background:var(--paper);
+  box-shadow:8px 0 30px -10px rgba(40,25,10,.5);transform:translateX(-100%);transition:transform .28s cubic-bezier(.16,1,.3,1);
+  padding:22px 16px;display:flex;flex-direction:column;gap:8px}
+.side-menu.open{transform:none}
+.menu-h{font-family:var(--display);font-size:26px;color:var(--ink);padding:6px 8px 14px}
+.menu-item{text-align:left;border:none;background:transparent;color:var(--ink);font-size:16px;font-weight:600;
+  padding:14px 12px;border-radius:12px;transition:.15s}
+.menu-item:hover{background:var(--paper-2)}
 .bell:hover{border-color:var(--ink);background:var(--paper-2)}
 .bell-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
 .themes{display:flex;gap:16px;flex-wrap:wrap}
@@ -182,7 +194,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .case-nav:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .case-ind{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin:6px 0 10px;display:none}
 .case-top{display:flex;justify-content:center;margin:4px 0 8px}
-.case-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;margin-bottom:30px}
+.case-actions{display:none}
 .wrapped{background:#b8493a;transition:background .5s ease;color:#fff;overflow:hidden}
 .wr-bars{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:6px;z-index:3}
 .wr-seg{flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.32);overflow:hidden}
@@ -233,6 +245,9 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .cat-cover{width:110px;height:150px;border-radius:5px 8px 8px 5px;display:flex;align-items:center;justify-content:center;
   padding:12px 10px;color:#fff;box-shadow:0 8px 16px -8px rgba(40,25,10,.55);position:relative;overflow:hidden}
 .cat-cover span{font-family:"Fraunces",serif;font-weight:600;font-size:15px;line-height:1.2;text-align:center}
+.cat-wish{position:absolute;top:5px;right:5px;width:26px;height:26px;border:none;border-radius:50%;
+  background:rgba(255,255,255,.85);color:#333;font-size:13px;display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.cat-wish:hover{background:#fff}
 .cat-book .cat-a{font-size:11.5px;color:var(--ink-soft);margin-top:7px;line-height:1.25}
 .cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:4px;line-height:1.2}
 /* окно книги из подборки */
@@ -451,6 +466,7 @@ main,footer{position:relative;z-index:1}
 
 <header>
   <div class="wrap bar">
+    <div class="bar-side left"><button class="bell menu-btn" id="menuBtn" aria-label="Меню">☰</button></div>
     <span class="brand">
       <svg class="logo-shelf" viewBox="0 0 120 112" width="42" height="42" aria-hidden="true">
         <path d="M24 72 V54 a36 36 0 0 1 72 0 V72" fill="#f6ead8" stroke="#d8c2a3" stroke-width="2"/>
@@ -465,12 +481,22 @@ main,footer{position:relative;z-index:1}
       </svg>
       <span class="bw">Polka</span>
     </span>
-    <span class="sp"></span>
-    <span class="tagline">уютная полка прочитанного</span>
-    <button class="bell" id="themeBtn" title="Тема оформления" aria-label="Тема">🎨</button>
-    <button class="bell" id="reqBtn" title="Запросы в друзья" aria-label="Запросы">🔔<span class="bell-count" id="reqCount" style="display:none">0</span></button>
+    <div class="bar-side right">
+      <button class="bell" id="themeBtn" title="Тема оформления" aria-label="Тема">🎨</button>
+      <button class="bell" id="reqBtn" title="Запросы в друзья" aria-label="Запросы">🔔<span class="bell-count" id="reqCount" style="display:none">0</span></button>
+    </div>
   </div>
 </header>
+
+<!-- боковое меню -->
+<div id="menuBack" class="menu-back"></div>
+<nav id="sideMenu" class="side-menu" aria-label="Меню">
+  <div class="menu-h">Polka 📚</div>
+  <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
+  <button class="menu-item" id="mWish">📌 Хотелки</button>
+  <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
+  <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
+</nav>
 
 <main class="wrap">
 
@@ -525,7 +551,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v93 test: подборки книг + рецензии читателей --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v94 test: меню-гамбургер, лого по центру, подборки по разделам --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1077,6 +1103,10 @@ main,footer{position:relative;z-index:1}
     $("#wishBtn").innerHTML = meV ? "📌 хотелки" : "📌 хотелки друга";
     $("#yearBtn").innerHTML = meV ? "✨ мой книжный год" : "✨ книжный год друга";
     $("#yearBtn").style.display = wrappedSeason() ? "" : "none";
+    $("#mQuotes").textContent = meV ? "💬 Мои цитаты" : "💬 Цитаты друга";
+    $("#mWish").textContent = meV ? "📌 Хотелки" : "📌 Хотелки друга";
+    $("#mYear").textContent = meV ? "✨ Мой книжный год" : "✨ Книжный год друга";
+    $("#mYear").style.display = wrappedSeason() ? "" : "none";
     renderMyStickers();
   }
   function renderMyStickers(){
@@ -1489,11 +1519,20 @@ main,footer{position:relative;z-index:1}
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
-    "🔥 Популярное последних лет": [
-      {t:"Тревожные люди", a:"Фредрик Бакман"}, {t:"Уроки химии", a:"Бонни Гармус"},
-      {t:"Незримая жизнь Адди Ларю", a:"В. Э. Шваб"}, {t:"Institute / Институт", a:"Стивен Кинг"},
-      {t:"Маленькая жизнь", a:"Ханья Янагихара"}, {t:"Щегол", a:"Донна Тартт"},
-      {t:"Задача трёх тел", a:"Лю Цысинь"}, {t:"Дни Савелия", a:"Григорий Служитель"}
+    "🔥 Популярное прошлого года": [
+      {t:"Уроки химии", a:"Бонни Гармус"}, {t:"Тревожные люди", a:"Фредрик Бакман"},
+      {t:"Незримая жизнь Адди Ларю", a:"В. Э. Шваб"}, {t:"Ветер знает моё имя", a:"Исабель Альенде"},
+      {t:"Йерверт", a:"Люк Кузи"}, {t:"Маленькая жизнь", a:"Ханья Янагихара"}
+    ],
+    "✨ Новинки": [
+      {t:"Джеймс", a:"Персиваль Эверетт"}, {t:"Хранитель древностей", a:"Робин Слоун"},
+      {t:"Служба доставки книг", a:"Карстен Себастиан Хенн"}, {t:"Сердце огня", a:"Крис Уитакер"},
+      {t:"Понравится ли тебе то, что ты видишь", a:"—"}, {t:"Дом на краю света", a:"Майкл Каннингем"}
+    ],
+    "🏆 Бестселлеры": [
+      {t:"Щегол", a:"Донна Тартт"}, {t:"Задача трёх тел", a:"Лю Цысинь"},
+      {t:"Атомные привычки", a:"Джеймс Клир"}, {t:"Sapiens", a:"Юваль Ной Харари"},
+      {t:"Тонкое искусство пофигизма", a:"Марк Мэнсон"}, {t:"Институт", a:"Стивен Кинг"}
     ],
     "📖 Проза": [
       {t:"Норвежский лес", a:"Харуки Мураками"}, {t:"Вино из одуванчиков", a:"Рэй Брэдбери"},
@@ -1526,12 +1565,21 @@ main,footer{position:relative;z-index:1}
     $("#catalogList").innerHTML = Object.entries(CATALOG).map(([genre,books])=>
       `<div class="cat-genre">${esc(genre)}</div><div class="cat-row">` +
       books.map((b,i)=>{ const bg=COLORS[i%COLORS.length];
-        return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}"><div class="cat-cover" style="background:${bg};color:${pickFg(bg)}"><span>${esc(b.t)}</span></div><div class="cat-a">${esc(b.a)}</div></div>`;
+        return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}"><div class="cat-cover" style="background:${bg};color:${pickFg(bg)}"><span>${esc(b.t)}</span><button class="cat-wish" data-wish title="в хотелки">📌</button></div><div class="cat-a">${esc(b.a)}</div></div>`;
       }).join("") + `</div>`
     ).join("");
   }
+  function addCatToWish(t,a){
+    if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
+    if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в хотелках 📌"); return; }
+    myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в хотелки 📌");
+  }
   $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); openPage("catalogPage"); });
-  $("#catalogList").addEventListener("click", e=>{ const c=e.target.closest(".cat-book"); if(!c) return; openCatBook(c.dataset.t, c.dataset.a); });
+  $("#catalogList").addEventListener("click", e=>{
+    const c=e.target.closest(".cat-book"); if(!c) return;
+    if(e.target.closest("[data-wish]")){ addCatToWish(c.dataset.t, c.dataset.a); return; }
+    openCatBook(c.dataset.t, c.dataset.a);
+  });
 
   let cbBook=null, cbRating=0;
   function openCatBook(t,a){
@@ -1574,6 +1622,17 @@ main,footer{position:relative;z-index:1}
     toast("Рецензия опубликована 💛"); $("#cbText").value=""; cbRating=0; paintRate($("#cbRate"),0);
     loadReviews(cbBook.t, cbBook.a);
   }));
+
+  /* ---- боковое меню ---- */
+  function openMenu(){ $("#menuBack").classList.add("open"); $("#sideMenu").classList.add("open"); }
+  function closeMenu(){ $("#menuBack").classList.remove("open"); $("#sideMenu").classList.remove("open"); }
+  $("#menuBtn").addEventListener("click", openMenu);
+  $("#menuBack").addEventListener("click", closeMenu);
+  const menuGo = origBtnId => { closeMenu(); const b=$("#"+origBtnId); if(b) b.click(); };
+  $("#mQuotes").addEventListener("click", ()=> menuGo("quotesBtn"));
+  $("#mWish").addEventListener("click", ()=> menuGo("wishBtn"));
+  $("#mCatalog").addEventListener("click", ()=> menuGo("catalogBtn"));
+  $("#mYear").addEventListener("click", ()=> menuGo("yearBtn"));
 
   /* свайп */
   let sx=null;
@@ -1805,7 +1864,7 @@ main,footer{position:relative;z-index:1}
 
   /* ---- закрытие модалок ---- */
   function welcomeLocked(){ return $("#welModal").classList.contains("open") && !localStorage.getItem("polka_registered"); }
-  function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".wa-back.open").forEach(x=>x.classList.remove("open")); document.querySelectorAll(".modal.open, .fullpage.open").forEach(m=>m.classList.remove("open")); }
+  function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".wa-back.open, #menuBack.open, .side-menu.open").forEach(x=>x.classList.remove("open")); document.querySelectorAll(".modal.open, .fullpage.open").forEach(m=>m.classList.remove("open")); }
   overlay.addEventListener("click", ()=>{ if(welcomeLocked()) return; closeModals(); });
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", closeModals));
   document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !welcomeLocked()) closeModals(); });
