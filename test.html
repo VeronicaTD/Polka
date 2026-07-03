@@ -567,7 +567,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v101 test: 73 настоящие обложки (Google Books CDN по ID, без лимитов) + заглушка где нет; описание из Википедии --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v102 test: чиним описания (баг fetchBookMeta), Институт→рус обложка, Норвежский лес→заглушка, zoom=1 (надёжный размер) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1625,11 +1625,10 @@ main,footer{position:relative;z-index:1}
     "Атомные привычки|Джеймс Клир":"t3XADwAAQBAJ",
     "Sapiens|Юваль Ной Харари":"mAWwDQAAQBAJ",
     "Тонкое искусство пофигизма|Марк Мэнсон":"LE00DwAAQBAJ",
-    "Институт|Стивен Кинг":"RriuDwAAQBAJ",
+    "Институт|Стивен Кинг":"8pXeDwAAQBAJ",
     "Шантарам|Грегори Робертс":"7uc7CwAAQBAJ",
     "Богатый папа, бедный папа|Роберт Кийосаки":"vy_lCwAAQBAJ",
     "Цветы для Элджернона|Дэниел Киз":"9f-vDQAAQBAJ",
-    "Норвежский лес|Харуки Мураками":"t7Y9DwAAQBAJ",
     "Вино из одуванчиков|Рэй Брэдбери":"v0BNEQAAQBAJ",
     "Стоунер|Джон Уильямс":"WerGCQAAQBAJ",
     "Три товарища|Э. М. Ремарк":"J25yDwAAQBAJ",
@@ -1674,7 +1673,7 @@ main,footer{position:relative;z-index:1}
     "Граф Монте-Кристо|Александр Дюма":"xW9LDwAAQBAJ",
     "Великий Гэтсби|Фрэнсис Фицджеральд":"_-KyCAAAQBAJ"
   };
-  const coverUrl = (t,a)=>{ const id=GBID[t+"|"+a]; return id ? `https://books.google.com/books/content?id=${id}&printsec=frontcover&img=1&zoom=2` : ""; };
+  const coverUrl = (t,a)=>{ const id=GBID[t+"|"+a]; return id ? `https://books.google.com/books/content?id=${id}&printsec=frontcover&img=1&zoom=1` : ""; };
   function cleanDesc(s, max){
     if(!s) return "";
     s=String(s).replace(/<[^>]+>/g," ").replace(/&[a-z]+;/gi," ").replace(/\s+/g," ").trim();
@@ -1748,11 +1747,9 @@ main,footer{position:relative;z-index:1}
   }
   const stillOn=(t,a)=> bpBook && bookKey(bpBook.t,bpBook.a)===bookKey(t,a);
   async function loadBookInfo(t,a){
-    const m=await fetchBookMeta(t,a);
-    if(!stillOn(t,a)) return;
     ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки
-    let desc = (m && m.desc) ? m.desc : "";
-    if(!desc){ desc=await loadWikiDesc(t,a); if(!stillOn(t,a)) return; }
+    const desc = await loadWikiDesc(t,a);
+    if(!stillOn(t,a)) return;
     $("#bpAnno").innerHTML = (desc && desc.length>40)
       ? `<div class="ir-label">Описание</div><div class="bp-anno">${esc(desc)}</div>`
       : `<p class="mp">Описание не нашлось в свободных источниках — загляни на Литрес или Букмейт 👆</p>`;
