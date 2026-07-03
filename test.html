@@ -530,7 +530,7 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
-  <button class="menu-item" id="mReviews">💬 Рецензии читателей</button>
+  <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
   <button class="menu-item" id="mTheme">🎨 Тема оформления</button>
@@ -589,7 +589,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v105 test: книги с рецензиями автоматически попадают в подборки (раздел сверху) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v107 test: убрано поле «Комментарий» (дублирует рецензию) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -609,7 +609,6 @@ main,footer{position:relative;z-index:1}
   </div>
   <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
   <div class="field"><label>Оценка</label><div class="rate" id="fRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
-  <div class="field"><label>Комментарий <span style="font-weight:400">(увидят друзья)</span></label><textarea id="fNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
   <div class="field"><label>Любимые цитаты из книги</label><div id="fQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="fAddQuote">+ ещё цитата</button></div>
   <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
@@ -634,9 +633,8 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Цвет обложки</label><div class="swatches" id="iColors"></div></div>
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
-        <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
-        <div class="field review-field"><label>📢 Рецензия <span style="font-weight:400">(появится в «Подборках» для всех)</span></label><textarea id="iReview" placeholder="поделись мнением о книге — её увидят все читатели в разделе «Подборки»"></textarea><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><span id="iReviewMsg" class="rev-msg"></span></div>
+        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><span id="iReviewMsg" class="rev-msg"></span></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -750,6 +748,7 @@ main,footer{position:relative;z-index:1}
   <h3 id="waTitle" style="margin-bottom:2px"></h3>
   <p class="mp" id="waAuthor" style="margin-top:0"></p>
   <button class="btn" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Прочитала — поставить на полку</button>
+  <button class="btn" id="waAddWish" style="width:100%;justify-content:center;display:none;margin-top:6px">📌 Добавить в свои хотелки</button>
   <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
   <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
 </div>
@@ -783,7 +782,7 @@ main,footer{position:relative;z-index:1}
         <p class="mp" id="bpAuthor" style="margin:0"></p>
       </div>
     </div>
-    <div class="bp-tabs">
+    <div class="bp-tabs" hidden>
       <button class="bp-tab active" id="bpTabAnno" data-tab="anno" type="button">Аннотация</button>
       <button class="bp-tab" id="bpTabRevs" data-tab="revs" type="button">Рецензии читателей</button>
     </div>
@@ -1551,11 +1550,12 @@ main,footer{position:relative;z-index:1}
     saveWish(); $("#wishTitle").value=""; $("#wishAuthor").value=""; renderWish();
   });
   $("#wishStack").addEventListener("click", e=>{
-    if(!wishForMe) return;
     const del = e.target.closest("[data-del]");
-    if(del){ myWishlist.splice(+del.dataset.del,1); saveWish(); renderWish(); return; }
+    if(del){ if(!wishForMe) return; myWishlist.splice(+del.dataset.del,1); saveWish(); renderWish(); return; }
     const el = e.target.closest(".wish-spine"); if(!el) return;
-    const i=+el.dataset.i, w=myWishlist[i]; if(!w) return;
+    const i=+el.dataset.i;
+    const wl = wishForMe ? myWishlist : ((friend()&&friend().wishlist)||[]);
+    const w = wl[i]; if(!w) return;
     openWishAct(i, w);
   });
   // окошко выбора для книги из хотелок
@@ -1567,6 +1567,9 @@ main,footer{position:relative;z-index:1}
     const bq = encodeURIComponent(w.t + " " + (w.a||""));
     $("#waLitres").href = "https://www.litres.ru/search/?q=" + bq;
     $("#waBookmate").href = "https://books.yandex.ru/search?query=" + bq;
+    // мои хотелки → «поставить на полку»; хотелки друга → «добавить в свои хотелки»
+    $("#waShelf").style.display   = wishForMe ? "flex" : "none";
+    $("#waAddWish").style.display = wishForMe ? "none" : "flex";
     $("#waBack").classList.add("open"); $("#wishActModal").classList.add("open");
   }
   function closeWishAct(){ $("#waBack").classList.remove("open"); $("#wishActModal").classList.remove("open"); }
@@ -1576,6 +1579,12 @@ main,footer{position:relative;z-index:1}
     const i=waIdx, w=waBook; closeWishAct(); closeModals();
     if(w){ pendingWish=i; openAdd({t:w.t, a:w.a}); }
   });
+  // добавить книгу друга в свои хотелки (можно и находясь в гостях)
+  function addToMyWish(t,a){
+    if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в твоих хотелках 📌"); return; }
+    myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в твои хотелки 📌");
+  }
+  $("#waAddWish").addEventListener("click", ()=>{ if(waBook){ addToMyWish(waBook.t, waBook.a); closeWishAct(); } });
   // Букмейт открывает приложение на главной — копируем название, чтобы вставить в поиск
   function copyForSearch(t){ try{ if(navigator.clipboard && t) navigator.clipboard.writeText(t); toast("Название скопировано — вставьте в поиск 📋"); }catch(e){} }
   $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
@@ -1857,7 +1866,7 @@ main,footer{position:relative;z-index:1}
     $("#catalogList").insertAdjacentHTML("afterbegin", html);
     hydrateCovers($("#catalogList"));
   }
-  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); openPage("catalogPage"); injectReviewedBooks(); });
+  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); openPage("catalogPage"); });
   $("#catalogList").addEventListener("click", e=>{
     const ar=e.target.closest(".cat-arrow");
     if(ar){ const row=ar.parentElement.querySelector(".cat-row"); if(row) row.scrollBy({left:(+ar.dataset.dir)*row.clientWidth*0.8, behavior:"smooth"}); return; }
@@ -1887,10 +1896,7 @@ main,footer{position:relative;z-index:1}
     ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки
     const anno = ANNO[t+"|"+a] || "";                    // авторская аннотация (не Википедия)
     $("#bpAnno").innerHTML = anno ? `<div class="bp-anno">${esc(anno)}</div>` : `<p class="mp">Аннотация скоро появится 🌱</p>`;
-    bpSetTab("anno");
-    $("#bpReviews").innerHTML = `<p class="mp">Загружаю рецензии…</p>`;
     openPage("bookPage");
-    loadReviews(t,a);
   }
   const stillOn=(t,a)=> bpBook && bookKey(bpBook.t,bpBook.a)===bookKey(t,a);
   async function loadReviews(t,a){
@@ -1973,14 +1979,14 @@ main,footer{position:relative;z-index:1}
   let pendingWish = null;
   function openAdd(pre){
     if(!requirePaid()) return;
-    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; $("#fNote").value=""; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
+    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
     selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
   $("#saveBook").addEventListener("click", ()=>{
     const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
     myBooks.push({ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
-      c:selColor, fav:favNew, r:rateNew, note:$("#fNote").value.trim(), qt:collectQuotes("fQuotes") });
+      c:selColor, fav:favNew, r:rateNew, note:"", qt:collectQuotes("fQuotes") });
     if(pendingWish!=null){ myWishlist.splice(pendingWish,1); pendingWish=null; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     saveMine(); syncUp();
     casePage=9999; slideDir=0; closeModals(); renderAll();
@@ -2006,7 +2012,7 @@ main,footer{position:relative;z-index:1}
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
-      $("#iNote").value = b.note||""; renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
+      renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
       $("#iReview").value=""; $("#iReviewMsg").textContent="";
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
@@ -2028,7 +2034,7 @@ main,footer{position:relative;z-index:1}
       infoBook.t = $("#iTitle").value.trim() || infoBook.t;
       infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
       infoBook.g = $("#iGenre").value;
-      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.note = $("#iNote").value.trim(); infoBook.qt = collectQuotes("iQuotes");
+      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
       saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
     }
   });
@@ -2043,7 +2049,7 @@ main,footer{position:relative;z-index:1}
     const btn=$("#iPublishReview"); btn.disabled=true; $("#iReviewMsg").textContent="Публикую…";
     try{
       await publishReview(b.t, b.a, text);
-      $("#iReview").value=""; $("#iReviewMsg").textContent="Опубликовано! Спасибо 🌸 Рецензия появится в «Подборках».";
+      $("#iReview").value=""; $("#iReviewMsg").textContent="Опубликовано! Спасибо 🌸";
     }catch(e){ $("#iReviewMsg").textContent="Не удалось опубликовать 😔 попробуй ещё раз"; }
     btn.disabled=false;
   });
