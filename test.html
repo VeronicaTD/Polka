@@ -262,15 +262,6 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
   box-shadow:0 4px 12px -4px rgba(40,25,10,.5);align-items:center;justify-content:center}
 .cat-arrow.left{left:-6px}.cat-arrow.right{right:-6px}
 @media(min-width:761px){ .cat-arrow{display:flex} .cat-row{padding-left:0;padding-right:0} }
-/* окно книги из подборки */
-.cb-modal{max-height:86vh;overflow-y:auto;width:min(460px,92vw)}
-.cb-head{display:flex;gap:14px;align-items:flex-start}
-.cb-cover{flex:0 0 auto;width:86px;height:124px;border-radius:4px 7px 7px 4px;overflow:hidden;display:flex;
-  align-items:center;justify-content:center;padding:8px;box-shadow:0 6px 14px -6px rgba(40,25,10,.5)}
-.cb-cover img{width:100%;height:100%;object-fit:cover}
-.cb-cover span{font-family:"Fraunces",serif;font-weight:600;font-size:12px;color:#fff;text-align:center;line-height:1.15}
-.cb-anno{margin-top:6px;font-size:14px;color:var(--ink);line-height:1.5}
-#cbAnno{margin-top:16px}
 .read-link{display:inline-block;font-size:13px;font-weight:700;color:var(--accent-deep);
   text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 15px;background:var(--paper-2)}
 .read-link:hover{border-color:var(--accent);color:var(--accent)}
@@ -565,7 +556,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v96 test: обложки (q=), кнопки Литрес/Букмейт под книгой --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v97 test: карточка самодостаточна (без попапа), обложки+кнопки --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -733,25 +724,9 @@ main,footer{position:relative;z-index:1}
 <div class="fullpage" id="catalogPage" aria-label="Подборки">
   <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Подборки книг 📚</h3></div>
   <div class="fp-body">
-    <p class="mp">Загляни, выбери книгу и почитай, что думают другие читатели Polka.</p>
+    <p class="mp">Выбери книгу — добавь в хотелки 📌 или открой на Литрес / Букмейт 📖</p>
     <div id="catalogList"></div>
   </div>
-</div>
-
-<!-- книга из подборки: рецензии читателей -->
-<div id="cbBack" class="wa-back"></div>
-<div class="modal wa-modal cb-modal" id="catBookModal" role="dialog" aria-modal="true">
-  <button class="close" id="cbClose">×</button>
-  <div class="cb-head">
-    <div class="cb-cover" id="cbCover"></div>
-    <div style="min-width:0"><h3 id="cbTitle" style="margin:0 0 2px"></h3><p class="mp" id="cbAuthor" style="margin:0"></p></div>
-  </div>
-  <div class="read-row" style="margin-top:12px">
-    <a id="cbLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a>
-    <a id="cbBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a>
-    <button class="read-link" id="cbWish" type="button">📌 в хотелки</button>
-  </div>
-  <div id="cbAnno"></div>
 </div>
 
 <!-- мой книжный год — истории как в Spotify Wrapped -->
@@ -1597,8 +1572,8 @@ main,footer{position:relative;z-index:1}
        <div class="cat-row">` +
       books.map((b,i)=>{ const bg=COLORS[i%COLORS.length]; const bq=encodeURIComponent(b.t+" "+b.a);
         return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
-          <div class="cat-cover" data-open style="background:${bg};color:${pickFg(bg)}"><span class="cat-ph">${esc(b.t)}</span><img class="cat-img" data-k="${esc(bookKey(b.t,b.a))}" alt="" onload="this.classList.add('loaded')" onerror="this.remove()"></div>
-          <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+          <div class="cat-cover" style="background:${bg};color:${pickFg(bg)}"><span class="cat-ph">${esc(b.t)}</span><img class="cat-img" data-k="${esc(bookKey(b.t,b.a))}" alt="" onload="this.classList.add('loaded')" onerror="this.remove()"></div>
+          <div class="cat-t">${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
           <div class="cat-acts">
             <button class="cat-mini" data-wish title="в хотелки">📌 хотелки</button>
             <a class="cat-mini" data-litres href="https://www.litres.ru/search/?q=${bq}" target="_blank" rel="noopener">📖 Литрес</a>
@@ -1639,50 +1614,8 @@ main,footer{position:relative;z-index:1}
     const c=e.target.closest(".cat-book"); if(!c) return;
     if(e.target.closest("[data-wish]")){ addCatToWish(c.dataset.t, c.dataset.a); return; }
     if(e.target.closest("[data-bookmate]")){ copyForSearch(c.dataset.t); return; }   // ссылка откроется сама, название скопируется
-    if(e.target.closest("[data-litres]")) return;                                     // ссылка откроется сама
-    if(e.target.closest("[data-open]")){ openCatBook(c.dataset.t, c.dataset.a); return; }
+    // Литрес — ссылка открывается сама
   });
-
-  let cbBook=null;
-  function openCatBook(t,a){
-    cbBook={t,a};
-    $("#cbTitle").textContent=t; $("#cbAuthor").textContent=a||"";
-    const bq=encodeURIComponent(t+" "+(a||""));
-    $("#cbLitres").href="https://www.litres.ru/search/?q="+bq;
-    $("#cbBookmate").href="https://books.yandex.ru/search?query="+bq;
-    // обложка (если уже подгружена в подборке)
-    const ck=coverCache[bookKey(t,a)];
-    $("#cbCover").innerHTML = ck ? `<img src="${esc(ck)}" alt="">` : `<span>${esc(t)}</span>`;
-    $("#cbCover").style.background = ck ? "var(--paper-2)" : COLORS[(t.length)%COLORS.length];
-    $("#cbAnno").innerHTML=`<p class="mp">Загружаю описание…</p>`;
-    $("#cbBack").classList.add("open"); $("#catBookModal").classList.add("open");
-    loadAnnotation(t,a);
-  }
-  async function loadAnnotation(t,a){
-    try{
-      const r=await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(t+" "+a)}&limit=1&fields=key`);
-      const d=await r.json(); const key=d.docs&&d.docs[0]&&d.docs[0].key;
-      if(cbBook && bookKey(cbBook.t,cbBook.a)!==bookKey(t,a)) return;
-      if(!key){ $("#cbAnno").innerHTML=""; return; }
-      const wr=await fetch(`https://openlibrary.org${key}.json`); const w=await wr.json();
-      let desc=w.description; if(desc && typeof desc==="object") desc=desc.value;
-      if(cbBook && bookKey(cbBook.t,cbBook.a)!==bookKey(t,a)) return;
-      $("#cbAnno").innerHTML = desc
-        ? `<div class="ir-label">Описание</div><div class="cb-anno">${esc(String(desc).replace(/\[.*?\]\(.*?\)/g,"").slice(0,900))}</div>`
-        : `<p class="mp" style="font-size:13px">Описание не найдено — загляни на Литрес или Букмейт 👆</p>`;
-    }catch(e){ $("#cbAnno").innerHTML=""; }
-  }
-  function closeCatBook(){ $("#cbBack").classList.remove("open"); $("#catBookModal").classList.remove("open"); }
-  $("#cbClose").addEventListener("click", closeCatBook);
-  $("#cbBack").addEventListener("click", closeCatBook);
-  $("#cbWish").addEventListener("click", ()=>{
-    if(!cbBook) return;
-    if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
-    if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(cbBook.t,cbBook.a))){ toast("Уже в хотелках 📌"); return; }
-    myWishlist.push({t:cbBook.t, a:cbBook.a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish();
-    toast("Добавлено в хотелки 📌");
-  });
-  $("#cbBookmate").addEventListener("click", ()=>{ if(cbBook) copyForSearch(cbBook.t); });
 
   /* ---- боковое меню ---- */
   function openMenu(){ $("#menuBack").classList.add("open"); $("#sideMenu").classList.add("open"); }
