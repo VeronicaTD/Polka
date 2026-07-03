@@ -258,6 +258,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 #bpCover .cat-cover{width:130px;height:190px;cursor:default}
 .bp-anno{margin-top:6px;font-size:15px;color:var(--ink);line-height:1.55;white-space:pre-wrap}
 #bpAnno{margin-top:18px}
+.bp-actions{margin-top:20px;flex-wrap:wrap;gap:8px}
 .cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:6px;line-height:1.2;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cat-book .cat-a{font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.2}
@@ -564,7 +565,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v98 test: дизайнерские обложки + аннотации из Википедии --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v99 test: аннотация + кнопки Литрес/Букмейт снизу; хотелки у книги друга --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -598,7 +599,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
+      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button">📌 в хотелки</button></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -745,15 +746,15 @@ main,footer{position:relative;z-index:1}
       <div id="bpCover"></div>
       <div style="min-width:0;flex:1">
         <h3 id="bpTitle" style="margin:0 0 3px"></h3>
-        <p class="mp" id="bpAuthor" style="margin:0 0 12px"></p>
-        <div class="read-row">
-          <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
-          <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
-          <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
-        </div>
+        <p class="mp" id="bpAuthor" style="margin:0"></p>
       </div>
     </div>
     <div id="bpAnno"></div>
+    <div class="read-row bp-actions">
+      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 читать в Литрес</a>
+      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 читать в Букмейт</a>
+      <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
+    </div>
   </div>
 </div>
 
@@ -1531,6 +1532,7 @@ main,footer{position:relative;z-index:1}
   function copyForSearch(t){ try{ if(navigator.clipboard && t) navigator.clipboard.writeText(t); toast("Название скопировано — вставьте в поиск 📋"); }catch(e){} }
   $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
   $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
+  $("#readWish").addEventListener("click", ()=>{ if(infoBook) addCatToWish(infoBook.t, infoBook.a); });
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
