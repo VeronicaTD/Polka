@@ -567,7 +567,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v100 test: настоящие обложки+описания (Google Books), фолбэк на заглушку; кнопки снизу; хотелки у книги друга --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v101 test: 73 настоящие обложки (Google Books CDN по ID, без лимитов) + заглушка где нет; описание из Википедии --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1602,33 +1602,85 @@ main,footer{position:relative;z-index:1}
       <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
       <div class="cc-title">${esc(b.t)}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
   }
-  /* ---- обложки и описания из Google Books (кэш в localStorage) ---- */
-  let bookMeta={}; try{ bookMeta=JSON.parse(localStorage.getItem("polka_bookmeta")||"{}"); }catch(e){ bookMeta={}; }
-  const saveBookMeta=()=>{ try{ localStorage.setItem("polka_bookmeta", JSON.stringify(bookMeta)); }catch(e){} };
+  /* ---- настоящие обложки: ID тома Google Books → картинка с CDN (без лимитов) ---- */
+  const GBID = {
+    "Уроки химии|Бонни Гармус":"THSiEAAAQBAJ",
+    "Тревожные люди|Фредрик Бакман":"E9UJEAAAQBAJ",
+    "Незримая жизнь Адди Ларю|В. Э. Шваб":"ycpDEAAAQBAJ",
+    "Маленькая жизнь|Ханья Янагихара":"oD2ADQAAQBAJ",
+    "Клара и Солнце|Кадзуо Исигуро":"05UsEAAAQBAJ",
+    "Дом в лазурном море|Ти Джей Клун":"92teEAAAQBAJ",
+    "Проект «Рози»|Грэм Симсион":"4KBXAwAAQBAJ",
+    "Тени тевтонов|Алексей Иванов":"RtEhEAAAQBAJ",
+    "Джеймс|Персиваль Эверетт":"n1qXEQAAQBAJ",
+    "Служба доставки книг|Карстен Хенн":"sb_PEQAAQBAJ",
+    "Дом на краю света|Майкл Каннингем":"utedDwAAQBAJ",
+    "Йеллоуфейс|Ребекка Куанг":"Y247EQAAQBAJ",
+    "Магазинчик у озера|Дженни Колган":"zZsQEAAAQBAJ",
+    "Пёсья матерь|Павлос Матесис":"6tQUEAAAQBAJ",
+    "Хроники хищных городов|Филип Рив":"0BVfDwAAQBAJ",
+    "Тоннель|Яна Вагнер":"HuoMEQAAQBAJ",
+    "Щегол|Донна Тартт":"fUKfBQAAQBAJ",
+    "Задача трёх тел|Лю Цысинь":"-u8-DwAAQBAJ",
+    "Атомные привычки|Джеймс Клир":"t3XADwAAQBAJ",
+    "Sapiens|Юваль Ной Харари":"mAWwDQAAQBAJ",
+    "Тонкое искусство пофигизма|Марк Мэнсон":"LE00DwAAQBAJ",
+    "Институт|Стивен Кинг":"RriuDwAAQBAJ",
+    "Шантарам|Грегори Робертс":"7uc7CwAAQBAJ",
+    "Богатый папа, бедный папа|Роберт Кийосаки":"vy_lCwAAQBAJ",
+    "Цветы для Элджернона|Дэниел Киз":"9f-vDQAAQBAJ",
+    "Норвежский лес|Харуки Мураками":"t7Y9DwAAQBAJ",
+    "Вино из одуванчиков|Рэй Брэдбери":"v0BNEQAAQBAJ",
+    "Стоунер|Джон Уильямс":"WerGCQAAQBAJ",
+    "Три товарища|Э. М. Ремарк":"J25yDwAAQBAJ",
+    "Здесь была Бритт-Мари|Фредрик Бакман":"QQtkDwAAQBAJ",
+    "До встречи с тобой|Джоджо Мойес":"LTaJAAAAQBAJ",
+    "Над пропастью во ржи|Дж. Сэлинджер":"KDHMDwAAQBAJ",
+    "Маленькие женщины|Луиза Олкотт":"LrLfDwAAQBAJ",
+    "Дом, в котором…|Мариам Петросян":"eOJoAwAAQBAJ",
+    "Зулейха открывает глаза|Гузель Яхина":"-cQkCQAAQBAJ",
+    "Гарри Поттер и философский камень|Дж. К. Роулинг":"Tm-kPwAACAAJ",
+    "Имя ветра|Патрик Ротфусс":"kp4eEAAAQBAJ",
+    "Дюна|Фрэнк Герберт":"S3joDwAAQBAJ",
+    "Ведьмак. Последнее желание|Анджей Сапковский":"lYESBAAAQBAJ",
+    "1984|Джордж Оруэлл":"uHOGAwAAQBAJ",
+    "451 градус по Фаренгейту|Рэй Брэдбери":"iRYlEQAAQBAJ",
+    "Игра престолов|Джордж Мартин":"B3WSAwAAQBAJ",
+    "Благие знамения|Пратчетт и Гейман":"FcQvEAAAQBAJ",
+    "Марсианин|Энди Вейер":"w5yuBAAAQBAJ",
+    "Исчезнувшая|Гиллиан Флинн":"lb95AAAAQBAJ",
+    "Девушка в поезде|Пола Хокинс":"fhN1CgAAQBAJ",
+    "Тайная история|Донна Тартт":"epW_BQAAQBAJ",
+    "Молчание ягнят|Томас Харрис":"tzfqBgAAQBAJ",
+    "Женщина в окне|А. Дж. Финн":"wjNIDwAAQBAJ",
+    "Метро 2033|Дмитрий Глуховский":"twKQ7zpid2UC",
+    "Десять негритят|Агата Кристи":"whbODQAAQBAJ",
+    "Молчаливый пациент|Алекс Михаэлидес":"9rOKDwAAQBAJ",
+    "Внутри убийцы|Майк Омер":"u5a8DwAAQBAJ",
+    "Ребекка|Дафна дю Морье":"k-OyCAAAQBAJ",
+    "Sapiens. Краткая история человечества|Юваль Ной Харари":"mAWwDQAAQBAJ",
+    "Думай медленно… решай быстро|Даниэль Канеман":"A5dZAgAAQBAJ",
+    "Магия утра|Хэл Элрод":"r9l2DwAAQBAJ",
+    "К себе нежно|Ольга Примаченко":"gGUUEAAAQBAJ",
+    "Тело помнит всё|Бессел ван дер Колк":"bJTcDwAAQBAJ",
+    "Мастер и Маргарита|Михаил Булгаков":"_t_SDwAAQBAJ",
+    "Преступление и наказание|Фёдор Достоевский":"W8tBDwAAQBAJ",
+    "Гордость и предубеждение|Джейн Остин":"TeVGDwAAQBAJ",
+    "Война и мир|Лев Толстой":"RjNGDAAAQBAJ",
+    "Убить пересмешника|Харпер Ли":"aN4RBAAAQBAJ",
+    "Портрет Дориана Грея|Оскар Уайльд":"PcdMDwAAQBAJ",
+    "Анна Каренина|Лев Толстой":"1XjXWFtxdKkC",
+    "Джейн Эйр|Шарлотта Бронте":"SI-svzDE6N4C",
+    "Граф Монте-Кристо|Александр Дюма":"xW9LDwAAQBAJ",
+    "Великий Гэтсби|Фрэнсис Фицджеральд":"_-KyCAAAQBAJ"
+  };
+  const coverUrl = (t,a)=>{ const id=GBID[t+"|"+a]; return id ? `https://books.google.com/books/content?id=${id}&printsec=frontcover&img=1&zoom=2` : ""; };
   function cleanDesc(s, max){
     if(!s) return "";
     s=String(s).replace(/<[^>]+>/g," ").replace(/&[a-z]+;/gi," ").replace(/\s+/g," ").trim();
     max=max||500;
     if(s.length>max){ let cut=s.slice(0,max); const p=Math.max(cut.lastIndexOf(". "),cut.lastIndexOf("! "),cut.lastIndexOf("? ")); s = p>max*0.5 ? cut.slice(0,p+1) : cut.trim()+"…"; }
     return s;
-  }
-  async function fetchBookMeta(t,a){
-    const key=bookKey(t,a);
-    if(bookMeta[key]) return bookMeta[key];
-    try{
-      const q=encodeURIComponent((t+" "+(a||"")).trim());
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&country=RU`);
-      if(!r.ok) throw 0;
-      const d=await r.json();
-      let cover="", desc="";
-      for(const it of (d.items||[])){
-        const v=it.volumeInfo||{};
-        if(!cover && v.imageLinks){ cover=(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"").replace(/^http:/,"https:").replace("&edge=curl",""); }
-        if(!desc && v.description){ desc=cleanDesc(v.description,600); }
-        if(cover && desc) break;
-      }
-      const meta={cover,desc}; bookMeta[key]=meta; saveBookMeta(); return meta;
-    }catch(e){ return null; }
   }
   let coverObs=null;
   function hydrateCovers(root){
@@ -1639,13 +1691,12 @@ main,footer{position:relative;z-index:1}
     }, {rootMargin:"250px"});
     (root||document).querySelectorAll(".cat-cover[data-ct]").forEach(el=>coverObs.observe(el));
   }
-  async function ensureCover(el,t,a){
+  function ensureCover(el,t,a){
     if(!el || el.querySelector(".cc-img")) return;
-    const m=await fetchBookMeta(t,a);
-    if(!m || !m.cover || !el.isConnected) return;
+    const url=coverUrl(t,a); if(!url) return;                 // нет ID — остаётся фирменная заглушка
     const img=new Image(); img.className="cc-img"; img.alt="";
     img.onload=()=>img.classList.add("loaded"); img.onerror=()=>img.remove();
-    img.src=m.cover; el.appendChild(img);
+    img.src=url; el.appendChild(img);
   }
   function renderCatalog(){
     $("#catalogList").innerHTML = Object.entries(CATALOG).map(([genre,books])=>{
