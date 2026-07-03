@@ -589,7 +589,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v108 test: ФИКС окна хотелок (z-index — окно пряталось за тёмным экраном) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v110 test: кнопка «Поставить на полку» (убрано «Прочитала —») --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -747,7 +747,7 @@ main,footer{position:relative;z-index:1}
   <button class="close" id="waClose">×</button>
   <h3 id="waTitle" style="margin-bottom:2px"></h3>
   <p class="mp" id="waAuthor" style="margin-top:0"></p>
-  <button class="btn" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Прочитала — поставить на полку</button>
+  <button class="btn" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Поставить на полку</button>
   <button class="btn" id="waAddWish" style="width:100%;justify-content:center;display:none;margin-top:6px">📌 Добавить в свои хотелки</button>
   <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
   <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
@@ -1581,6 +1581,7 @@ main,footer{position:relative;z-index:1}
   });
   // добавить книгу друга в свои хотелки (можно и находясь в гостях)
   function addToMyWish(t,a){
+    if(myBooks.some(b=>bookKey(b.t,b.a)===bookKey(t,a))){ toast("Эта книга уже на твоей полке 📚"); return; }
     if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в твоих хотелках 📌"); return; }
     myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в твои хотелки 📌");
   }
@@ -1845,6 +1846,7 @@ main,footer{position:relative;z-index:1}
   }
   function addCatToWish(t,a){
     if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
+    if(myBooks.some(b=>bookKey(b.t,b.a)===bookKey(t,a))){ toast("Эта книга уже на твоей полке 📚"); return; }
     if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в хотелках 📌"); return; }
     myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в хотелки 📌");
   }
