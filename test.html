@@ -589,7 +589,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v110 test: кнопка «Поставить на полку» (убрано «Прочитала —») --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v111 test: убрана кнопка «в хотелки» из окна книги --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -622,7 +622,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button">📌 в хотелки</button></div>
+      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -1590,7 +1590,6 @@ main,footer{position:relative;z-index:1}
   function copyForSearch(t){ try{ if(navigator.clipboard && t) navigator.clipboard.writeText(t); toast("Название скопировано — вставьте в поиск 📋"); }catch(e){} }
   $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
   $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
-  $("#readWish").addEventListener("click", ()=>{ if(infoBook) addCatToWish(infoBook.t, infoBook.a); });
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
