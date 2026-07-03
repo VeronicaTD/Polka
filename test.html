@@ -63,6 +63,20 @@ body[data-theme="matcha"]{
 #splash{position:fixed;inset:0;z-index:200;background:#FFF8F1;display:grid;place-items:center;text-align:center}
 .splash-in{font-family:"Fredoka",sans-serif;font-size:30px;line-height:1.4;color:#5e4538}
 .splash-in span{font-size:14px;color:#7a6253}
+/* анимация загрузки: книжка с перелистывающимися страницами */
+.book-loader{position:relative;width:60px;height:44px;margin:0 auto;perspective:600px}
+.book-loader .bl-side{position:absolute;top:0;width:28px;height:44px;background:#fdf6ec;border:2px solid #7a5c48;box-sizing:border-box}
+.book-loader .bl-left{left:0;border-radius:5px 0 0 5px;border-right:none}
+.book-loader .bl-right{right:0;border-radius:0 5px 5px 0;border-left:none}
+.book-loader .bl-spine{position:absolute;left:calc(50% - 1.5px);top:0;width:3px;height:44px;background:#7a5c48;z-index:4;border-radius:2px}
+.book-loader .bl-page{position:absolute;top:3px;left:calc(50% - 1px);width:24px;height:38px;background:#fff;border:1px solid #d8c9b8;border-left:none;border-radius:0 3px 3px 0;transform-origin:left center;animation:bl-flip 2.4s infinite ease-in-out;backface-visibility:hidden;box-sizing:border-box}
+.book-loader .bl-page:nth-child(4){animation-delay:0s}
+.book-loader .bl-page:nth-child(5){animation-delay:.3s}
+.book-loader .bl-page:nth-child(6){animation-delay:.6s}
+.book-loader .bl-page:nth-child(7){animation-delay:.9s}
+@keyframes bl-flip{0%,100%{transform:rotateY(0)}45%,55%{transform:rotateY(-172deg)}}
+.loader-box{text-align:center;padding:22px 0}
+.loader-box .mp{margin-top:12px}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:"Fredoka",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
   background-image:radial-gradient(circle at 15% 0%, rgba(184,73,58,.05), transparent 38%),
@@ -467,7 +481,7 @@ main,footer{position:relative;z-index:1}
 </head>
 <body>
 
-<div id="splash"><div class="splash-in">📖<br>Polka<br><span>загрузка…</span></div></div>
+<div id="splash"><div class="splash-in"><div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div><div style="margin-top:18px">Polka</div><span>загрузка…</span></div></div>
 
 <!-- спрайт звёзд -->
 <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
@@ -589,7 +603,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v111 test: убрана кнопка «в хотелки» из окна книги --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v114 test: вкладка рецензий убрана со страницы книги (рецензии пока только в редактировании) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -622,7 +636,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
+      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -782,20 +796,11 @@ main,footer{position:relative;z-index:1}
         <p class="mp" id="bpAuthor" style="margin:0"></p>
       </div>
     </div>
-    <div class="bp-tabs" hidden>
-      <button class="bp-tab active" id="bpTabAnno" data-tab="anno" type="button">Аннотация</button>
-      <button class="bp-tab" id="bpTabRevs" data-tab="revs" type="button">Рецензии читателей</button>
-    </div>
-    <div class="bp-pane" id="bpPaneAnno">
-      <div id="bpAnno"></div>
-      <div class="read-row bp-actions">
-        <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
-        <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
-        <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
-      </div>
-    </div>
-    <div class="bp-pane" id="bpPaneRevs" hidden>
-      <div id="bpReviews"></div>
+    <div id="bpAnno"></div>
+    <div class="read-row bp-actions">
+      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
+      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
+      <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
     </div>
   </div>
 </div>
@@ -1590,6 +1595,7 @@ main,footer{position:relative;z-index:1}
   function copyForSearch(t){ try{ if(navigator.clipboard && t) navigator.clipboard.writeText(t); toast("Название скопировано — вставьте в поиск 📋"); }catch(e){} }
   $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
   $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
+  $("#readWish").addEventListener("click", ()=>{ if(infoBook){ addToMyWish(infoBook.t, infoBook.a); closeModals(); } });
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
@@ -1904,7 +1910,7 @@ main,footer{position:relative;z-index:1}
     let list=[];
     try{ if(CLOUD()) list = await sbFetchReviews(bookKey(t,a)); }catch(e){ list=[]; }
     if(!stillOn(t,a)) return;
-    if(!list.length){ $("#bpReviews").innerHTML = `<p class="mp">Пока нет рецензий. Будь первым — открой книгу в своём профиле и нажми «Опубликовать рецензию» ✍️</p>`; return; }
+    if(!list.length){ $("#bpReviews").innerHTML = `<div class="loader-box"><p class="mp">На эту книгу пока нет рецензий ✍️</p>${BOOK_LOADER}</div>`; return; }
     $("#bpReviews").innerHTML = list.map(rv=>{
       const nm = rv.name||"Читатель", ph=rv.photo||"";
       const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
@@ -1915,12 +1921,14 @@ main,footer{position:relative;z-index:1}
     if(!CLOUD()) throw new Error("нет облака");
     await sbInsertReview({ book:bookKey(t,a), title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", text:text });
   }
+  const BOOK_LOADER = `<div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div>`;
+  function loaderBox(msg){ return `<div class="loader-box">${BOOK_LOADER}${msg?`<p class="mp">${esc(msg)}</p>`:""}</div>`; }
   async function openReviewsFeed(){
-    $("#reviewsFeed").innerHTML = `<p class="mp">Загружаю ленту…</p>`;
+    $("#reviewsFeed").innerHTML = loaderBox("Листаю рецензии…");
     openPage("reviewsPage");
     let list=[];
     try{ if(CLOUD()) list = await sbFetchAllReviews(); }catch(e){ list=[]; }
-    if(!list.length){ $("#reviewsFeed").innerHTML = `<p class="mp">Пока нет рецензий. Открой книгу в своём профиле, напиши мнение и нажми «Опубликовать рецензию» ✍️</p>`; return; }
+    if(!list.length){ $("#reviewsFeed").innerHTML = `<div class="loader-box"><p class="mp">Пока нет рецензий. Открой книгу в своём профиле и нажми «Опубликовать рецензию» ✍️</p>${BOOK_LOADER}</div>`; return; }
     $("#reviewsFeed").innerHTML = list.map(rv=>{
       const nm=rv.name||"Читатель", ph=rv.photo||"", ttl=rv.title||"", au=rv.author||"";
       const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
@@ -1929,8 +1937,6 @@ main,footer{position:relative;z-index:1}
       return `<div class="rev-item"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(rv.text||"")}</div>${spine}</div></div>`;
     }).join("");
   }
-  $("#bpTabAnno").addEventListener("click", ()=>bpSetTab("anno"));
-  $("#bpTabRevs").addEventListener("click", ()=>bpSetTab("revs"));
   $("#bpWish").addEventListener("click", ()=>{ if(bpBook) addCatToWish(bpBook.t, bpBook.a); });
   $("#bpBookmate").addEventListener("click", ()=>{ if(bpBook) copyForSearch(bpBook.t); });
   $("#bpBack").addEventListener("click", ()=>{ $("#bookPage").classList.remove("open"); });   // назад — только закрыть книгу, подборки остаются
@@ -2007,6 +2013,9 @@ main,footer{position:relative;z-index:1}
     const bq = encodeURIComponent(b.t + " " + (b.a||""));
     $("#readLitres").href = "https://www.litres.ru/search/?q=" + bq;
     $("#readBookmate").href = "https://books.yandex.ru/search?query=" + bq;
+    // «в хотелки» — только для книги с полки друга, которой ещё нет у меня (не метч, не своя)
+    const onMyShelf = myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a));
+    $("#readWish").style.display = (!isMe() && !onMyShelf) ? "inline-flex" : "none";
     if(isMe()){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
