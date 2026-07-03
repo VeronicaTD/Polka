@@ -63,6 +63,20 @@ body[data-theme="matcha"]{
 #splash{position:fixed;inset:0;z-index:200;background:#FFF8F1;display:grid;place-items:center;text-align:center}
 .splash-in{font-family:"Fredoka",sans-serif;font-size:30px;line-height:1.4;color:#5e4538}
 .splash-in span{font-size:14px;color:#7a6253}
+/* анимация загрузки: книжка с перелистывающимися страницами */
+.book-loader{position:relative;width:60px;height:44px;margin:0 auto;perspective:600px}
+.book-loader .bl-side{position:absolute;top:0;width:28px;height:44px;background:#fdf6ec;border:2px solid #7a5c48;box-sizing:border-box}
+.book-loader .bl-left{left:0;border-radius:5px 0 0 5px;border-right:none}
+.book-loader .bl-right{right:0;border-radius:0 5px 5px 0;border-left:none}
+.book-loader .bl-spine{position:absolute;left:calc(50% - 1.5px);top:0;width:3px;height:44px;background:#7a5c48;z-index:4;border-radius:2px}
+.book-loader .bl-page{position:absolute;top:3px;left:calc(50% - 1px);width:24px;height:38px;background:#fff;border:1px solid #d8c9b8;border-left:none;border-radius:0 3px 3px 0;transform-origin:left center;animation:bl-flip 2.4s infinite ease-in-out;backface-visibility:hidden;box-sizing:border-box}
+.book-loader .bl-page:nth-child(4){animation-delay:0s}
+.book-loader .bl-page:nth-child(5){animation-delay:.3s}
+.book-loader .bl-page:nth-child(6){animation-delay:.6s}
+.book-loader .bl-page:nth-child(7){animation-delay:.9s}
+@keyframes bl-flip{0%,100%{transform:rotateY(0)}45%,55%{transform:rotateY(-172deg)}}
+.loader-box{text-align:center;padding:22px 0}
+.loader-box .mp{margin-top:12px}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:"Fredoka",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
   background-image:radial-gradient(circle at 15% 0%, rgba(184,73,58,.05), transparent 38%),
@@ -83,7 +97,9 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .bw{font-family:var(--display);font-size:28px;line-height:1;color:var(--ink)}
 .bell{position:relative;border:1px solid var(--line);background:var(--paper);border-radius:50%;width:42px;height:42px;font-size:18px;display:grid;place-items:center;margin-left:10px;flex:0 0 auto}
 .bar-side.left .bell{margin-left:0}
-.menu-btn{font-size:22px;font-weight:700}
+.menu-btn{font-size:22px;font-weight:700;color:var(--accent-deep);background:var(--paper-2)}
+.menu-btn:hover{background:var(--paper);border-color:var(--accent)}
+.menu-sep{height:1px;background:var(--line);margin:8px 4px}
 /* боковое меню */
 .menu-back{display:none;position:fixed;inset:0;z-index:60;background:rgba(20,10,5,.4)}
 .menu-back.open{display:block}
@@ -194,7 +210,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .case-nav:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .case-ind{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin:6px 0 10px;display:none}
 .case-top{display:flex;justify-content:center;margin:4px 0 8px}
-.case-actions{display:none}
+.case-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;margin-bottom:30px}
 .wrapped{background:#b8493a;transition:background .5s ease;color:#fff;overflow:hidden}
 .wr-bars{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:6px;z-index:3}
 .wr-seg{flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.32);overflow:hidden}
@@ -235,29 +251,63 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .add-quote{display:inline-block;margin-top:8px}
 .wa-back{display:none;position:fixed;inset:0;z-index:150;background:rgba(20,10,5,.45)}
 .wa-back.open{display:block}
-.wa-modal{z-index:151}
+.modal.wa-modal{z-index:160}
 .read-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 /* подборки книг */
-.cat-genre{margin:22px 0 10px;font-family:var(--head);font-size:19px;color:var(--ink)}
-.cat-row{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none}
+.cat-genre{margin:22px 0 8px;font-family:var(--head);font-size:19px;color:var(--ink)}
+.cat-scroll{position:relative}
+.cat-row{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:none;scroll-behavior:smooth}
 .cat-row::-webkit-scrollbar{display:none}
-.cat-book{flex:0 0 auto;width:110px;cursor:pointer;text-align:center}
-.cat-cover{width:110px;height:150px;border-radius:5px 8px 8px 5px;display:flex;align-items:center;justify-content:center;
-  padding:12px 10px;color:#fff;box-shadow:0 8px 16px -8px rgba(40,25,10,.55);position:relative;overflow:hidden}
-.cat-cover span{font-family:"Fraunces",serif;font-weight:600;font-size:15px;line-height:1.2;text-align:center}
-.cat-wish{position:absolute;top:5px;right:5px;width:26px;height:26px;border:none;border-radius:50%;
-  background:rgba(255,255,255,.85);color:#333;font-size:13px;display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.cat-wish:hover{background:#fff}
-.cat-book .cat-a{font-size:11.5px;color:var(--ink-soft);margin-top:7px;line-height:1.25}
-.cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:4px;line-height:1.2}
-/* окно книги из подборки */
-.cb-modal{max-height:86vh;overflow-y:auto;width:min(460px,92vw)}
-.cb-reviews{margin-top:16px}
-.cb-rev{background:var(--paper-2);border-radius:10px;padding:12px 14px;margin-bottom:10px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
-.cb-rev .cb-who{font-weight:700;font-size:13px;color:var(--ink);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.cb-rev .cb-stars{color:var(--gold);font-size:13px;letter-spacing:1px}
-.cb-rev .cb-txt{font-size:14px;color:var(--ink);margin-top:5px;line-height:1.4;white-space:pre-wrap}
-.cb-add{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.cat-book{flex:0 0 auto;width:116px;cursor:pointer;text-align:center}
+.cat-cover{position:relative;width:116px;height:168px;border-radius:4px 9px 9px 4px;overflow:hidden;padding:8px;
+  box-shadow:0 8px 16px -8px rgba(40,25,10,.55), inset 4px 0 6px -3px rgba(0,0,0,.25)}
+.cat-cover .cc-frame{width:100%;height:100%;border:1px solid currentColor;border-radius:3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 8px 10px;text-align:center}
+.cat-cover .cc-motif{font-size:20px;opacity:.85}
+.cat-cover .cc-title{font-family:"Fraunces",serif;font-weight:600;font-size:14px;line-height:1.18;flex:1;
+  display:flex;align-items:center;overflow:hidden}
+.cat-cover .cc-author{font-size:9.5px;letter-spacing:.03em;opacity:.85;border-top:1px solid currentColor;padding-top:5px;width:100%}
+.cat-cover .cc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;border-radius:inherit}
+.cat-cover .cc-img.loaded{opacity:1}
+/* страница книги */
+.bp-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:6px}
+#bpCover .cat-cover{width:130px;height:190px;cursor:default}
+.bp-anno{margin-top:6px;font-size:15px;color:var(--ink);line-height:1.55;white-space:pre-wrap}
+#bpAnno{margin-top:18px}
+.bp-actions{margin-top:20px;flex-wrap:wrap;gap:8px}
+/* вкладки книги */
+.bp-tabs{display:flex;gap:4px;margin:18px 0 4px;border-bottom:1px solid var(--line)}
+.bp-tab{appearance:none;background:none;border:none;cursor:pointer;font:inherit;font-size:14px;color:var(--ink-soft);
+  padding:9px 12px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.bp-tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.bp-pane{padding-top:14px}
+/* рецензии читателей */
+.rev-item{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}
+.rev-item:last-child{border-bottom:none}
+.rev-av{flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;overflow:hidden}
+.rev-av img{width:100%;height:100%;object-fit:cover}
+.rev-body{min-width:0;flex:1}
+.rev-name{font-weight:600;font-size:14px;margin-bottom:3px}
+.rev-text{font-size:14.5px;line-height:1.5;color:var(--ink);white-space:pre-wrap}
+.rev-book{display:inline-flex;align-items:baseline;gap:6px;margin-top:9px;padding:5px 11px;max-width:100%;
+  border-radius:3px 7px 7px 3px;box-shadow:inset 4px 0 0 rgba(0,0,0,.16), 0 2px 6px -3px rgba(40,25,10,.5);font-size:12px}
+.rev-book .rb-title{font-family:"Fraunces",serif;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rev-book .rb-author{opacity:.85;white-space:nowrap}
+.review-field{border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
+.rev-msg{display:block;margin-top:6px;font-size:13px;color:var(--accent-deep)}
+.cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:6px;line-height:1.2;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cat-book .cat-a{font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.2}
+.cat-acts{display:flex;flex-direction:column;gap:5px;margin-top:7px;align-items:stretch}
+.cat-mini{border:1px solid var(--line);background:var(--paper-2);color:var(--accent-deep);text-decoration:none;
+  border-radius:999px;padding:5px 8px;font-size:11.5px;font-weight:700;cursor:pointer;text-align:center;display:block}
+.cat-mini:hover{border-color:var(--accent);color:var(--accent)}
+.cat-arrow{display:none;position:absolute;top:60px;z-index:3;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;
+  box-shadow:0 4px 12px -4px rgba(40,25,10,.5);align-items:center;justify-content:center}
+.cat-arrow.left{left:-6px}.cat-arrow.right{right:-6px}
+@media(min-width:761px){ .cat-arrow{display:flex} .cat-row{padding-left:0;padding-right:0} }
 .read-link{display:inline-block;font-size:13px;font-weight:700;color:var(--accent-deep);
   text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 15px;background:var(--paper-2)}
 .read-link:hover{border-color:var(--accent);color:var(--accent)}
@@ -431,7 +481,7 @@ main,footer{position:relative;z-index:1}
 </head>
 <body>
 
-<div id="splash"><div class="splash-in">📖<br>Polka<br><span>загрузка…</span></div></div>
+<div id="splash"><div class="splash-in"><div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div><div style="margin-top:18px">Polka</div><span>загрузка…</span></div></div>
 
 <!-- спрайт звёзд -->
 <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
@@ -482,7 +532,6 @@ main,footer{position:relative;z-index:1}
       <span class="bw">Polka</span>
     </span>
     <div class="bar-side right">
-      <button class="bell" id="themeBtn" title="Тема оформления" aria-label="Тема">🎨</button>
       <button class="bell" id="reqBtn" title="Запросы в друзья" aria-label="Запросы">🔔<span class="bell-count" id="reqCount" style="display:none">0</span></button>
     </div>
   </div>
@@ -493,9 +542,12 @@ main,footer{position:relative;z-index:1}
 <nav id="sideMenu" class="side-menu" aria-label="Меню">
   <div class="menu-h">Polka 📚</div>
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
-  <button class="menu-item" id="mWish">📌 Хотелки</button>
+  <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
+  <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
+  <div class="menu-sep"></div>
+  <button class="menu-item" id="mTheme">🎨 Тема оформления</button>
 </nav>
 
 <main class="wrap">
@@ -540,18 +592,18 @@ main,footer{position:relative;z-index:1}
     <button class="case-nav next" id="caseNext" aria-label="Следующий шкаф">›</button>
     <div class="bookcase" id="bookcase"></div>
     <div class="case-ind" id="caseInd"></div>
-    <div class="case-actions">
-      <button class="dice-btn" id="quotesBtn">💬 мои цитаты</button>
-      <button class="dice-btn" id="wishBtn">📌 хотелки</button>
-      <button class="dice-btn" id="yearBtn" style="display:none">✨ мой книжный год</button>
-      <button class="dice-btn" id="catalogBtn">📚 подборки книг</button>
+    <div class="case-actions" id="friendActions" style="display:none">
+      <button class="dice-btn" id="quotesBtn">💬 цитаты друга</button>
+      <button class="dice-btn" id="wishBtn">📌 хотелки друга</button>
+      <button class="dice-btn" id="yearBtn" style="display:none">✨ книжный год друга</button>
     </div>
+    <div style="display:none"><button id="catalogBtn"></button></div>
   </section>
 
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v94 test: меню-гамбургер, лого по центру, подборки по разделам --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v115 test: убрано «рецензии читателей» из подписи вверху подборок --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -571,7 +623,6 @@ main,footer{position:relative;z-index:1}
   </div>
   <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
   <div class="field"><label>Оценка</label><div class="rate" id="fRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
-  <div class="field"><label>Комментарий <span style="font-weight:400">(увидят друзья)</span></label><textarea id="fNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
   <div class="field"><label>Любимые цитаты из книги</label><div id="fQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="fAddQuote">+ ещё цитата</button></div>
   <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
@@ -585,7 +636,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
+      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -596,8 +647,8 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Цвет обложки</label><div class="swatches" id="iColors"></div></div>
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
-        <div class="field"><label>Комментарий</label><textarea id="iNote" placeholder="чем зацепила, кому советуете..."></textarea></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
+        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><span id="iReviewMsg" class="rev-msg"></span></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -710,7 +761,8 @@ main,footer{position:relative;z-index:1}
   <button class="close" id="waClose">×</button>
   <h3 id="waTitle" style="margin-bottom:2px"></h3>
   <p class="mp" id="waAuthor" style="margin-top:0"></p>
-  <button class="btn" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Прочитала — поставить на полку</button>
+  <button class="btn" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Поставить на полку</button>
+  <button class="btn" id="waAddWish" style="width:100%;justify-content:center;display:none;margin-top:6px">📌 Добавить в свои хотелки</button>
   <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
   <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
 </div>
@@ -719,28 +771,37 @@ main,footer{position:relative;z-index:1}
 <div class="fullpage" id="catalogPage" aria-label="Подборки">
   <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Подборки книг 📚</h3></div>
   <div class="fp-body">
-    <p class="mp">Загляни, выбери книгу и почитай, что думают другие читатели Polka.</p>
+    <p class="mp">Жанровые подборки и самое популярное. Нажми на книгу — там аннотация 📖</p>
     <div id="catalogList"></div>
   </div>
 </div>
 
-<!-- книга из подборки: рецензии читателей -->
-<div id="cbBack" class="wa-back"></div>
-<div class="modal wa-modal cb-modal" id="catBookModal" role="dialog" aria-modal="true">
-  <button class="close" id="cbClose">×</button>
-  <h3 id="cbTitle" style="margin-bottom:2px"></h3>
-  <p class="mp" id="cbAuthor" style="margin-top:0"></p>
-  <div class="read-row" style="margin-top:2px">
-    <a id="cbLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a>
-    <a id="cbBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a>
-    <button class="read-link" id="cbWish" type="button">📌 в хотелки</button>
+<!-- лента рецензий читателей -->
+<div class="fullpage" id="reviewsPage" aria-label="Рецензии читателей">
+  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Рецензии читателей 💬</h3></div>
+  <div class="fp-body">
+    <p class="mp">Живая лента: что читатели пишут о книгах — в том числе о тех, которых нет в подборках. Своё мнение можно оставить в любой своей книге → «Опубликовать рецензию».</p>
+    <div id="reviewsFeed"></div>
   </div>
-  <div class="cb-reviews" id="cbReviews"><p class="mp">Загружаю рецензии…</p></div>
-  <div class="cb-add">
-    <div class="ir-label">Ваша рецензия</div>
-    <div class="rate" id="cbRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div>
-    <textarea id="cbText" placeholder="что понравилось, кому советуете..."></textarea>
-    <button class="btn" id="cbSend" style="margin-top:8px">Опубликовать рецензию</button>
+</div>
+
+<!-- книга из подборки (полный экран) -->
+<div class="fullpage" id="bookPage" aria-label="Книга">
+  <div class="fp-head"><button class="fp-back" id="bpBack">← назад</button><h3>Книга</h3></div>
+  <div class="fp-body">
+    <div class="bp-head">
+      <div id="bpCover"></div>
+      <div style="min-width:0;flex:1">
+        <h3 id="bpTitle" style="margin:0 0 3px"></h3>
+        <p class="mp" id="bpAuthor" style="margin:0"></p>
+      </div>
+    </div>
+    <div id="bpAnno"></div>
+    <div class="read-row bp-actions">
+      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
+      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
+      <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
+    </div>
   </div>
 </div>
 
@@ -833,6 +894,11 @@ main,footer{position:relative;z-index:1}
   }
   async function sbFetchReviews(bookKey){
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?select=*&book=eq."+encodeURIComponent(bookKey)+"&order=created_at.desc",{headers:SB_H()});
+    if(!r.ok) return [];
+    const a = await r.json(); return Array.isArray(a)?a:[];
+  }
+  async function sbFetchAllReviews(){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?select=*&order=created_at.desc&limit=100",{headers:SB_H()});
     if(!r.ok) return [];
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
@@ -1099,13 +1165,10 @@ main,footer{position:relative;z-index:1}
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     const meV = isMe();
     $("#diceBtn").style.display = meV ? "" : "none";
-    $("#quotesBtn").innerHTML = meV ? "💬 мои цитаты" : "💬 цитаты друга";
-    $("#wishBtn").innerHTML = meV ? "📌 хотелки" : "📌 хотелки друга";
-    $("#yearBtn").innerHTML = meV ? "✨ мой книжный год" : "✨ книжный год друга";
-    $("#yearBtn").style.display = wrappedSeason() ? "" : "none";
-    $("#mQuotes").textContent = meV ? "💬 Мои цитаты" : "💬 Цитаты друга";
-    $("#mWish").textContent = meV ? "📌 Хотелки" : "📌 Хотелки друга";
-    $("#mYear").textContent = meV ? "✨ Мой книжный год" : "✨ Книжный год друга";
+    // нижний ряд кнопок — только когда я в гостях (цитаты/хотелки друга)
+    $("#friendActions").style.display = meV ? "none" : "flex";
+    $("#yearBtn").style.display = (!meV && wrappedSeason()) ? "" : "none";
+    // пункт «книжный год» в меню — всегда мой, только в новогоднюю неделю
     $("#mYear").style.display = wrappedSeason() ? "" : "none";
     renderMyStickers();
   }
@@ -1365,17 +1428,19 @@ main,footer{position:relative;z-index:1}
 
   /* мои цитаты */
   function openPage(id){ $("#"+id).classList.add("open"); }
-  $("#quotesBtn").addEventListener("click", ()=>{
-    const me = isMe(), fn = me ? "" : friend().name;
-    $("#quotesTitle").textContent = me ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
-    $("#quotesSub").textContent = me ? "Цитаты, которые вы сохранили из своих книг." : `Любимые цитаты из книг — ${fn}.`;
+  function openQuotesPage(forMe){
+    const books = forMe ? myBooks : ((friend()&&friend().books)||[]);
+    const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
+    $("#quotesTitle").textContent = forMe ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
+    $("#quotesSub").textContent = forMe ? "Цитаты, которые вы сохранили из своих книг." : `Любимые цитаты из книг — ${fn}.`;
     const items = [];
-    currentBooks().forEach(b=> quotesOf(b).forEach(q=> items.push({q, b})));
+    books.forEach(b=> quotesOf(b).forEach(q=> items.push({q, b})));
     $("#quotesList").innerHTML = items.length
       ? items.map(({q,b})=>`<div class="q-row"><span class="q-text">«${esc(q)}»</span><div class="q-side"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
-      : `<p class="mp">${me ? "Пока нет цитат. Откройте книгу и впишите любимую цитату из неё." : "У друга пока нет сохранённых цитат."}</p>`;
+      : `<p class="mp">${forMe ? "Пока нет цитат. Откройте книгу и впишите любимую цитату из неё." : "У друга пока нет сохранённых цитат."}</p>`;
     openPage("quotesPage");
-  });
+  }
+  $("#quotesBtn").addEventListener("click", ()=> openQuotesPage(false));   // нижняя кнопка — цитаты друга
 
   /* книжные хотелки — стоят как книги на полке */
   function packShelves(cells, innerW, gap){
@@ -1393,21 +1458,24 @@ main,footer{position:relative;z-index:1}
       <div class="s-foot"><div class="s-band" style="font-size:${Math.max(6,Math.round(d.font*0.55))}px">${esc(lastName(w.a||""))}</div></div>
     </div>`;
   }
+  let wishForMe = true;   // чья хотелка сейчас открыта (можно ли редактировать)
   function renderWish(){
-    const wc = $("#wishStack"), me = isMe(), wl = currentWishlist();
+    const wc = $("#wishStack"), me = wishForMe, wl = me ? myWishlist : ((friend()&&friend().wishlist)||[]);
     if(!wl.length){ wc.innerHTML = `<p class="mp">${me ? "Хотелки пусты. Добавьте книгу ниже." : "У друга пока нет хотелок."}</p>`; return; }
     const innerW = Math.max(180, wc.clientWidth - 40);
     const cells = wl.map((w,i)=>{ const d=spineDims({t:w.t}); return { html: wishSpineHTML(w,i,me), w:d.w }; });
     const shelves = packShelves(cells, innerW, 6);
     wc.innerHTML = `<div class="bookcase">${shelves.map(r=>`<div class="shelf">${r.map(c=>c.html).join("")}</div>`).join("")}</div>`;
   }
-  $("#wishBtn").addEventListener("click", ()=>{
-    const me = isMe(), fn = me ? "" : friend().name;
-    $("#wishTitleH").textContent = me ? "Книжные хотелки 📌" : `Хотелки · ${fn} 📌`;
-    $("#wishSub").textContent = me ? "То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
-    $("#wishAddForm").style.display = me ? "" : "none";
+  function openWishPage(forMe){
+    wishForMe = forMe;
+    const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
+    $("#wishTitleH").textContent = forMe ? "Мои хотелки 📌" : `Хотелки · ${fn} 📌`;
+    $("#wishSub").textContent = forMe ? "То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
+    $("#wishAddForm").style.display = forMe ? "" : "none";
     $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish();
-  });
+  }
+  $("#wishBtn").addEventListener("click", ()=> openWishPage(false));   // нижняя кнопка — хотелки друга
   // «книжный год» доступен только в новогоднюю неделю: 31 дек — 6 янв
   function wrappedSeason(){ const d=new Date(), m=d.getMonth(), day=d.getDate(); return (m===11 && day>=31) || (m===0 && day<=6); }
   function readWord(n){ const a=n%100,b=n%10; if(a>=11&&a<=14) return "книг прочитано"; if(b===1) return "книга прочитана"; if(b>=2&&b<=4) return "книги прочитано"; return "книг прочитано"; }
@@ -1487,11 +1555,12 @@ main,footer{position:relative;z-index:1}
     saveWish(); $("#wishTitle").value=""; $("#wishAuthor").value=""; renderWish();
   });
   $("#wishStack").addEventListener("click", e=>{
-    if(!isMe()) return;
     const del = e.target.closest("[data-del]");
-    if(del){ myWishlist.splice(+del.dataset.del,1); saveWish(); renderWish(); return; }
+    if(del){ if(!wishForMe) return; myWishlist.splice(+del.dataset.del,1); saveWish(); renderWish(); return; }
     const el = e.target.closest(".wish-spine"); if(!el) return;
-    const i=+el.dataset.i, w=myWishlist[i]; if(!w) return;
+    const i=+el.dataset.i;
+    const wl = wishForMe ? myWishlist : ((friend()&&friend().wishlist)||[]);
+    const w = wl[i]; if(!w) return;
     openWishAct(i, w);
   });
   // окошко выбора для книги из хотелок
@@ -1503,6 +1572,9 @@ main,footer{position:relative;z-index:1}
     const bq = encodeURIComponent(w.t + " " + (w.a||""));
     $("#waLitres").href = "https://www.litres.ru/search/?q=" + bq;
     $("#waBookmate").href = "https://books.yandex.ru/search?query=" + bq;
+    // мои хотелки → «поставить на полку»; хотелки друга → «добавить в свои хотелки»
+    $("#waShelf").style.display   = wishForMe ? "flex" : "none";
+    $("#waAddWish").style.display = wishForMe ? "none" : "flex";
     $("#waBack").classList.add("open"); $("#wishActModal").classList.add("open");
   }
   function closeWishAct(){ $("#waBack").classList.remove("open"); $("#wishActModal").classList.remove("open"); }
@@ -1512,127 +1584,375 @@ main,footer{position:relative;z-index:1}
     const i=waIdx, w=waBook; closeWishAct(); closeModals();
     if(w){ pendingWish=i; openAdd({t:w.t, a:w.a}); }
   });
+  // добавить книгу друга в свои хотелки (можно и находясь в гостях)
+  function addToMyWish(t,a){
+    if(myBooks.some(b=>bookKey(b.t,b.a)===bookKey(t,a))){ toast("Эта книга уже на твоей полке 📚"); return; }
+    if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в твоих хотелках 📌"); return; }
+    myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в твои хотелки 📌");
+  }
+  $("#waAddWish").addEventListener("click", ()=>{ if(waBook){ addToMyWish(waBook.t, waBook.a); closeWishAct(); } });
   // Букмейт открывает приложение на главной — копируем название, чтобы вставить в поиск
   function copyForSearch(t){ try{ if(navigator.clipboard && t) navigator.clipboard.writeText(t); toast("Название скопировано — вставьте в поиск 📋"); }catch(e){} }
   $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
   $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
+  $("#readWish").addEventListener("click", ()=>{ if(infoBook){ addToMyWish(infoBook.t, infoBook.a); closeModals(); } });
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
     "🔥 Популярное прошлого года": [
       {t:"Уроки химии", a:"Бонни Гармус"}, {t:"Тревожные люди", a:"Фредрик Бакман"},
       {t:"Незримая жизнь Адди Ларю", a:"В. Э. Шваб"}, {t:"Ветер знает моё имя", a:"Исабель Альенде"},
-      {t:"Йерверт", a:"Люк Кузи"}, {t:"Маленькая жизнь", a:"Ханья Янагихара"}
+      {t:"Маленькая жизнь", a:"Ханья Янагихара"}, {t:"Клара и Солнце", a:"Кадзуо Исигуро"},
+      {t:"Проект «Рози»", a:"Грэм Симсион"}, {t:"Тени тевтонов", a:"Алексей Иванов"}
     ],
     "✨ Новинки": [
-      {t:"Джеймс", a:"Персиваль Эверетт"}, {t:"Хранитель древностей", a:"Робин Слоун"},
-      {t:"Служба доставки книг", a:"Карстен Себастиан Хенн"}, {t:"Сердце огня", a:"Крис Уитакер"},
-      {t:"Понравится ли тебе то, что ты видишь", a:"—"}, {t:"Дом на краю света", a:"Майкл Каннингем"}
+      {t:"Джеймс", a:"Персиваль Эверетт"}, {t:"Служба доставки книг", a:"Карстен Хенн"},
+      {t:"Сердце огня", a:"Крис Уитакер"}, {t:"Йеллоуфейс", a:"Ребекка Куанг"},
+      {t:"Магазинчик у озера", a:"Дженни Колган"},
+      {t:"Пёсья матерь", a:"Павлос Матесис"}, {t:"Хроники хищных городов", a:"Филип Рив"},
+      {t:"Тоннель", a:"Яна Вагнер"}, {t:"Наводнение", a:"Дарья Бобылёва"}
     ],
     "🏆 Бестселлеры": [
       {t:"Щегол", a:"Донна Тартт"}, {t:"Задача трёх тел", a:"Лю Цысинь"},
       {t:"Атомные привычки", a:"Джеймс Клир"}, {t:"Sapiens", a:"Юваль Ной Харари"},
-      {t:"Тонкое искусство пофигизма", a:"Марк Мэнсон"}, {t:"Институт", a:"Стивен Кинг"}
+      {t:"Тонкое искусство пофигизма", a:"Марк Мэнсон"}, {t:"Институт", a:"Стивен Кинг"},
+      {t:"Маленькая жизнь", a:"Ханья Янагихара"}, {t:"Шантарам", a:"Грегори Робертс"},
+      {t:"Богатый папа, бедный папа", a:"Роберт Кийосаки"}, {t:"Цветы для Элджернона", a:"Дэниел Киз"}
     ],
     "📖 Проза": [
       {t:"Норвежский лес", a:"Харуки Мураками"}, {t:"Вино из одуванчиков", a:"Рэй Брэдбери"},
       {t:"Стоунер", a:"Джон Уильямс"}, {t:"Три товарища", a:"Э. М. Ремарк"},
-      {t:"Здесь была Бритт-Мари", a:"Фредрик Бакман"}, {t:"До встречи с тобой", a:"Джоджо Мойес"}
+      {t:"Здесь была Бритт-Мари", a:"Фредрик Бакман"}, {t:"До встречи с тобой", a:"Джоджо Мойес"},
+      {t:"Над пропастью во ржи", a:"Дж. Сэлинджер"}, {t:"Маленькие женщины", a:"Луиза Олкотт"},
+      {t:"Дом, в котором…", a:"Мариам Петросян"}, {t:"Зулейха открывает глаза", a:"Гузель Яхина"}
     ],
     "🐉 Фэнтези и фантастика": [
       {t:"Гарри Поттер и философский камень", a:"Дж. К. Роулинг"}, {t:"Имя ветра", a:"Патрик Ротфусс"},
       {t:"Дюна", a:"Фрэнк Герберт"}, {t:"Ведьмак. Последнее желание", a:"Анджей Сапковский"},
-      {t:"1984", a:"Джордж Оруэлл"}, {t:"451 градус по Фаренгейту", a:"Рэй Брэдбери"}
+      {t:"1984", a:"Джордж Оруэлл"}, {t:"451 градус по Фаренгейту", a:"Рэй Брэдбери"},
+      {t:"Игра престолов", a:"Джордж Мартин"}, {t:"Благие знамения", a:"Пратчетт и Гейман"},
+      {t:"Марсианин", a:"Энди Вейер"}, {t:"Свечи горят", a:"Виктория Шваб"}
     ],
     "🔎 Детектив и триллер": [
       {t:"Исчезнувшая", a:"Гиллиан Флинн"}, {t:"Девушка в поезде", a:"Пола Хокинс"},
       {t:"Тайная история", a:"Донна Тартт"}, {t:"Молчание ягнят", a:"Томас Харрис"},
-      {t:"Женщина в окне", a:"А. Дж. Финн"}, {t:"Метро 2033", a:"Дмитрий Глуховский"}
+      {t:"Женщина в окне", a:"А. Дж. Финн"}, {t:"Метро 2033", a:"Дмитрий Глуховский"},
+      {t:"Десять негритят", a:"Агата Кристи"}, {t:"Молчаливый пациент", a:"Алекс Михаэлидес"},
+      {t:"Внутри убийцы", a:"Майк Омер"}, {t:"Ребекка", a:"Дафна дю Морье"}
     ],
     "🌱 Нон-фикшн и саморазвитие": [
       {t:"Sapiens. Краткая история человечества", a:"Юваль Ной Харари"}, {t:"Атомные привычки", a:"Джеймс Клир"},
       {t:"Тонкое искусство пофигизма", a:"Марк Мэнсон"}, {t:"Думай медленно… решай быстро", a:"Даниэль Канеман"},
-      {t:"Магия утра", a:"Хэл Элрод"}, {t:"К себе нежно", a:"Ольга Примаченко"}
+      {t:"Магия утра", a:"Хэл Элрод"}, {t:"К себе нежно", a:"Ольга Примаченко"},
+      {t:"Гены, наркотики и я", a:"—"}, {t:"Дофаминовая нация", a:"Анна Лембке"},
+      {t:"Здоровые границы", a:"Нэнси Левин"}, {t:"Тело помнит всё", a:"Бессел ван дер Колк"}
     ],
     "🏛 Классика": [
       {t:"Мастер и Маргарита", a:"Михаил Булгаков"}, {t:"Преступление и наказание", a:"Фёдор Достоевский"},
       {t:"Гордость и предубеждение", a:"Джейн Остин"}, {t:"Война и мир", a:"Лев Толстой"},
-      {t:"Убить пересмешника", a:"Харпер Ли"}, {t:"Портрет Дориана Грея", a:"Оскар Уайльд"}
+      {t:"Убить пересмешника", a:"Харпер Ли"}, {t:"Портрет Дориана Грея", a:"Оскар Уайльд"},
+      {t:"Анна Каренина", a:"Лев Толстой"}, {t:"Джейн Эйр", a:"Шарлотта Бронте"},
+      {t:"Граф Монте-Кристо", a:"Александр Дюма"}, {t:"Великий Гэтсби", a:"Фрэнсис Фицджеральд"}
     ]
   };
   const bookKey = (t,a) => (String(t||"")+"|"+String(a||"")).trim().toLowerCase();
+  function coverHTML(b, motif, bg){
+    // дизайнерская обложка-заглушка: показывается сразу; поверх подгружается настоящая обложка, если найдётся
+    return `<div class="cat-cover" data-open data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}" style="background:${bg};color:${pickFg(bg)}">
+      <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
+      <div class="cc-title">${esc(b.t)}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
+  }
+  /* ---- настоящие обложки: ID тома Google Books → картинка с CDN (без лимитов) ---- */
+  const GBID = {
+    "Уроки химии|Бонни Гармус":"THSiEAAAQBAJ",
+    "Тревожные люди|Фредрик Бакман":"E9UJEAAAQBAJ",
+    "Незримая жизнь Адди Ларю|В. Э. Шваб":"ycpDEAAAQBAJ",
+    "Маленькая жизнь|Ханья Янагихара":"oD2ADQAAQBAJ",
+    "Клара и Солнце|Кадзуо Исигуро":"05UsEAAAQBAJ",
+    "Проект «Рози»|Грэм Симсион":"4KBXAwAAQBAJ",
+    "Тени тевтонов|Алексей Иванов":"RtEhEAAAQBAJ",
+    "Джеймс|Персиваль Эверетт":"n1qXEQAAQBAJ",
+    "Служба доставки книг|Карстен Хенн":"sb_PEQAAQBAJ",
+    "Йеллоуфейс|Ребекка Куанг":"Y247EQAAQBAJ",
+    "Магазинчик у озера|Дженни Колган":"zZsQEAAAQBAJ",
+    "Пёсья матерь|Павлос Матесис":"6tQUEAAAQBAJ",
+    "Хроники хищных городов|Филип Рив":"0BVfDwAAQBAJ",
+    "Тоннель|Яна Вагнер":"HuoMEQAAQBAJ",
+    "Щегол|Донна Тартт":"fUKfBQAAQBAJ",
+    "Задача трёх тел|Лю Цысинь":"-u8-DwAAQBAJ",
+    "Атомные привычки|Джеймс Клир":"t3XADwAAQBAJ",
+    "Sapiens|Юваль Ной Харари":"mAWwDQAAQBAJ",
+    "Тонкое искусство пофигизма|Марк Мэнсон":"LE00DwAAQBAJ",
+    "Институт|Стивен Кинг":"8pXeDwAAQBAJ",
+    "Шантарам|Грегори Робертс":"7uc7CwAAQBAJ",
+    "Богатый папа, бедный папа|Роберт Кийосаки":"vy_lCwAAQBAJ",
+    "Цветы для Элджернона|Дэниел Киз":"9f-vDQAAQBAJ",
+    "Норвежский лес|Харуки Мураками":"t7Y9DwAAQBAJ",
+    "Вино из одуванчиков|Рэй Брэдбери":"v0BNEQAAQBAJ",
+    "Стоунер|Джон Уильямс":"WerGCQAAQBAJ",
+    "Три товарища|Э. М. Ремарк":"J25yDwAAQBAJ",
+    "Здесь была Бритт-Мари|Фредрик Бакман":"QQtkDwAAQBAJ",
+    "До встречи с тобой|Джоджо Мойес":"LTaJAAAAQBAJ",
+    "Над пропастью во ржи|Дж. Сэлинджер":"KDHMDwAAQBAJ",
+    "Маленькие женщины|Луиза Олкотт":"LrLfDwAAQBAJ",
+    "Дом, в котором…|Мариам Петросян":"eOJoAwAAQBAJ",
+    "Зулейха открывает глаза|Гузель Яхина":"-cQkCQAAQBAJ",
+    "Гарри Поттер и философский камень|Дж. К. Роулинг":"Tm-kPwAACAAJ",
+    "Имя ветра|Патрик Ротфусс":"kp4eEAAAQBAJ",
+    "Дюна|Фрэнк Герберт":"S3joDwAAQBAJ",
+    "Ведьмак. Последнее желание|Анджей Сапковский":"lYESBAAAQBAJ",
+    "1984|Джордж Оруэлл":"uHOGAwAAQBAJ",
+    "451 градус по Фаренгейту|Рэй Брэдбери":"iRYlEQAAQBAJ",
+    "Игра престолов|Джордж Мартин":"B3WSAwAAQBAJ",
+    "Благие знамения|Пратчетт и Гейман":"FcQvEAAAQBAJ",
+    "Марсианин|Энди Вейер":"w5yuBAAAQBAJ",
+    "Исчезнувшая|Гиллиан Флинн":"lb95AAAAQBAJ",
+    "Девушка в поезде|Пола Хокинс":"fhN1CgAAQBAJ",
+    "Тайная история|Донна Тартт":"epW_BQAAQBAJ",
+    "Молчание ягнят|Томас Харрис":"tzfqBgAAQBAJ",
+    "Женщина в окне|А. Дж. Финн":"wjNIDwAAQBAJ",
+    "Метро 2033|Дмитрий Глуховский":"twKQ7zpid2UC",
+    "Десять негритят|Агата Кристи":"whbODQAAQBAJ",
+    "Молчаливый пациент|Алекс Михаэлидес":"9rOKDwAAQBAJ",
+    "Внутри убийцы|Майк Омер":"u5a8DwAAQBAJ",
+    "Ребекка|Дафна дю Морье":"k-OyCAAAQBAJ",
+    "Sapiens. Краткая история человечества|Юваль Ной Харари":"mAWwDQAAQBAJ",
+    "Думай медленно… решай быстро|Даниэль Канеман":"A5dZAgAAQBAJ",
+    "Магия утра|Хэл Элрод":"r9l2DwAAQBAJ",
+    "К себе нежно|Ольга Примаченко":"gGUUEAAAQBAJ",
+    "Тело помнит всё|Бессел ван дер Колк":"bJTcDwAAQBAJ",
+    "Мастер и Маргарита|Михаил Булгаков":"_t_SDwAAQBAJ",
+    "Преступление и наказание|Фёдор Достоевский":"W8tBDwAAQBAJ",
+    "Гордость и предубеждение|Джейн Остин":"TeVGDwAAQBAJ",
+    "Война и мир|Лев Толстой":"RjNGDAAAQBAJ",
+    "Убить пересмешника|Харпер Ли":"aN4RBAAAQBAJ",
+    "Портрет Дориана Грея|Оскар Уайльд":"PcdMDwAAQBAJ",
+    "Анна Каренина|Лев Толстой":"1XjXWFtxdKkC",
+    "Джейн Эйр|Шарлотта Бронте":"SI-svzDE6N4C",
+    "Граф Монте-Кристо|Александр Дюма":"xW9LDwAAQBAJ",
+    "Великий Гэтсби|Фрэнсис Фицджеральд":"_-KyCAAAQBAJ"
+  };
+  const coverUrl = (t,a)=>{ const id=GBID[t+"|"+a]; return id ? `https://books.google.com/books/content?id=${id}&printsec=frontcover&img=1&zoom=1` : ""; };
+  // авторские аннотации (свой текст, не Википедия)
+  const ANNO = {
+    "Уроки химии|Бонни Гармус":"Начало 1960-х: блестящий химик Элизабет Зотт вынуждена уйти из лаборатории и внезапно становится звездой кулинарного телешоу. Только вот вместо рецептов она учит домохозяек всей Америки думать, спорить и не бояться быть собой — а мир вокруг совсем не готов к женщине, которая отказывается знать своё место. Умная, дерзкая и невероятно тёплая история для всех, кто любит героинь с характером.",
+    "Тревожные люди|Фредрик Бакман":"Неудачливый грабитель врывается в квартиру, где идёт показ недвижимости, и берёт в заложники компанию совершенно незнакомых, слегка сломанных людей. Постепенно выясняется, что каждый из них тащит на себе свою тревогу, свои ошибки и свою тихую боль — и что мост через всё это лежит через простое человеческое участие. Смешно, трогательно и по-бакмановски мудро.",
+    "Незримая жизнь Адди Ларю|В. Э. Шваб":"Франция, 1714 год: девушка заключает отчаянную сделку и получает вечную жизнь — но с проклятием быть забытой каждым, кого встречает. Три века Адди скользит сквозь эпохи, не оставляя следа в чужой памяти, пока однажды парень в книжном не произносит: «Я тебя помню». Атмосферный роман о свободе, искусстве и жажде оставить след — для мечтателей и полуночников.",
+    "Ветер знает моё имя|Исабель Альенде":"Две истории, разделённые десятилетиями и континентами: мальчик, бегущий из нацистской Вены, и девочка, разлучённая с матерью на границе. Альенде сплетает их судьбы в тихий разговор о том, как дети переживают потерю дома и находят новую опору в чужих добрых руках. Пронзительно и человечно — для тех, кто верит в силу памяти и надежды.",
+    "Маленькая жизнь|Ханья Янагихара":"Четверо друзей приезжают покорять Нью-Йорк, но в центре истории — загадочный и надломленный Джуд, чьё прошлое он прячет ото всех. Это огромный роман о дружбе длиною в жизнь, о любви, которая пытается исцелить, и о ранах, которые не всегда затягиваются. Тяжёлая, но незабываемая книга для тех, кто готов прожить её сердцем.",
+    "Клара и Солнце|Кадзуо Исигуро":"Клара — искусственная подруга, которая наблюдает мир из витрины магазина и мечтает, что однажды её выберет ребёнок. Обретя дом, она с трогательной наивностью пытается понять любовь, болезнь и человеческую хрупкость — и готова на всё ради девочки, которой служит. Тихая, щемящая притча о том, что значит любить.",
+    "Проект «Рози»|Грэм Симсион":"Профессор генетики Дон, который живёт по расписанию и плохо считывает эмоции, решает найти жену с помощью научной анкеты. Но в его выверенную жизнь врывается Рози — совершенно неподходящая по всем пунктам — и запускает цепочку событий, которые не предусмотришь ни одним алгоритмом. Смешная и обаятельная история для тех, кто верит в нелогичную любовь.",
+    "Тени тевтонов|Алексей Иванов":"Две эпохи — закат Тевтонского ордена и Кёнигсберг 1945 года — связаны легендой о проклятом мече и договоре с дьяволом. Иванов сплетает мистику, историю и авантюру в плотный узел, где прошлое властно тянется в настоящее, а расплата настигает через века. Атмосферный историко-мистический роман для тех, кто любит, когда захватывает по-настоящему.",
+    "Джеймс|Персиваль Эверетт":"Знакомая история побега по Миссисипи, но рассказанная голосом раба Джима — человека умного, ироничного и куда более сложного, чем привыкли думать. Это дерзкое переосмысление классики, где герой обретает собственный язык, достоинство и право на свою правду. Острая, умная и мощная книга для тех, кто готов взглянуть на знакомое иначе.",
+    "Служба доставки книг|Карстен Хенн":"Пожилой книготорговец Карл каждый вечер разносит книги своим постоянным читателям, зная каждого по любимому жанру. Однажды к его тихим прогулкам присоединяется бойкая девочка — и эта странная дружба меняет обоих, напоминая, что нужные книги приходят в нужный момент. Нежная, светлая история для всех, кто любит книги о любви к книгам.",
+    "Сердце огня|Крис Уитакер":"В маленьком городке пропадает девочка, и мальчишка по имени Пэтч, назвавший себя разбойником, оказывается в центре трагедии, что определит всю его жизнь. Через годы тянется история о дружбе, вине и одержимом поиске правды, где боль и красота идут рука об руку. Мощный, кинематографичный роман для тех, кто любит истории с большим сердцем.",
+    "Йеллоуфейс|Ребекка Куанг":"Начинающая писательница присваивает неизданную рукопись погибшей подруги-звезды и выдаёт чужой успех за свой. Дальше — головокружительный спуск во лжи, зависти и токсичном мире издательского бизнеса, где интернет всё видит и ничего не прощает. Острый, злой и затягивающий роман для тех, кто любит, когда неудобно и не оторваться.",
+    "Магазинчик у озера|Дженни Колган":"Устав от лондонской суеты, героиня перебирается в шотландскую глушь на берегу озера, где заводит собственный книжный фургончик. Новая жизнь оказывается полна хлопот, соседей с характером и неожиданных чувств — но именно здесь она наконец находит себя. Уютная, тёплая история для чашки чая под пледом.",
+    "Пёсья матерь|Павлос Матесис":"Греция, тень войны и оккупации: немолодая женщина вспоминает своё детство и позор, легший на семью в страшные годы. Её сбивчивый, живой голос складывается в горькую и странно светлую исповедь о выживании, стыде и человеческом достоинстве. Сильная, необычная проза для тех, кто ищет глубокие и честные истории.",
+    "Хроники хищных городов|Филип Рив":"В будущем, где огромные города на колёсах катятся по опустошённой земле и пожирают друг друга, юный подмастерье случайно раскрывает опасную тайну. Выброшенный за борт цивилизации, он оказывается втянут в приключение, что решит судьбу целого мира. Изобретательный, стремительный стимпанк для тех, кто любит смелую фантастику.",
+    "Тоннель|Яна Вагнер":"Обычный летний день, пробка в тоннеле под рекой — и вдруг выезд наглухо перекрыт, связи нет, а помощь не приходит. Запертые в бетонной ловушке люди час за часом сбрасывают цивилизованную кожу, и вопрос выживания становится вопросом о том, кто мы на самом деле. Напряжённый, безжалостный психологический триллер.",
+    "Наводнение|Дарья Бобылёва":"В затерянной русской глубинке привычный уклад начинает трещать: вода подступает, а вместе с ней просыпается что-то древнее и недоброе. Бобылёва мастерски нагнетает жуть из бытового и знакомого, где фольклорный ужас прорастает сквозь обычную жизнь. Атмосферный, мурашечный хоррор для любителей тёмного и по-настоящему страшного.",
+    "Щегол|Донна Тартт":"Мальчик выживает после взрыва в музее и уносит с собой маленькую картину, которая станет тайной всей его жизни. История о том, как одна вещь и одна потеря тянут человека сквозь годы — через одиночество, дружбу, красоту и саморазрушение. Большой, затягивающий роман для тех, кто любит терять себя в чужой судьбе на сотни страниц.",
+    "Задача трёх тел|Лю Цысинь":"Всё начинается с загадочной игры и странных смертей учёных, за которыми стоит нечто куда большее, чем земные интриги. Человечество впервые всерьёз задаётся вопросом, что делать, если мы во Вселенной не одни — и готовы ли мы к ответу. Для тех, кто любит умную научную фантастику, от которой холодеет спина.",
+    "Атомные привычки|Джеймс Клир":"Книга о том, что большие перемены складываются из крошечных ежедневных действий. Автор объясняет, как привычки устроены изнутри и как перестроить их так, чтобы полезное давалось само собой, а вредное отваливалось. Практичное чтение для всех, кто хочет меняться без надрыва и силы воли.",
+    "Sapiens|Юваль Ной Харари":"Как голый примат из африканской саванны стал хозяином планеты? Харари прослеживает историю человечества через большие идеи — мифы, деньги, религии и государства, которые связали миллионы незнакомцев. Для любопытных, кто хочет взглянуть на привычный мир свежими глазами.",
+    "Тонкое искусство пофигизма|Марк Мэнсон":"Дерзкая книга о том, что жить хорошо — не значит быть позитивным всегда и во всём. Мэнсон предлагает выбирать, что действительно важно, и перестать тратить силы на всё остальное. Отрезвляющее и честное чтение для тех, кто устал от глянцевых советов о счастье.",
+    "Институт|Стивен Кинг":"Одарённых детей похищают и свозят в закрытое учреждение, откуда, кажется, нет выхода. За стенами Института творится то, о чём взрослый мир предпочитает не знать, — и один мальчик решает этому не покориться. Для любителей крепкого напряжённого триллера, который не отпускает до утра.",
+    "Шантарам|Грегори Робертс":"Беглец с фальшивым паспортом растворяется в шумном, нищем и живом Бомбее в поисках новой жизни. Трущобы, дружба, любовь и опасность сплетаются в большое путешествие, где герой заново учится быть человеком. Для тех, кто мечтает о густой, пахнущей далёкими странами истории.",
+    "Богатый папа, бедный папа|Роберт Кийосаки":"Книга о двух взглядах на деньги — на примере двух отцов, думавших о богатстве совершенно по-разному. Автор объясняет, как работают активы, долги и финансовая грамотность, которой не учат в школе. Для тех, кто хочет изменить своё отношение к деньгам и начать мыслить иначе.",
+    "Цветы для Элджернона|Дэниел Киз":"Простодушный герой соглашается на операцию, которая должна сделать его умным. По мере того как мир открывается ему заново, приходят не только новые знания, но и совсем недетские вопросы о человечности и одиночестве. Пронзительная история, после которой хочется помолчать и обнять близких.",
+    "Норвежский лес|Харуки Мураками":"Услышанная песня возвращает героя в юность — в токийские шестидесятые, в первую любовь и первые потери. Тихая, меланхоличная история о взрослении, о живых и ушедших и о том, как научиться жить дальше. Для тех, кто любит нежную грусть и настроение больше, чем громкий сюжет.",
+    "Вино из одуванчиков|Рэй Брэдбери":"Одно лето в маленьком городке глазами двенадцатилетнего мальчишки, для которого каждый день — крошечное чудо. Радости, открытия и первые печали закупориваются, как вино из одуванчиков, чтобы храниться потом всю зиму и всю жизнь. Тёплое чтение для всех, кто скучает по детскому лету.",
+    "Стоунер|Джон Уильямс":"История обычного человека — сына фермеров, ставшего университетским преподавателем, — рассказанная негромко и честно. Через тихую жизнь Стоунера проходят любовь, разочарования и упрямая верность делу, в котором он нашёл себя. Для тех, кто ценит глубокую прозу о простой и настоящей жизни.",
+    "Три товарища|Э. М. Ремарк":"Послевоенная Германия, трое друзей, старый гоночный автомобиль и хрупкая надежда на счастье. На фоне неустроенного, тревожного времени рождается нежная любовь и проверяется настоящая мужская дружба. Для тех, кто любит истории, где горечь и теплота идут рука об руку.",
+    "Здесь была Бритт-Мари|Фредрик Бакман":"Педантичная и одинокая Бритт-Мари наконец решается уйти и оказывается в захолустном городке, где её никто не ждал. Работая в захудалом центре и приглядывая за детской футбольной командой, она понемногу учится жить заново. Тёплая и смешная история для тех, кому по душе Бакман и его чудаковатые герои.",
+    "До встречи с тобой|Джоджо Мойес":"Обычная девушка устраивается сиделкой к молодому мужчине, чья жизнь после несчастья замерла. Между двумя очень разными людьми завязывается связь, которая изменит обоих и заставит спорить о самом главном. Для тех, кто готов и посмеяться, и всплакнуть над настоящей историей о любви.",
+    "Над пропастью во ржи|Дж. Сэлинджер":"Подросток сбегает из школы и бродит по огромному Нью-Йорку, не желая становиться частью взрослого, фальшивого мира. Его дерзкий и ранимый голос стал символом юношеского бунта и одиночества на все времена. Для тех, кто помнит, каково это — быть не как все и искать себя.",
+    "Маленькие женщины|Луиза Олкотт":"Четыре сестры взрослеют в скромном доме, пока отец далеко на войне, а мечты у каждой свои. Радости, ссоры, первые чувства и утраты сплетаются в тёплую хронику одной дружной семьи. Уютная классика для тех, кто любит истории о доме, сёстрах и взрослении.",
+    "Дом, в котором…|Мариам Петросян":"За стенами странного Дома-интерната живёт свой мир — со своими законами, легендами и подростками, у которых вместо имён клички. Реальность и вымысел здесь переплетаются так, что уже не понять, где заканчивается один и начинается другой. Большой, необычный роман для тех, кто готов надолго поселиться в удивительной вселенной.",
+    "Зулейха открывает глаза|Гузель Яхина":"Раскулачивание отрывает молодую татарскую крестьянку от прежней жизни и отправляет в долгий путь в сибирскую глушь. Там, посреди холода и лишений, женщина впервые по-настоящему открывает глаза — на себя, на мир и на собственную силу. Для тех, кто любит сильную прозу о судьбе человека на переломе истории.",
+    "Гарри Поттер и философский камень|Дж. К. Роулинг":"Мальчик, выросший в чулане под лестницей, в свой одиннадцатый день рождения узнаёт, что он волшебник. Впереди — Хогвартс, первые друзья, движущиеся лестницы и тайна, спрятанная в самом сердце школы, к которой Гарри оказывается ближе всех. Та самая книга, с которой начинается любовь к чтению — и в детстве, и во взрослом возрасте.",
+    "Имя ветра|Патрик Ротфусс":"В придорожном трактире живёт рыжий хозяин, за чьей обыденностью прячется человек-легенда. Он сам берётся рассказать свою историю — о нищем детстве, о жажде знаний, о магии и о том, как рождаются мифы. Для тех, кто любит богатый язык и хочет утонуть в истории на много вечеров.",
+    "Дюна|Фрэнк Герберт":"Пустынная планета Арракис — единственный источник вещества, от которого зависит вся галактика. Юный наследник знатного дома оказывается в центре борьбы за власть, где политика, религия и песок сплетаются в смертельную игру. Величественная классика для тех, кто хочет фантастику с глубиной.",
+    "Ведьмак. Последнее желание|Анджей Сапковский":"Геральт из Ривии убивает чудовищ за деньги — но чем дольше живёшь среди монстров, тем труднее понять, кто здесь настоящее зло. Сборник историй, где знакомые сказки вывернуты наизнанку, а выбор почти никогда не бывает простым. Идеально, чтобы влюбиться в мир Ведьмака с самого начала.",
+    "1984|Джордж Оруэлл":"В мире, где Большой Брат видит всё, даже мысли могут быть преступлением. Один человек решается вести дневник и полюбить — крошечный бунт против системы, стирающей саму правду. Книга, которая с годами становится только актуальнее.",
+    "451 градус по Фаренгейту|Рэй Брэдбери":"В будущем, где книги под запретом, пожарные не тушат огонь, а сжигают библиотеки. Один из них однажды прячет томик в карман — и этот жест переворачивает всю его жизнь. Пронзительная притча о том, почему нам так нужно читать.",
+    "Игра престолов|Джордж Мартин":"На землях Семи Королевств лето длилось годами, но зима уже близко — а вместе с ней и борьба за Железный трон. Знатные семьи плетут интриги, заключают союзы и предают друг друга, и здесь никто не защищён бронёй сюжета. Для тех, кто хочет эпос, от которого невозможно оторваться.",
+    "Благие знамения|Пратчетт и Гейман":"Ангел и демон за тысячи лет так привыкли к земной жизни, что совсем не хотят Апокалипсиса. Проблема в том, что конец света уже назначен, а младенца-Антихриста, кажется, где-то перепутали. Уморительно смешная книга для тех, кому нравится добрый юмор и обаятельный хаос.",
+    "Марсианин|Энди Вейер":"Астронавта случайно бросают на Марсе, посчитав погибшим, — и теперь он один на целой планете. Вооружённый только наукой, чёрным юмором и упрямством, он начинает бороться за выживание метр за метром. Для тех, кто любит умные истории и болеть за героя до последней страницы.",
+    "Свечи горят|Виктория Шваб":"Плотный, атмосферный роман, где за уютным фасадом прячется что-то тревожное. Автор мастерски играет с полутонами, магией и человеческими тайнами, медленно затягивая читателя в свою историю. Для любителей тёмного волшебства и тонкой, красивой прозы.",
+    "Исчезнувшая|Гиллиан Флинн":"В годовщину свадьбы жена бесследно исчезает, и все улики указывают на мужа. Но чем глубже мы вглядываемся в этот идеальный брак, тем яснее: правда куда извилистее, чем кажется. Психологический триллер, который заставит вас сомневаться в каждом слове.",
+    "Девушка в поезде|Пола Хокинс":"Каждый день из окна поезда она наблюдает за одной парой и придумывает им идеальную жизнь. А потом женщина из её фантазий пропадает — и рассказчица оказывается втянута в дело, которое помнит смутно. Напряжённый триллер для тех, кто любит ненадёжных героев и неожиданные повороты.",
+    "Тайная история|Донна Тартт":"Группа блестящих студентов, изучающих античность в закрытом колледже, живёт по своим особым правилам красоты и вседозволенности. Но однажды их изысканный мир даёт трещину, и становится ясно: за интеллектуальной игрой скрывается настоящая трагедия. Для тех, кто любит умную, гипнотическую прозу с тёмным подтекстом.",
+    "Молчание ягнят|Томас Харрис":"Молодой курсант ФБР приходит за помощью к гениальному психиатру-людоеду, запертому в камере. Чтобы поймать нового убийцу, ей придётся вести опасную игру разума с человеком, который читает её насквозь. Классика жанра для крепких нервов и любителей психологического триллера.",
+    "Женщина в окне|А. Дж. Финн":"Затворница, боящаяся выйти из дома, коротает дни за вином и наблюдением за соседями. Однажды в окне напротив она видит то, чего видеть не должна, — но кто поверит женщине, путающей реальность и вымысел? Атмосферный триллер в духе старого доброго Хичкока.",
+    "Метро 2033|Дмитрий Глуховский":"После ядерной войны остатки человечества выживают в тоннелях московского метро, где каждая станция — отдельный маленький мир. Молодому герою предстоит опасное путешествие сквозь тьму, мутантов и людской страх, чтобы спасти свой дом. Для тех, кто любит мрачную атмосферу и постапокалипсис с русской душой.",
+    "Десять негритят|Агата Кристи":"Десять незнакомцев приезжают на уединённый остров по приглашению таинственного хозяина, которого никто не видел. Один за другим они начинают гибнуть — точно по строчкам старой считалочки, и убийца среди них. Образцовый детектив, который держит в напряжении до самой последней страницы.",
+    "Молчаливый пациент|Алекс Михаэлидес":"Знаменитая художница застрелила мужа и с тех пор не произнесла ни слова. Психотерапевт, одержимый её случаем, готов на всё, чтобы разговорить пациентку и раскрыть тайну той роковой ночи. Затягивающий триллер с финалом, к которому вы вряд ли будете готовы.",
+    "Внутри убийцы|Майк Омер":"Специалист по составлению психологических портретов преступников сталкивается с делом, которое бьёт слишком близко к прошлому. Чтобы остановить убийцу с жутким почерком, ей придётся заглянуть в самую тёмную бездну — и в себя. Динамичный триллер для любителей острых сюжетов и криминальной психологии.",
+    "Ребекка|Дафна дю Морье":"Юная жена привозит новобрачного в его родовое поместье, где всё ещё словно живёт тень его первой супруги. Память о безупречной Ребекке пропитала каждый угол дома — и постепенно начинает сводить героиню с ума. Готическая классика для тех, кто любит тревожную атмосферу и тайны старых особняков.",
+    "Sapiens. Краткая история человечества|Юваль Ной Харари":"Как из ничем не примечательного вида приматов мы стали хозяевами планеты? Харари проходит весь путь человечества — от первых костров до цифровых империй, разбирая, как выдумки вроде денег, богов и государств связали миллионы незнакомцев в единое целое. Книга, после которой на привычный мир смотришь другими глазами.",
+    "Думай медленно… решай быстро|Даниэль Канеман":"В нашей голове живут двое: один быстрый и импульсивный, другой медленный и ленивый. Нобелевский лауреат показывает, как эти две системы мышления управляют нашими решениями и почему интуиция так часто нас подводит там, где мы ей больше всего доверяем. Обязательное чтение для каждого, кто хочет понять, как на самом деле работает его ум.",
+    "Магия утра|Хэл Элрод":"Всё начинается с того, как вы проведёте первый час после пробуждения. Элрод предлагает простую систему утренних привычек, которая, по его словам, способна постепенно изменить всю вашу жизнь — от энергии до целей. Для тех, кто давно хочет начать жить осознаннее, но не знает, с чего начать.",
+    "К себе нежно|Ольга Примаченко":"Что, если перестать грызть себя за несовершенство и научиться быть себе другом? Примаченко мягко и честно говорит о заботе о себе, границах, усталости и праве быть живым человеком, а не проектом на постоянной доработке. Тёплая книга-объятие для всех, кто привык требовать от себя слишком много.",
+    "Дофаминовая нация|Анна Лембке":"Мы живём в мире, где удовольствие всегда на расстоянии одного клика — и именно это делает нас несчастными. Психиатр Лембке объясняет, как устроен баланс наслаждения и боли в мозге и почему в эпоху изобилия так легко попасть в ловушку зависимости. Книга, которая помогает вернуть контроль над собственными желаниями.",
+    "Здоровые границы|Нэнси Левин":"Почему так трудно сказать «нет» и так легко забыть о себе ради других? Левин разбирает, как выстраивать личные границы без чувства вины и перестать растворяться в чужих ожиданиях. Практичное и поддерживающее чтение для тех, кто устал угождать всем вокруг.",
+    "Тело помнит всё|Бессел ван дер Колк":"Травма живёт не только в памяти — она поселяется в теле и годами управляет нами исподволь. Опираясь на десятилетия практики, ван дер Колк показывает, как пережитая боль меняет мозг и тело и какими путями к человеку возвращается способность чувствовать себя в безопасности. Глубокая и человечная книга для всех, кто хочет понять природу травмы.",
+    "Мастер и Маргарита|Михаил Булгаков":"В душную московскую весну является сам дьявол со свитой — и город уже не будет прежним. В переплетении сатиры, мистики и вечной истории о любви и трусости разворачивается роман о художнике, его возлюбленной и цене настоящей верности. Великая книга, которую хочется перечитывать всю жизнь, каждый раз находя новое.",
+    "Преступление и наказание|Фёдор Достоевский":"Бедный студент убеждает себя, что имеет право переступить черту — и совершает то, после чего обратной дороги нет. Достоевский с беспощадной точностью следует за мятущейся совестью героя, превращая детективный сюжет в глубочайшее исследование вины, гордыни и возможности искупления. Роман, который переворачивает представление о человеке.",
+    "Гордость и предубеждение|Джейн Остин":"Умная и острая на язык Элизабет Беннет уверена, что раскусила надменного мистера Дарси с первого взгляда. Остин с иронией и нежностью рассказывает историю о том, как первые впечатления обманывают, а гордость и предрассудки мешают разглядеть настоящее чувство. Идеальный роман для уютного вечера — светлый, остроумный и вечно живой.",
+    "Война и мир|Лев Толстой":"Целая эпоха оживает на страницах: балы и сражения, любовь и разочарования, поиски смысла на фоне грандиозной войны. Толстой сплетает судьбы нескольких семей в громадное полотно о том, как история проходит сквозь обычных людей и что по-настоящему важно среди всеобщего хаоса. Книга-жизнь, в которую погружаешься целиком.",
+    "Убить пересмешника|Харпер Ли":"Маленький южный городок, где детское лето вдруг сталкивается со взрослой несправедливостью. Глазами девочки Скаут мы видим, как её отец-адвокат защищает невиновного вопреки всему городу, и учимся вместе с ней, что такое совесть и человеческое достоинство. Тёплая и мудрая книга, которая остаётся с тобой навсегда.",
+    "Портрет Дориана Грея|Оскар Уайльд":"Юноша невероятной красоты загадывает, чтобы старел и портился его портрет, а не он сам — и желание сбывается. Уайльд рассказывает блестящую и жуткую историю о цене вечной молодости, о соблазне и о том, что скрывается за безупречным фасадом. Роман, полный афоризмов и мрачного очарования.",
+    "Анна Каренина|Лев Толстой":"Замужняя женщина встречает мужчину, ради которого готова сжечь всю прежнюю жизнь. Толстой сплетает историю запретной страсти с тихими поисками счастья другой пары — и получается пронзительный роман о любви, обществе и цене, которую платят за свободу. Великая книга о человеческом сердце во всей его противоречивости.",
+    "Джейн Эйр|Шарлотта Бронте":"Сирота без денег и связей, но с несгибаемым чувством собственного достоинства, приезжает гувернанткой в мрачный особняк, хранящий тайну. Бронте рассказывает историю о любви, которая требует не поступиться собой, и о женщине, что выбирает верность себе вопреки всему. Роман для тех, кто любит сильных героинь и готическую атмосферу.",
+    "Граф Монте-Кристо|Александр Дюма":"Молодого моряка накануне свадьбы предают самые близкие люди и заживо хоронят в тюремной камере. Спустя годы он возвращается неузнаваемым и баснословно богатым, чтобы по одной свести счёты с теми, кто разрушил его жизнь. Захватывающий роман о мести, надежде и терпении — из тех, что невозможно отложить.",
+    "Великий Гэтсби|Фрэнсис Фицджеральд":"За блеском роскошных вечеринок скрывается человек, готовый на всё ради одной несбывшейся мечты. Фицджеральд рисует ослепительный и печальный портрет эпохи джаза, где богатство соседствует с пустотой, а любовь оказывается лишь красивой иллюзией. Тонкий и грустный роман об американской мечте и её обратной стороне."
+  };
+  function cleanDesc(s, max){
+    if(!s) return "";
+    s=String(s).replace(/<[^>]+>/g," ").replace(/&[a-z]+;/gi," ").replace(/\s+/g," ").trim();
+    max=max||500;
+    if(s.length>max){ let cut=s.slice(0,max); const p=Math.max(cut.lastIndexOf(". "),cut.lastIndexOf("! "),cut.lastIndexOf("? ")); s = p>max*0.5 ? cut.slice(0,p+1) : cut.trim()+"…"; }
+    return s;
+  }
+  let coverObs=null;
+  function hydrateCovers(root){
+    if(!("IntersectionObserver" in window)) return;
+    if(coverObs) coverObs.disconnect();
+    coverObs=new IntersectionObserver(ents=>{
+      ents.forEach(en=>{ if(!en.isIntersecting) return; const el=en.target; coverObs.unobserve(el); ensureCover(el, el.dataset.ct, el.dataset.ca); });
+    }, {rootMargin:"250px"});
+    (root||document).querySelectorAll(".cat-cover[data-ct]").forEach(el=>coverObs.observe(el));
+  }
+  function ensureCover(el,t,a){
+    if(!el || el.querySelector(".cc-img")) return;
+    const url=coverUrl(t,a); if(!url) return;                 // нет ID — остаётся фирменная заглушка
+    const img=new Image(); img.className="cc-img"; img.alt="";
+    img.onload=()=>img.classList.add("loaded"); img.onerror=()=>img.remove();
+    img.src=url; el.appendChild(img);
+  }
   function renderCatalog(){
-    $("#catalogList").innerHTML = Object.entries(CATALOG).map(([genre,books])=>
-      `<div class="cat-genre">${esc(genre)}</div><div class="cat-row">` +
-      books.map((b,i)=>{ const bg=COLORS[i%COLORS.length];
-        return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}"><div class="cat-cover" style="background:${bg};color:${pickFg(bg)}"><span>${esc(b.t)}</span><button class="cat-wish" data-wish title="в хотелки">📌</button></div><div class="cat-a">${esc(b.a)}</div></div>`;
-      }).join("") + `</div>`
-    ).join("");
+    $("#catalogList").innerHTML = Object.entries(CATALOG).map(([genre,books])=>{
+      const motif = genre.split(" ")[0];
+      return `<div class="cat-genre">${esc(genre)}</div>
+       <div class="cat-scroll"><button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>
+       <div class="cat-row">` +
+      books.map((b,i)=>{ const bg=COLORS[i%COLORS.length]; const bq=encodeURIComponent(b.t+" "+b.a);
+        return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
+          ${coverHTML(b, motif, bg)}
+          <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+          <div class="cat-acts">
+            <button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button>
+          </div></div>`;
+      }).join("") + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div>`;
+    }).join("");
+    hydrateCovers($("#catalogList"));
   }
   function addCatToWish(t,a){
     if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
+    if(myBooks.some(b=>bookKey(b.t,b.a)===bookKey(t,a))){ toast("Эта книга уже на твоей полке 📚"); return; }
     if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в хотелках 📌"); return; }
     myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в хотелки 📌");
   }
+  // книги, на которые читатели написали рецензии — попадают в подборки автоматически
+  async function injectReviewedBooks(){
+    let list=[]; try{ if(CLOUD()) list=await sbFetchAllReviews(); }catch(e){ list=[]; }
+    const seen=new Set(), books=[];
+    list.forEach(rv=>{ if(!rv.title) return; const k=rv.book||bookKey(rv.title,rv.author||""); if(!seen.has(k)){ seen.add(k); books.push({t:rv.title,a:rv.author||""}); } });
+    if(!books.length || !$("#catalogList")) return;
+    const motif="💬";
+    const html = `<div class="cat-genre">💬 Книги с рецензиями читателей</div>
+     <div class="cat-scroll"><button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>
+     <div class="cat-row">` +
+     books.map((b,i)=>`<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
+        ${coverHTML(b, motif, COLORS[i%COLORS.length])}
+        <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+        <div class="cat-acts"><button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button></div></div>`).join("")
+     + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div>`;
+    $("#catalogList").insertAdjacentHTML("afterbegin", html);
+    hydrateCovers($("#catalogList"));
+  }
   $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); openPage("catalogPage"); });
   $("#catalogList").addEventListener("click", e=>{
+    const ar=e.target.closest(".cat-arrow");
+    if(ar){ const row=ar.parentElement.querySelector(".cat-row"); if(row) row.scrollBy({left:(+ar.dataset.dir)*row.clientWidth*0.8, behavior:"smooth"}); return; }
     const c=e.target.closest(".cat-book"); if(!c) return;
     if(e.target.closest("[data-wish]")){ addCatToWish(c.dataset.t, c.dataset.a); return; }
-    openCatBook(c.dataset.t, c.dataset.a);
+    if(e.target.closest("[data-bookmate]")){ copyForSearch(c.dataset.t); return; }
+    if(e.target.closest("[data-litres]")) return;
+    if(e.target.closest("[data-open]")){ openBookPage(c.dataset.t, c.dataset.a); return; }
   });
-
-  let cbBook=null, cbRating=0;
-  function openCatBook(t,a){
-    cbBook={t,a}; cbRating=0;
-    $("#cbTitle").textContent=t; $("#cbAuthor").textContent=a||"";
+  // страница книги: настоящая обложка + описание (Google Books → Википедия → заглушка)
+  let bpBook=null;
+  function bpSetTab(tab){
+    const anno = tab!=="revs";
+    $("#bpTabAnno").classList.toggle("active", anno);
+    $("#bpTabRevs").classList.toggle("active", !anno);
+    $("#bpPaneAnno").hidden = !anno;
+    $("#bpPaneRevs").hidden = anno;
+  }
+  function openBookPage(t,a){
+    bpBook={t,a};
+    const motif="📖", bg=COLORS[(t.length)%COLORS.length];
+    $("#bpCover").outerHTML = `<div id="bpCover">${coverHTML({t,a}, motif, bg)}</div>`;
+    $("#bpTitle").textContent=t; $("#bpAuthor").textContent=a||"";
     const bq=encodeURIComponent(t+" "+(a||""));
-    $("#cbLitres").href="https://www.litres.ru/search/?q="+bq;
-    $("#cbBookmate").href="https://books.yandex.ru/search?query="+bq;
-    $("#cbText").value=""; paintRate($("#cbRate"),0);
-    $("#cbReviews").innerHTML=`<p class="mp">Загружаю рецензии…</p>`;
-    $("#cbBack").classList.add("open"); $("#catBookModal").classList.add("open");
-    loadReviews(t,a);
+    $("#bpLitres").href="https://www.litres.ru/search/?q="+bq;
+    $("#bpBookmate").href="https://books.yandex.ru/search?query="+bq;
+    ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки
+    const anno = ANNO[t+"|"+a] || "";                    // авторская аннотация (не Википедия)
+    $("#bpAnno").innerHTML = anno ? `<div class="bp-anno">${esc(anno)}</div>` : `<p class="mp">Аннотация скоро появится 🌱</p>`;
+    openPage("bookPage");
   }
+  const stillOn=(t,a)=> bpBook && bookKey(bpBook.t,bpBook.a)===bookKey(t,a);
   async function loadReviews(t,a){
-    if(!CLOUD()){ $("#cbReviews").innerHTML=`<p class="mp">Рецензии доступны только онлайн.</p>`; return; }
-    let list=[]; try{ list=await sbFetchReviews(bookKey(t,a)); }catch(e){ list=[]; }
-    if(cbBook && bookKey(cbBook.t,cbBook.a)!==bookKey(t,a)) return;   // уже открыли другую
-    $("#cbReviews").innerHTML = list.length
-      ? `<div class="ir-label">Рецензии читателей (${list.length})</div>` + list.map(r=>`<div class="cb-rev"><div class="cb-who">${esc(r.from_name||"Читатель")}${r.rating?` <span class="cb-stars">${"★".repeat(r.rating)}</span>`:""}</div>${r.text?`<div class="cb-txt">${esc(r.text)}</div>`:""}</div>`).join("")
-      : `<p class="mp">Пока нет рецензий. Будь первым! ✍️</p>`;
+    let list=[];
+    try{ if(CLOUD()) list = await sbFetchReviews(bookKey(t,a)); }catch(e){ list=[]; }
+    if(!stillOn(t,a)) return;
+    if(!list.length){ $("#bpReviews").innerHTML = `<div class="loader-box"><p class="mp">На эту книгу пока нет рецензий ✍️</p>${BOOK_LOADER}</div>`; return; }
+    $("#bpReviews").innerHTML = list.map(rv=>{
+      const nm = rv.name||"Читатель", ph=rv.photo||"";
+      const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
+      return `<div class="rev-item"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
+    }).join("");
   }
-  function closeCatBook(){ $("#cbBack").classList.remove("open"); $("#catBookModal").classList.remove("open"); }
-  $("#cbClose").addEventListener("click", closeCatBook);
-  $("#cbBack").addEventListener("click", closeCatBook);
-  $("#cbRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; cbRating=+b.dataset.r; paintRate($("#cbRate"),cbRating); });
-  $("#cbWish").addEventListener("click", ()=>{
-    if(!cbBook) return;
-    if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
-    if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(cbBook.t,cbBook.a))){ toast("Уже в хотелках 📌"); return; }
-    myWishlist.push({t:cbBook.t, a:cbBook.a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish();
-    toast("Добавлено в хотелки 📌");
-  });
-  $("#cbSend").addEventListener("click", ()=>withBtn($("#cbSend"),"Публикую…", async ()=>{
-    if(!cbBook) return;
-    const text=$("#cbText").value.trim();
-    if(!text && !cbRating){ toast("Напишите пару слов или поставьте оценку"); return; }
-    if(!CLOUD()){ toast("Для рецензий нужен интернет"); return; }
-    try{ await sbInsertReview({ book:bookKey(cbBook.t,cbBook.a), from_code:myCode||"", from_name:myName||"Читатель", rating:cbRating||null, text }); }
-    catch(e){ toast("Не удалось отправить (проверьте таблицу reviews): "+(e.message||e)); return; }
-    toast("Рецензия опубликована 💛"); $("#cbText").value=""; cbRating=0; paintRate($("#cbRate"),0);
-    loadReviews(cbBook.t, cbBook.a);
-  }));
+  async function publishReview(t,a,text){
+    if(!CLOUD()) throw new Error("нет облака");
+    await sbInsertReview({ book:bookKey(t,a), title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", text:text });
+  }
+  const BOOK_LOADER = `<div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div>`;
+  function loaderBox(msg){ return `<div class="loader-box">${BOOK_LOADER}${msg?`<p class="mp">${esc(msg)}</p>`:""}</div>`; }
+  async function openReviewsFeed(){
+    $("#reviewsFeed").innerHTML = loaderBox("Листаю рецензии…");
+    openPage("reviewsPage");
+    let list=[];
+    try{ if(CLOUD()) list = await sbFetchAllReviews(); }catch(e){ list=[]; }
+    if(!list.length){ $("#reviewsFeed").innerHTML = `<div class="loader-box"><p class="mp">Пока нет рецензий. Открой книгу в своём профиле и нажми «Опубликовать рецензию» ✍️</p>${BOOK_LOADER}</div>`; return; }
+    $("#reviewsFeed").innerHTML = list.map(rv=>{
+      const nm=rv.name||"Читатель", ph=rv.photo||"", ttl=rv.title||"", au=rv.author||"";
+      const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
+      const col = COLORS[(ttl.length+(ttl.charCodeAt(0)||0))%COLORS.length];
+      const spine = ttl?`<div class="rev-book" style="background:${col};color:${pickFg(col)}"><span class="rb-title">${esc(ttl)}</span>${au?`<span class="rb-author">· ${esc(au)}</span>`:""}</div>`:"";
+      return `<div class="rev-item"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(rv.text||"")}</div>${spine}</div></div>`;
+    }).join("");
+  }
+  $("#bpWish").addEventListener("click", ()=>{ if(bpBook) addCatToWish(bpBook.t, bpBook.a); });
+  $("#bpBookmate").addEventListener("click", ()=>{ if(bpBook) copyForSearch(bpBook.t); });
+  $("#bpBack").addEventListener("click", ()=>{ $("#bookPage").classList.remove("open"); });   // назад — только закрыть книгу, подборки остаются
 
   /* ---- боковое меню ---- */
   function openMenu(){ $("#menuBack").classList.add("open"); $("#sideMenu").classList.add("open"); }
   function closeMenu(){ $("#menuBack").classList.remove("open"); $("#sideMenu").classList.remove("open"); }
   $("#menuBtn").addEventListener("click", openMenu);
   $("#menuBack").addEventListener("click", closeMenu);
-  const menuGo = origBtnId => { closeMenu(); const b=$("#"+origBtnId); if(b) b.click(); };
-  $("#mQuotes").addEventListener("click", ()=> menuGo("quotesBtn"));
-  $("#mWish").addEventListener("click", ()=> menuGo("wishBtn"));
-  $("#mCatalog").addEventListener("click", ()=> menuGo("catalogBtn"));
-  $("#mYear").addEventListener("click", ()=> menuGo("yearBtn"));
+  // пункты меню — ВСЕГДА про меня (мои цитаты/хотелки), даже когда я в гостях
+  $("#mQuotes").addEventListener("click", ()=>{ closeMenu(); openQuotesPage(true); });
+  $("#mWish").addEventListener("click", ()=>{ closeMenu(); openWishPage(true); });
+  $("#mCatalog").addEventListener("click", ()=>{ closeMenu(); $("#catalogBtn").click(); });
+  $("#mReviews").addEventListener("click", ()=>{ closeMenu(); openReviewsFeed(); });
+  $("#mYear").addEventListener("click", ()=>{ closeMenu(); $("#yearBtn").click(); });
+  $("#mTheme").addEventListener("click", ()=>{ closeMenu(); openThemes(); });
 
   /* свайп */
   let sx=null;
@@ -1666,14 +1986,14 @@ main,footer{position:relative;z-index:1}
   let pendingWish = null;
   function openAdd(pre){
     if(!requirePaid()) return;
-    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; $("#fNote").value=""; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
+    $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
     selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
   $("#saveBook").addEventListener("click", ()=>{
     const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
     myBooks.push({ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
-      c:selColor, fav:favNew, r:rateNew, note:$("#fNote").value.trim(), qt:collectQuotes("fQuotes") });
+      c:selColor, fav:favNew, r:rateNew, note:"", qt:collectQuotes("fQuotes") });
     if(pendingWish!=null){ myWishlist.splice(pendingWish,1); pendingWish=null; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     saveMine(); syncUp();
     casePage=9999; slideDir=0; closeModals(); renderAll();
@@ -1693,13 +2013,17 @@ main,footer{position:relative;z-index:1}
     const bq = encodeURIComponent(b.t + " " + (b.a||""));
     $("#readLitres").href = "https://www.litres.ru/search/?q=" + bq;
     $("#readBookmate").href = "https://books.yandex.ru/search?query=" + bq;
+    // «в хотелки» — только для книги с полки друга, которой ещё нет у меня (не метч, не своя)
+    const onMyShelf = myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a));
+    $("#readWish").style.display = (!isMe() && !onMyShelf) ? "inline-flex" : "none";
     if(isMe()){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
-      $("#iNote").value = b.note||""; renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
+      renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
+      $("#iReview").value=""; $("#iReviewMsg").textContent="";
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -1720,12 +2044,24 @@ main,footer{position:relative;z-index:1}
       infoBook.t = $("#iTitle").value.trim() || infoBook.t;
       infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
       infoBook.g = $("#iGenre").value;
-      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.note = $("#iNote").value.trim(); infoBook.qt = collectQuotes("iQuotes");
+      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
       saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
     }
   });
   $("#delBook").addEventListener("click", ()=>{
     if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll(); }
+  });
+  $("#iPublishReview").addEventListener("click", async ()=>{
+    if(!requirePaid()) return;
+    const b=infoBook; if(!b) return;
+    const text=$("#iReview").value.trim();
+    if(text.length<10){ $("#iReviewMsg").textContent="Напиши чуть подробнее 🙂"; return; }
+    const btn=$("#iPublishReview"); btn.disabled=true; $("#iReviewMsg").textContent="Публикую…";
+    try{
+      await publishReview(b.t, b.a, text);
+      $("#iReview").value=""; $("#iReviewMsg").textContent="Опубликовано! Спасибо 🌸";
+    }catch(e){ $("#iReviewMsg").textContent="Не удалось опубликовать 😔 попробуй ещё раз"; }
+    btn.disabled=false;
   });
 
   /* ---- профиль: редактирование ---- */
@@ -1814,7 +2150,7 @@ main,footer{position:relative;z-index:1}
   function renderThemes(){
     $("#themeList").innerHTML = THEMES.map(t=>`<button class="theme-opt ${t.id===myTheme?'on':''}" data-t="${t.id}"><span class="theme-sw" style="background:${t.c1};border:4px solid ${t.c2}"></span>${t.name}</button>`).join("");
   }
-  $("#themeBtn").addEventListener("click", ()=>{ renderThemes(); overlay.classList.add("open"); $("#themeModal").classList.add("open"); });
+  function openThemes(){ renderThemes(); overlay.classList.add("open"); $("#themeModal").classList.add("open"); }
   $("#themeList").addEventListener("click", e=>{ const b=e.target.closest(".theme-opt"); if(!b) return; applyTheme(b.dataset.t); renderThemes(); });
   applyTheme(myTheme);
 
