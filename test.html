@@ -589,7 +589,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v104 test: убраны ЛГБТ-книги; лента «Рецензии читателей» в меню (аватар+текст+корешок книги, любые книги) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v105 test: книги с рецензиями автоматически попадают в подборки (раздел сверху) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1839,7 +1839,25 @@ main,footer{position:relative;z-index:1}
     if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в хотелках 📌"); return; }
     myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в хотелки 📌");
   }
-  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); openPage("catalogPage"); });
+  // книги, на которые читатели написали рецензии — попадают в подборки автоматически
+  async function injectReviewedBooks(){
+    let list=[]; try{ if(CLOUD()) list=await sbFetchAllReviews(); }catch(e){ list=[]; }
+    const seen=new Set(), books=[];
+    list.forEach(rv=>{ if(!rv.title) return; const k=rv.book||bookKey(rv.title,rv.author||""); if(!seen.has(k)){ seen.add(k); books.push({t:rv.title,a:rv.author||""}); } });
+    if(!books.length || !$("#catalogList")) return;
+    const motif="💬";
+    const html = `<div class="cat-genre">💬 Книги с рецензиями читателей</div>
+     <div class="cat-scroll"><button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>
+     <div class="cat-row">` +
+     books.map((b,i)=>`<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
+        ${coverHTML(b, motif, COLORS[i%COLORS.length])}
+        <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+        <div class="cat-acts"><button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button></div></div>`).join("")
+     + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div>`;
+    $("#catalogList").insertAdjacentHTML("afterbegin", html);
+    hydrateCovers($("#catalogList"));
+  }
+  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); openPage("catalogPage"); injectReviewedBooks(); });
   $("#catalogList").addEventListener("click", e=>{
     const ar=e.target.closest(".cat-arrow");
     if(ar){ const row=ar.parentElement.querySelector(".cat-row"); if(row) row.scrollBy({left:(+ar.dataset.dir)*row.clientWidth*0.8, behavior:"smooth"}); return; }
