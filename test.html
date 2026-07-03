@@ -237,7 +237,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .add-quote{display:inline-block;margin-top:8px}
 .wa-back{display:none;position:fixed;inset:0;z-index:150;background:rgba(20,10,5,.45)}
 .wa-back.open{display:block}
-.wa-modal{z-index:151}
+.modal.wa-modal{z-index:160}
 .read-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 /* подборки книг */
 .cat-genre{margin:22px 0 8px;font-family:var(--head);font-size:19px;color:var(--ink)}
@@ -589,7 +589,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v107 test: убрано поле «Комментарий» (дублирует рецензию) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v108 test: ФИКС окна хотелок (z-index — окно пряталось за тёмным экраном) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
