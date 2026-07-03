@@ -253,6 +253,8 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .cat-cover .cc-title{font-family:"Fraunces",serif;font-weight:600;font-size:14px;line-height:1.18;flex:1;
   display:flex;align-items:center;overflow:hidden}
 .cat-cover .cc-author{font-size:9.5px;letter-spacing:.03em;opacity:.85;border-top:1px solid currentColor;padding-top:5px;width:100%}
+.cat-cover .cc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;border-radius:inherit}
+.cat-cover .cc-img.loaded{opacity:1}
 /* страница книги */
 .bp-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:6px}
 #bpCover .cat-cover{width:130px;height:190px;cursor:default}
@@ -565,7 +567,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v99 test: аннотация + кнопки Литрес/Букмейт снизу; хотелки у книги друга --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v100 test: настоящие обложки+описания (Google Books), фолбэк на заглушку; кнопки снизу; хотелки у книги друга --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -751,8 +753,8 @@ main,footer{position:relative;z-index:1}
     </div>
     <div id="bpAnno"></div>
     <div class="read-row bp-actions">
-      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 читать в Литрес</a>
-      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 читать в Букмейт</a>
+      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
+      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
       <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
     </div>
   </div>
@@ -1595,10 +1597,55 @@ main,footer{position:relative;z-index:1}
   };
   const bookKey = (t,a) => (String(t||"")+"|"+String(a||"")).trim().toLowerCase();
   function coverHTML(b, motif, bg){
-    // дизайнерская обложка: цвет + рамка + узор раздела + красивое название
-    return `<div class="cat-cover" data-open style="background:${bg};color:${pickFg(bg)}">
+    // дизайнерская обложка-заглушка: показывается сразу; поверх подгружается настоящая обложка, если найдётся
+    return `<div class="cat-cover" data-open data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}" style="background:${bg};color:${pickFg(bg)}">
       <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
       <div class="cc-title">${esc(b.t)}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
+  }
+  /* ---- обложки и описания из Google Books (кэш в localStorage) ---- */
+  let bookMeta={}; try{ bookMeta=JSON.parse(localStorage.getItem("polka_bookmeta")||"{}"); }catch(e){ bookMeta={}; }
+  const saveBookMeta=()=>{ try{ localStorage.setItem("polka_bookmeta", JSON.stringify(bookMeta)); }catch(e){} };
+  function cleanDesc(s, max){
+    if(!s) return "";
+    s=String(s).replace(/<[^>]+>/g," ").replace(/&[a-z]+;/gi," ").replace(/\s+/g," ").trim();
+    max=max||500;
+    if(s.length>max){ let cut=s.slice(0,max); const p=Math.max(cut.lastIndexOf(". "),cut.lastIndexOf("! "),cut.lastIndexOf("? ")); s = p>max*0.5 ? cut.slice(0,p+1) : cut.trim()+"…"; }
+    return s;
+  }
+  async function fetchBookMeta(t,a){
+    const key=bookKey(t,a);
+    if(bookMeta[key]) return bookMeta[key];
+    try{
+      const q=encodeURIComponent((t+" "+(a||"")).trim());
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&country=RU`);
+      if(!r.ok) throw 0;
+      const d=await r.json();
+      let cover="", desc="";
+      for(const it of (d.items||[])){
+        const v=it.volumeInfo||{};
+        if(!cover && v.imageLinks){ cover=(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"").replace(/^http:/,"https:").replace("&edge=curl",""); }
+        if(!desc && v.description){ desc=cleanDesc(v.description,600); }
+        if(cover && desc) break;
+      }
+      const meta={cover,desc}; bookMeta[key]=meta; saveBookMeta(); return meta;
+    }catch(e){ return null; }
+  }
+  let coverObs=null;
+  function hydrateCovers(root){
+    if(!("IntersectionObserver" in window)) return;
+    if(coverObs) coverObs.disconnect();
+    coverObs=new IntersectionObserver(ents=>{
+      ents.forEach(en=>{ if(!en.isIntersecting) return; const el=en.target; coverObs.unobserve(el); ensureCover(el, el.dataset.ct, el.dataset.ca); });
+    }, {rootMargin:"250px"});
+    (root||document).querySelectorAll(".cat-cover[data-ct]").forEach(el=>coverObs.observe(el));
+  }
+  async function ensureCover(el,t,a){
+    if(!el || el.querySelector(".cc-img")) return;
+    const m=await fetchBookMeta(t,a);
+    if(!m || !m.cover || !el.isConnected) return;
+    const img=new Image(); img.className="cc-img"; img.alt="";
+    img.onload=()=>img.classList.add("loaded"); img.onerror=()=>img.remove();
+    img.src=m.cover; el.appendChild(img);
   }
   function renderCatalog(){
     $("#catalogList").innerHTML = Object.entries(CATALOG).map(([genre,books])=>{
@@ -1617,6 +1664,7 @@ main,footer{position:relative;z-index:1}
           </div></div>`;
       }).join("") + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div>`;
     }).join("");
+    hydrateCovers($("#catalogList"));
   }
   function addCatToWish(t,a){
     if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
@@ -1633,7 +1681,7 @@ main,footer{position:relative;z-index:1}
     if(e.target.closest("[data-litres]")) return;
     if(e.target.closest("[data-open]")){ openBookPage(c.dataset.t, c.dataset.a); return; }
   });
-  // страница книги: обложка, кнопки, аннотация из Википедии
+  // страница книги: настоящая обложка + описание (Google Books → Википедия → заглушка)
   let bpBook=null;
   function openBookPage(t,a){
     bpBook={t,a};
@@ -1645,19 +1693,27 @@ main,footer{position:relative;z-index:1}
     $("#bpBookmate").href="https://books.yandex.ru/search?query="+bq;
     $("#bpAnno").innerHTML=`<p class="mp">Загружаю описание…</p>`;
     openPage("bookPage");
-    loadWiki(t,a);
+    loadBookInfo(t,a);
   }
-  async function loadWiki(t,a){
+  const stillOn=(t,a)=> bpBook && bookKey(bpBook.t,bpBook.a)===bookKey(t,a);
+  async function loadBookInfo(t,a){
+    const m=await fetchBookMeta(t,a);
+    if(!stillOn(t,a)) return;
+    ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки
+    let desc = (m && m.desc) ? m.desc : "";
+    if(!desc){ desc=await loadWikiDesc(t,a); if(!stillOn(t,a)) return; }
+    $("#bpAnno").innerHTML = (desc && desc.length>40)
+      ? `<div class="ir-label">Описание</div><div class="bp-anno">${esc(desc)}</div>`
+      : `<p class="mp">Описание не нашлось в свободных источниках — загляни на Литрес или Букмейт 👆</p>`;
+  }
+  async function loadWikiDesc(t,a){
     try{
       const url=`https://ru.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(t+" "+a)}&gsrlimit=1&prop=extracts&exintro=1&explaintext=1&redirects=1`;
       const r=await fetch(url); const d=await r.json();
-      if(!bpBook || bookKey(bpBook.t,bpBook.a)!==bookKey(t,a)) return;
       const pages=d.query&&d.query.pages; const p=pages?Object.values(pages)[0]:null;
       const ex=p&&p.extract?String(p.extract).trim():"";
-      $("#bpAnno").innerHTML = (ex && ex.length>40)
-        ? `<div class="ir-label">Описание</div><div class="bp-anno">${esc(ex.slice(0,1200))}</div>`
-        : `<p class="mp">Описание не нашлось в свободных источниках — загляни на Литрес или Букмейт 👆</p>`;
-    }catch(e){ $("#bpAnno").innerHTML=`<p class="mp">Не удалось загрузить описание.</p>`; }
+      return ex? cleanDesc(ex,900) : "";
+    }catch(e){ return ""; }
   }
   $("#bpWish").addEventListener("click", ()=>{ if(bpBook) addCatToWish(bpBook.t, bpBook.a); });
   $("#bpBookmate").addEventListener("click", ()=>{ if(bpBook) copyForSearch(bpBook.t); });
