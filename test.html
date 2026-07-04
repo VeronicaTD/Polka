@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="120" />
+<meta name="app-version" content="121" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -82,13 +82,19 @@ body[data-theme="matcha"]{
 .poem-actions{margin-left:auto;display:flex;gap:8px}
 .poem-mini{appearance:none;cursor:pointer;font:inherit;font-size:13px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:999px;padding:6px 12px;white-space:nowrap}
 .poem-mini.on{border-color:var(--accent);color:var(--accent-deep);background:rgba(0,0,0,.03)}
-.poem-book{position:relative;max-width:560px;margin:8px auto 0;display:flex;align-items:stretch}
-.poem-page{flex:1;min-width:0;background:var(--paper-2);border:1px solid var(--line);border-radius:6px;
-  padding:40px 30px 46px;min-height:360px;position:relative;
-  box-shadow:inset 9px 0 20px -14px rgba(0,0,0,.35), 0 12px 34px -16px rgba(40,25,10,.5);
-  display:flex;flex-direction:column;justify-content:center;font-family:"Fraunces",serif}
-.poem-page.flip{animation:poemflip .34s ease}
-@keyframes poemflip{from{opacity:0;transform:translateX(16px) rotateY(5deg)}to{opacity:1;transform:none}}
+.poem-quote{max-width:560px;margin:2px auto 16px;text-align:center;font-family:"Fraunces",serif;font-style:italic;font-size:16px;color:var(--ink-soft);line-height:1.5}
+.poem-book{position:relative;max-width:600px;margin:0 auto;display:flex;align-items:stretch;gap:2px}
+.poem-stage{position:relative;flex:1;min-width:0;perspective:2000px}
+.poem-page{width:100%;min-height:360px;box-sizing:border-box;background:var(--paper-2);border:1px solid var(--line);border-radius:6px 11px 11px 6px;
+  padding:40px 30px 46px;font-family:"Fraunces",serif;display:flex;flex-direction:column;justify-content:center;
+  box-shadow:inset 11px 0 22px -14px rgba(0,0,0,.4), 3px 3px 0 rgba(0,0,0,.03), 6px 6px 0 rgba(0,0,0,.02), 0 14px 34px -16px rgba(40,25,10,.5)}
+.poem-leaf{position:absolute;inset:0;margin:0;transform-origin:left center;backface-visibility:hidden;z-index:6}
+.poem-leaf.fwd{transform:rotateY(0)}
+.poem-leaf.fwd.go{animation:pf-fwd .55s ease forwards}
+.poem-leaf.back{transform:rotateY(-168deg)}
+.poem-leaf.back.go{animation:pf-back .55s ease forwards}
+@keyframes pf-fwd{to{transform:rotateY(-168deg)}}
+@keyframes pf-back{to{transform:rotateY(0)}}
 .poem-title{text-align:center;font-weight:600;font-size:20px;margin-bottom:16px;color:var(--ink)}
 .poem-text{white-space:pre-wrap;font-size:17px;line-height:1.75;text-align:center;color:var(--ink)}
 .poem-author{text-align:right;margin-top:22px;font-style:italic;font-size:15px;color:var(--ink-soft)}
@@ -569,7 +575,7 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
-  <button class="menu-item" id="mPoems">✒️ Стихи</button>
+  <button class="menu-item" id="mPoems">✒️ Поэзия</button>
   <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
@@ -630,7 +636,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v120: раздел «Стихи» — сборник-книга, стихи читателей, закладки, публикация --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v121: «Поэзия» — книга с перелистыванием страниц, вдохновляющая фраза вверху --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -813,18 +819,19 @@ main,footer{position:relative;z-index:1}
 </div>
 
 <!-- стихи: сборник-книга -->
-<div class="fullpage" id="poemsPage" aria-label="Стихи">
+<div class="fullpage" id="poemsPage" aria-label="Поэзия">
   <div class="fp-head">
-    <button class="fp-back" data-close>← назад</button><h3>Стихи ✒️</h3>
+    <button class="fp-back" data-close>← назад</button><h3>Поэзия ✒️</h3>
     <div class="poem-actions">
       <button class="poem-mini" id="poemFilter" type="button">🔖 закладки</button>
       <button class="poem-mini" id="poemAdd" type="button">＋ поделиться</button>
     </div>
   </div>
   <div class="fp-body">
+    <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-book">
       <button class="poem-nav prev" id="poemPrev" aria-label="предыдущее">‹</button>
-      <div class="poem-page" id="poemPage"></div>
+      <div class="poem-stage" id="poemStage"><div class="poem-page" id="poemPage"></div></div>
       <button class="poem-nav next" id="poemNext" aria-label="следующее">›</button>
     </div>
     <div class="poem-count" id="poemCount"></div>
@@ -2037,8 +2044,18 @@ main,footer{position:relative;z-index:1}
   let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
   const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
   const poemList=()=> poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems;
+  const POEM_PHRASES = ["Поэзия — это когда слова начинают дышать ✨","Найди строчку, которая станет твоей 🕊","Иногда одно стихотворение меняет весь день","Здесь живут строки, которые хочется перечитывать","Пусть сегодня какая-то строфа тебя обнимет 🤍","Одна страница — одно настроение 🍃"];
+  function poemHTML(p){
+    const marked=poemBM.has(p.id);
+    return `<button class="poem-bm ${marked?'on':''}" id="poemBm" title="Закладка" aria-label="Закладка">🔖</button>`
+      + (p.t?`<div class="poem-title">${esc(p.t)}</div>`:"")
+      + `<div class="poem-text">${esc(p.x)}</div>`
+      + (p.a?`<div class="poem-author">— ${esc(p.a)}</div>`:"")
+      + (p.by?`<div class="poem-by">поделился(-ась): ${esc(p.by)}</div>`:"");
+  }
   async function openPoems(){
     poemFilterBm=false; $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="🔖 закладки";
+    $("#poemQuote").textContent = POEM_PHRASES[Math.floor(Math.random()*POEM_PHRASES.length)];
     $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent="";
     openPage("poemsPage");
     let community=[];
@@ -2053,16 +2070,24 @@ main,footer{position:relative;z-index:1}
       $("#poemCount").textContent=""; return;
     }
     if(poemIdx>=list.length) poemIdx=0; if(poemIdx<0) poemIdx=list.length-1;
-    const p=list[poemIdx], marked=poemBM.has(p.id), pg=$("#poemPage");
-    pg.innerHTML = `<button class="poem-bm ${marked?'on':''}" id="poemBm" title="Закладка" aria-label="Закладка">🔖</button>`
-      + (p.t?`<div class="poem-title">${esc(p.t)}</div>`:"")
-      + `<div class="poem-text">${esc(p.x)}</div>`
-      + (p.a?`<div class="poem-author">— ${esc(p.a)}</div>`:"")
-      + (p.by?`<div class="poem-by">поделился(-ась): ${esc(p.by)}</div>`:"");
+    $("#poemPage").innerHTML = poemHTML(list[poemIdx]);
     $("#poemCount").textContent = `${poemIdx+1} / ${list.length}`;
-    pg.classList.remove("flip"); void pg.offsetWidth; pg.classList.add("flip");
   }
-  function poemGo(d){ const list=poemList(); if(!list.length) return; poemIdx=(poemIdx+d+list.length)%list.length; renderPoem(); }
+  function poemGo(d){
+    const list=poemList(); if(!list.length) return;
+    const oldHTML = $("#poemPage").innerHTML;
+    poemIdx=(poemIdx+d+list.length)%list.length;
+    $("#poemPage").innerHTML = poemHTML(list[poemIdx]);
+    $("#poemCount").textContent = `${poemIdx+1} / ${list.length}`;
+    if(reduce) return;                                    // без анимации, если пользователь её отключил
+    const stage=$("#poemStage");
+    const leaf=document.createElement("div");
+    leaf.className = "poem-page poem-leaf " + (d>0 ? "fwd" : "back");   // переворачивающийся лист
+    leaf.innerHTML = (d>0 ? oldHTML : $("#poemPage").innerHTML);
+    stage.appendChild(leaf);
+    requestAnimationFrame(()=>leaf.classList.add("go"));
+    leaf.addEventListener("animationend", ()=>leaf.remove(), {once:true});
+  }
   $("#mPoems").addEventListener("click", ()=>{ closeMenu(); openPoems(); });
   $("#poemPrev").addEventListener("click", ()=>poemGo(-1));
   $("#poemNext").addEventListener("click", ()=>poemGo(1));
