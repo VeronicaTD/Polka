@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="116" />
+<meta name="app-version" content="119" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -140,6 +140,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
   color:var(--ink-soft);font-size:14px}
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
+.fav-pill{appearance:none;cursor:pointer;font:inherit;font-size:13px;border:1px solid #e0556a;color:#c73f56;background:rgba(224,85,106,.06);border-radius:999px;padding:5px 12px;white-space:nowrap;line-height:1.1}
+.fav-pill.on{background:#e0556a;color:#fff;border-color:#e0556a}
+.tab .tab-heart{font-size:11px;margin-left:2px}
+.tab.fav{border-color:#e0556a}
 .profile .sub{color:var(--ink-soft);font-family:"Fraunces",serif;font-style:italic;font-weight:400;
   font-size:16px;line-height:1.4;margin-top:4px;max-width:46ch}
 .reading{margin-top:7px;font-size:14px;color:var(--ink-soft)}
@@ -559,6 +563,7 @@ main,footer{position:relative;z-index:1}
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
+        <button class="fav-pill" id="favFriendBtn" style="display:none">🤍 в любимки</button>
       </div>
       <div class="sub" id="pSub"></div>
       <div class="reading" id="pReading"></div>
@@ -604,7 +609,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v116: авто-обновление приложения (проверяет версию на сервере, сам перезагружается на свежую) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v119: кнопка «в любимки» рядом с именем друга (розовая пилюля) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1037,6 +1042,10 @@ main,footer{position:relative;z-index:1}
   (function(){ const seen=new Set(); savedFriends = savedFriends.filter(f=>{ const k=f.code||f.id; if(seen.has(k)) return false; seen.add(k); return true; }); })();
   try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
   savedFriends.forEach(f => { DEMO_FRIENDS[f.id] = f; });
+  // любимые друзья — храним отдельно по коду (переживает обновление данных из облака)
+  let favFriends; try{ favFriends = new Set(JSON.parse(localStorage.getItem("polka_favfriends")||"[]")); }catch(e){ favFriends = new Set(); }
+  const saveFavFriends = ()=>{ try{ localStorage.setItem("polka_favfriends", JSON.stringify([...favFriends])); }catch(e){} };
+  const isFavFriend = f => !!(f && f.code && favFriends.has(f.code));
 
   /* мой профиль */
   let myName  = localStorage.getItem("polka_name")  || "Моя полка";
@@ -1139,7 +1148,9 @@ main,footer{position:relative;z-index:1}
   function renderTabs(){
     const t = $("#tabs");
     const me = `<button class="tab ${isMe()?'active':''}" data-view="me"><span class="face" style="${myPhoto?`background-image:url(${myPhoto})`:'background:var(--accent)'}">${myPhoto?'':'М'}</span>${esc(myName.split(" ")[0])}</button>`;
-    const fr = Object.entries(DEMO_FRIENDS).map(([k,f])=>`<button class="tab ${view===k?'active':''}" data-view="${k}"><span class="face" style="${f.photo?`background-image:url(${f.photo})`:`background:${f.color}`}">${f.photo?'':esc(f.name[0])}</span>${esc(f.name.split(" ")[0])}</button>`).join("");
+    const fr = Object.entries(DEMO_FRIENDS)
+      .sort((a,b)=>(isFavFriend(b[1])?1:0)-(isFavFriend(a[1])?1:0))   // любимые — первыми (как закреп)
+      .map(([k,f])=>`<button class="tab ${view===k?'active':''} ${isFavFriend(f)?'fav':''}" data-view="${k}"><span class="face" style="${f.photo?`background-image:url(${f.photo})`:`background:${f.color}`}">${f.photo?'':esc(f.name[0])}</span>${esc(f.name.split(" ")[0])}${isFavFriend(f)?' <span class="tab-heart">❤</span>':''}</button>`).join("");
     t.innerHTML = `<span class="lbl">Профили:</span>${me}${fr}<button class="tab tab-add" id="addFriend" title="Добавить полку друга по коду">+ полка друга</button>`;
   }
   $("#tabs").addEventListener("click", e=>{
@@ -1147,6 +1158,12 @@ main,footer{position:relative;z-index:1}
     if(b.id==="addFriend"){ openJoin(); return; }
     if(!b.dataset.view) return;
     view = b.dataset.view; casePage=0; slideDir=0; renderAll();
+  });
+  $("#favFriendBtn").addEventListener("click", ()=>{
+    const f = friend(); if(!f || !f.code) return;
+    if(favFriends.has(f.code)) favFriends.delete(f.code); else favFriends.add(f.code);
+    saveFavFriends(); renderTabs(); renderProfile();
+    toast(favFriends.has(f.code) ? "В любимых ❤" : "Убрано из любимых");
   });
 
   /* профиль */
@@ -1162,12 +1179,14 @@ main,footer{position:relative;z-index:1}
       $("#pName").textContent = myName;
       $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
       $("#editProfile").style.display = "";
+      $("#favFriendBtn").style.display = "none";
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
       $("#pName").textContent = f.name;
       $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
       $("#editProfile").style.display = "none";
+      const fb = $("#favFriendBtn"); fb.style.display = f.code ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
     $("#stTotal").textContent = books.length;
