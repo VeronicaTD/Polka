@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="119" />
+<meta name="app-version" content="120" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -78,6 +78,26 @@ body[data-theme="matcha"]{
 @keyframes bl-flip{0%,100%{transform:rotateY(0)}45%,55%{transform:rotateY(-172deg)}}
 .loader-box{text-align:center;padding:22px 0}
 .loader-box .mp{margin-top:12px}
+/* стихи */
+.poem-actions{margin-left:auto;display:flex;gap:8px}
+.poem-mini{appearance:none;cursor:pointer;font:inherit;font-size:13px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:999px;padding:6px 12px;white-space:nowrap}
+.poem-mini.on{border-color:var(--accent);color:var(--accent-deep);background:rgba(0,0,0,.03)}
+.poem-book{position:relative;max-width:560px;margin:8px auto 0;display:flex;align-items:stretch}
+.poem-page{flex:1;min-width:0;background:var(--paper-2);border:1px solid var(--line);border-radius:6px;
+  padding:40px 30px 46px;min-height:360px;position:relative;
+  box-shadow:inset 9px 0 20px -14px rgba(0,0,0,.35), 0 12px 34px -16px rgba(40,25,10,.5);
+  display:flex;flex-direction:column;justify-content:center;font-family:"Fraunces",serif}
+.poem-page.flip{animation:poemflip .34s ease}
+@keyframes poemflip{from{opacity:0;transform:translateX(16px) rotateY(5deg)}to{opacity:1;transform:none}}
+.poem-title{text-align:center;font-weight:600;font-size:20px;margin-bottom:16px;color:var(--ink)}
+.poem-text{white-space:pre-wrap;font-size:17px;line-height:1.75;text-align:center;color:var(--ink)}
+.poem-author{text-align:right;margin-top:22px;font-style:italic;font-size:15px;color:var(--ink-soft)}
+.poem-by{text-align:right;margin-top:6px;font-size:12px;color:var(--ink-soft);opacity:.85;font-family:inherit}
+.poem-bm{position:absolute;top:10px;right:12px;appearance:none;border:none;background:none;cursor:pointer;font-size:22px;line-height:1;filter:grayscale(1) opacity(.4);transition:filter .2s}
+.poem-bm.on{filter:none}
+.poem-nav{align-self:center;flex:0 0 auto;appearance:none;border:none;background:none;cursor:pointer;font-size:34px;line-height:1;color:var(--ink-soft);padding:8px 6px}
+.poem-nav:hover{color:var(--ink)}
+.poem-count{text-align:center;color:var(--ink-soft);font-size:13px;margin-top:14px}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:"Fredoka",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
   background-image:radial-gradient(circle at 15% 0%, rgba(184,73,58,.05), transparent 38%),
@@ -549,6 +569,7 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
+  <button class="menu-item" id="mPoems">✒️ Стихи</button>
   <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
@@ -609,7 +630,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v119: кнопка «в любимки» рядом с именем друга (розовая пилюля) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v120: раздел «Стихи» — сборник-книга, стихи читателей, закладки, публикация --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -791,6 +812,38 @@ main,footer{position:relative;z-index:1}
   </div>
 </div>
 
+<!-- стихи: сборник-книга -->
+<div class="fullpage" id="poemsPage" aria-label="Стихи">
+  <div class="fp-head">
+    <button class="fp-back" data-close>← назад</button><h3>Стихи ✒️</h3>
+    <div class="poem-actions">
+      <button class="poem-mini" id="poemFilter" type="button">🔖 закладки</button>
+      <button class="poem-mini" id="poemAdd" type="button">＋ поделиться</button>
+    </div>
+  </div>
+  <div class="fp-body">
+    <div class="poem-book">
+      <button class="poem-nav prev" id="poemPrev" aria-label="предыдущее">‹</button>
+      <div class="poem-page" id="poemPage"></div>
+      <button class="poem-nav next" id="poemNext" aria-label="следующее">›</button>
+    </div>
+    <div class="poem-count" id="poemCount"></div>
+  </div>
+</div>
+
+<!-- поделиться стихотворением -->
+<div class="fullpage" id="poemAddPage" aria-label="Поделиться стихотворением">
+  <div class="fp-head"><button class="fp-back" id="poemAddBack">← назад</button><h3>Поделиться стихотворением ✒️</h3></div>
+  <div class="fp-body">
+    <p class="mp">Строки, которые тебя тронули — их прочитают и другие читатели.</p>
+    <div class="field"><label>Название <span style="font-weight:400">(если есть)</span></label><input id="poemT" maxlength="120" placeholder="например, «Парус»"></div>
+    <div class="field"><label>Автор <span style="font-weight:400">(если знаешь)</span></label><input id="poemA" maxlength="80" placeholder="имя поэта"></div>
+    <div class="field"><label>Текст стихотворения</label><textarea id="poemText" rows="10" placeholder="впиши строки…"></textarea></div>
+    <button class="btn" id="poemSave" type="button" style="width:100%;justify-content:center;display:flex">Поделиться</button>
+    <span id="poemMsg" class="rev-msg"></span>
+  </div>
+</div>
+
 <!-- книга из подборки (полный экран) -->
 <div class="fullpage" id="bookPage" aria-label="Книга">
   <div class="fp-head"><button class="fp-back" id="bpBack">← назад</button><h3>Книга</h3></div>
@@ -929,6 +982,15 @@ main,footer{position:relative;z-index:1}
   }
   async function sbInsertReview(row){
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+  }
+  async function sbFetchPoems(){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems?select=*&order=created_at.desc&limit=300",{headers:SB_H()});
+    if(!r.ok) return [];
+    const a = await r.json(); return Array.isArray(a)?a:[];
+  }
+  async function sbInsertPoem(row){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
   }
   function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
@@ -1962,6 +2024,80 @@ main,footer{position:relative;z-index:1}
   }
   const BOOK_LOADER = `<div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div>`;
   function loaderBox(msg){ return `<div class="loader-box">${BOOK_LOADER}${msg?`<p class="mp">${esc(msg)}</p>`:""}</div>`; }
+
+  /* ===== СТИХИ ===== */
+  const SEED_POEMS = [
+    {id:"s1", t:"", a:"Фёдор Тютчев", x:"Умом Россию не понять,\nАршином общим не измерить:\nУ ней особенная стать —\nВ Россию можно только верить."},
+    {id:"s2", t:"", a:"Александр Пушкин", x:"Я вас любил: любовь ещё, быть может,\nВ душе моей угасла не совсем;\nНо пусть она вас больше не тревожит;\nЯ не хочу печалить вас ничем.\nЯ вас любил безмолвно, безнадежно,\nТо робостью, то ревностью томим;\nЯ вас любил так искренно, так нежно,\nКак дай вам Бог любимой быть другим."},
+    {id:"s3", t:"", a:"Александр Блок", x:"Ночь, улица, фонарь, аптека,\nБессмысленный и тусклый свет.\nЖиви ещё хоть четверть века —\nВсё будет так. Исхода нет.\n\nУмрёшь — начнёшь опять сначала,\nИ повторится всё, как встарь:\nНочь, ледяная рябь канала,\nАптека, улица, фонарь."},
+    {id:"s4", t:"Парус", a:"Михаил Лермонтов", x:"Белеет парус одинокой\nВ тумане моря голубом!..\nЧто ищет он в стране далёкой?\nЧто кинул он в краю родном?..\n\nИграют волны — ветер свищет,\nИ мачта гнётся и скрыпит...\nУвы! он счастия не ищет\nИ не от счастия бежит!\n\nПод ним струя светлей лазури,\nНад ним луч солнца золотой...\nА он, мятежный, просит бури,\nКак будто в бурях есть покой!"},
+    {id:"s5", t:"", a:"Афанасий Фет", x:"Шёпот, робкое дыханье,\nТрели соловья,\nСеребро и колыханье\nСонного ручья,\n\nСвет ночной, ночные тени,\nТени без конца,\nРяд волшебных изменений\nМилого лица,\n\nВ дымных тучках пурпур розы,\nОтблеск янтаря,\nИ лобзания, и слёзы,\nИ заря, заря!.."}
+  ];
+  let poems=[], poemIdx=0, poemFilterBm=false;
+  let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
+  const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
+  const poemList=()=> poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems;
+  async function openPoems(){
+    poemFilterBm=false; $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="🔖 закладки";
+    $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent="";
+    openPage("poemsPage");
+    let community=[];
+    try{ if(CLOUD()) community = await sbFetchPoems(); }catch(e){ community=[]; }
+    poems = community.map(p=>({id:"c"+p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||""})).concat(SEED_POEMS);
+    poemIdx=0; renderPoem();
+  }
+  function renderPoem(){
+    const list=poemList();
+    if(!list.length){
+      $("#poemPage").innerHTML = `<div class="loader-box"><p class="mp">${poemFilterBm?"Пока нет закладок 🔖 — открой стих и нажми на ленточку":"Здесь пока пусто. Поделись первым стихотворением ✒️"}</p>${BOOK_LOADER}</div>`;
+      $("#poemCount").textContent=""; return;
+    }
+    if(poemIdx>=list.length) poemIdx=0; if(poemIdx<0) poemIdx=list.length-1;
+    const p=list[poemIdx], marked=poemBM.has(p.id), pg=$("#poemPage");
+    pg.innerHTML = `<button class="poem-bm ${marked?'on':''}" id="poemBm" title="Закладка" aria-label="Закладка">🔖</button>`
+      + (p.t?`<div class="poem-title">${esc(p.t)}</div>`:"")
+      + `<div class="poem-text">${esc(p.x)}</div>`
+      + (p.a?`<div class="poem-author">— ${esc(p.a)}</div>`:"")
+      + (p.by?`<div class="poem-by">поделился(-ась): ${esc(p.by)}</div>`:"");
+    $("#poemCount").textContent = `${poemIdx+1} / ${list.length}`;
+    pg.classList.remove("flip"); void pg.offsetWidth; pg.classList.add("flip");
+  }
+  function poemGo(d){ const list=poemList(); if(!list.length) return; poemIdx=(poemIdx+d+list.length)%list.length; renderPoem(); }
+  $("#mPoems").addEventListener("click", ()=>{ closeMenu(); openPoems(); });
+  $("#poemPrev").addEventListener("click", ()=>poemGo(-1));
+  $("#poemNext").addEventListener("click", ()=>poemGo(1));
+  $("#poemPage").addEventListener("click", e=>{
+    if(!e.target.closest("#poemBm")) return;
+    const p=poemList()[poemIdx]; if(!p) return;
+    if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id);
+    savePoemBM(); renderPoem();
+    toast(poemBM.has(p.id)?"В закладках 🔖":"Убрано из закладок");
+  });
+  $("#poemFilter").addEventListener("click", ()=>{
+    poemFilterBm=!poemFilterBm; poemIdx=0;
+    $("#poemFilter").classList.toggle("on", poemFilterBm);
+    $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"🔖 закладки";
+    renderPoem();
+  });
+  $("#poemAdd").addEventListener("click", ()=>{ $("#poemT").value=""; $("#poemA").value=""; $("#poemText").value=""; $("#poemMsg").textContent=""; openPage("poemAddPage"); });
+  $("#poemAddBack").addEventListener("click", ()=>{ $("#poemAddPage").classList.remove("open"); });
+  $("#poemSave").addEventListener("click", async ()=>{
+    const x=$("#poemText").value.trim();
+    if(x.length<10){ $("#poemMsg").textContent="Впиши строки стихотворения 🙂"; return; }
+    if(!CLOUD()){ $("#poemMsg").textContent="Нет соединения с облаком 😔"; return; }
+    const btn=$("#poemSave"); btn.disabled=true; $("#poemMsg").textContent="Публикую…";
+    try{
+      await sbInsertPoem({ title:$("#poemT").value.trim(), author:$("#poemA").value.trim(), text:x, name:myName||"Читатель" });
+      $("#poemMsg").textContent="Опубликовано! Спасибо 🌸";
+      $("#poemAddPage").classList.remove("open");
+      await openPoems();
+    }catch(e){ $("#poemMsg").textContent="Не удалось опубликовать 😔 попробуй ещё раз"; }
+    btn.disabled=false;
+  });
+  (function(){ let px=null; const bk=$("#poemPage");
+    bk.addEventListener("pointerdown", e=>{ px=e.clientX; });
+    bk.addEventListener("pointerup", e=>{ if(px==null) return; const dx=e.clientX-px; px=null; if(Math.abs(dx)>50 && !e.target.closest("#poemBm")) poemGo(dx<0?1:-1); });
+  })();
   async function openReviewsFeed(){
     $("#reviewsFeed").innerHTML = loaderBox("Листаю рецензии…");
     openPage("reviewsPage");
