@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="117" />
+<meta name="app-version" content="118" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -140,8 +140,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
   color:var(--ink-soft);font-size:14px}
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
-.fav-friend{appearance:none;border:none;background:transparent;cursor:pointer;font-size:24px;line-height:1;color:#e0556a;padding:0 4px}
-.fav-friend:not(.on){color:var(--ink-soft);opacity:.8}
+#favFriendBtn.on{border-color:#e0556a;color:#c73f56;background:rgba(224,85,106,.08)}
 .tab .tab-heart{font-size:11px;margin-left:2px}
 .tab.fav{border-color:#e0556a}
 .profile .sub{color:var(--ink-soft);font-family:"Fraunces",serif;font-style:italic;font-weight:400;
@@ -563,7 +562,6 @@ main,footer{position:relative;z-index:1}
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
-        <button class="fav-friend" id="favFriendBtn" title="В любимые" aria-label="В любимые" style="display:none">♡</button>
       </div>
       <div class="sub" id="pSub"></div>
       <div class="reading" id="pReading"></div>
@@ -599,6 +597,7 @@ main,footer{position:relative;z-index:1}
     <div class="bookcase" id="bookcase"></div>
     <div class="case-ind" id="caseInd"></div>
     <div class="case-actions" id="friendActions" style="display:none">
+      <button class="dice-btn" id="favFriendBtn">🤍 в любимые</button>
       <button class="dice-btn" id="quotesBtn">💬 цитаты друга</button>
       <button class="dice-btn" id="wishBtn">📌 хотелки друга</button>
       <button class="dice-btn" id="yearBtn" style="display:none">✨ книжный год друга</button>
@@ -609,7 +608,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v117: друзья-любимчики (сердечко, закреп вверху ленты) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v118: кнопка «в любимые» с текстом (в ряду кнопок друга) вместо голого сердечка --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1186,7 +1185,7 @@ main,footer{position:relative;z-index:1}
       $("#pName").textContent = f.name;
       $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
       $("#editProfile").style.display = "none";
-      const fb = $("#favFriendBtn"); fb.style.display = f.code ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.textContent = isFavFriend(f) ? "❤" : "♡";
+      const fb = $("#favFriendBtn"); fb.style.display = f.code ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимых" : "🤍 в любимые";
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
     $("#stTotal").textContent = books.length;
