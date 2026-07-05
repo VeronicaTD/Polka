@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="130" />
+<meta name="app-version" content="131" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -102,7 +102,7 @@ body[data-theme="matcha"]{
 .pb-star{position:absolute;right:8%;bottom:5%;z-index:6;color:#b39b74;opacity:.7;line-height:0}
 .poem-bm{position:absolute;right:-7px;top:33%;width:30px;height:40px;z-index:9;appearance:none;border:none;cursor:pointer;padding:0;background:var(--accent);background-image:linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,0) 40%);border-radius:3px 3px 0 0;clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%);box-shadow:2px 2px 5px rgba(0,0,0,.22)}
 .poem-bm::after{content:"\2665";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-bottom:7px;font-size:14px;color:var(--accent-deep);opacity:.5}
-.poem-bm.on::after{opacity:1}
+.poem-bm.on::after{opacity:1;color:#e21b3c;font-size:17px;filter:drop-shadow(0 1px 2px rgba(150,10,30,.55))}
 .poem-controls{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:16px}
 .poem-nav{appearance:none;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);cursor:pointer;width:44px;height:44px;border-radius:50%;font-size:22px;line-height:1}
 .poem-nav:hover{border-color:var(--ink)}
@@ -448,6 +448,10 @@ footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--ink-soft
 .decor svg:nth-of-type(12){animation-delay:-2.8s}
 @keyframes bob{0%,100%{transform:rotate(var(--r)) translateY(0)}50%{transform:rotate(var(--r)) translateY(-12px)}}
 main,footer{position:relative;z-index:1}
+.fp-decor{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.fp-decor svg{position:absolute;display:block;transform:rotate(var(--r,0deg));animation:bob 8s ease-in-out infinite}
+.fp-decor svg:nth-of-type(2){animation-delay:-2s}.fp-decor svg:nth-of-type(3){animation-delay:-4s}.fp-decor svg:nth-of-type(4){animation-delay:-1s}.fp-decor svg:nth-of-type(5){animation-delay:-3s}.fp-decor svg:nth-of-type(6){animation-delay:-5s}.fp-decor svg:nth-of-type(7){animation-delay:-1.5s}.fp-decor svg:nth-of-type(8){animation-delay:-3.5s}.fp-decor svg:nth-of-type(9){animation-delay:-2.2s}.fp-decor svg:nth-of-type(10){animation-delay:-4.4s}.fp-decor svg:nth-of-type(11){animation-delay:-.8s}.fp-decor svg:nth-of-type(12){animation-delay:-2.8s}
+.fullpage>.fp-head,.fullpage>.fp-body{position:relative;z-index:1}
 
 /* модалки */
 .overlay{position:fixed;inset:0;background:rgba(40,30,18,.5);opacity:0;pointer-events:none;transition:.25s;z-index:80}
@@ -639,7 +643,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v130 test: поэзия нарисована в коде (без картинки) — чётко, тема-адаптивно --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v131 test: фраза фикс, закладка-сердечко ярче, звёзды-фон на вкладках --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -827,7 +831,7 @@ main,footer{position:relative;z-index:1}
   <div class="fp-body">
     <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-tools">
-      <button class="poem-mini" id="poemFilter" type="button">🔖 закладки</button>
+      <button class="poem-mini" id="poemFilter" type="button">❤ закладки</button>
       <button class="poem-mini" id="poemAdd" type="button">＋ поделиться</button>
     </div>
     <div class="poem-book">
@@ -1545,7 +1549,8 @@ main,footer{position:relative;z-index:1}
   }
 
   /* мои цитаты */
-  function openPage(id){ $("#"+id).classList.add("open"); }
+  const FP_STARS = `<svg class="d-star s1" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s2" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s3" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s4" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s5" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s6" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s7" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-spark k1" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k2" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k3" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k4" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k5" viewBox="0 0 100 100"><use href="#spark"/></svg>`;
+  function openPage(id){ const el=$("#"+id); if(el && !el.querySelector(".fp-decor")){ const d=document.createElement("div"); d.className="fp-decor"; d.setAttribute("aria-hidden","true"); d.innerHTML=FP_STARS; el.insertBefore(d, el.firstChild); } el.classList.add("open"); }
   function openQuotesPage(forMe){
     const books = forMe ? myBooks : ((friend()&&friend().books)||[]);
     const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
@@ -2054,7 +2059,7 @@ main,footer{position:relative;z-index:1}
   let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
   const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
   const poemList=()=> poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems;
-  const POEM_PHRASES = ["Стихи умеют то, чего не умеют слова ✨","Полистай — вдруг эта строчка про тебя 🤍","Немного поэзии на сегодня 🍃","Строки, в которых хочется остаться","Пусть одна из страниц станет твоей 🕊","Открой страницу — и замри на минуту"];
+  const POEM_PHRASES = ["Полистай, вдруг эти строчки про тебя?"];
   function poemContent(p){
     const head = p.t ? esc(p.t) : "📖";
     return `<div class="poem-head">${head}</div><div class="poem-head-rule"></div>`
@@ -2065,7 +2070,7 @@ main,footer{position:relative;z-index:1}
   function updatePoemBm(p){ const b=$("#poemBm"); if(!b) return; b.style.display=p?"":"none"; b.classList.toggle("on", !!(p && poemBM.has(p.id))); }
   function fitPoem(){ const pg=$("#poemPage"), t=pg.querySelector(".poem-text"); if(!t) return; let fs=16,g=0; t.style.fontSize=fs+"px"; while(g++<40 && fs>10.5 && pg.scrollHeight>pg.clientHeight+1){ fs-=0.5; t.style.fontSize=fs+"px"; } }
   async function openPoems(){
-    poemFilterBm=false; $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="🔖 закладки";
+    poemFilterBm=false; $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки";
     $("#poemQuote").textContent = POEM_PHRASES[Math.floor(Math.random()*POEM_PHRASES.length)];
     $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent=""; updatePoemBm(null);
     openPage("poemsPage");
@@ -2085,7 +2090,7 @@ main,footer{position:relative;z-index:1}
   $("#poemPrev").addEventListener("click", ()=>poemGo(-1));
   $("#poemNext").addEventListener("click", ()=>poemGo(1));
   $("#poemBm").addEventListener("click", ()=>{ const p=poemList()[poemIdx]; if(!p) return; if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id); savePoemBM(); updatePoemBm(p); toast(poemBM.has(p.id)?"В закладках ♥":"Убрано из закладок"); });
-  $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"🔖 закладки"; renderPoem(); });
+  $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"❤ закладки"; renderPoem(); });
   $("#poemAdd").addEventListener("click", ()=>{ $("#poemT").value=""; $("#poemA").value=""; $("#poemText").value=""; $("#poemMsg").textContent=""; openPage("poemAddPage"); });
   $("#poemAddBack").addEventListener("click", ()=>{ $("#poemAddPage").classList.remove("open"); });
   $("#poemSave").addEventListener("click", async ()=>{
