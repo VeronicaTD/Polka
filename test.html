@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="133" />
+<meta name="app-version" content="134" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -117,8 +117,8 @@ button{font-family:inherit;cursor:pointer}
 .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
 
 /* header */
-header{position:sticky;top:0;z-index:40;background:var(--paper);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+header{position:sticky;top:0;z-index:40;background:transparent;
+  backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);
   border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:10px;height:64px}
 .bar-side{flex:1 1 0;display:flex;align-items:center;min-width:0}
@@ -161,7 +161,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .polaroid{background:#fff;padding:7px 7px 16px;border-radius:3px;box-shadow:var(--shadow);
   transform:rotate(-3deg);position:relative;flex:0 0 auto}
 .polaroid::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-5deg);
-  width:48px;height:18px;background:rgba(184,137,63,.45);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+  width:48px;height:18px;background:var(--accent);opacity:.4;box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;position:relative;overflow:hidden;
   font-family:"Fredoka",sans-serif;font-weight:600;font-size:44px;color:#fff;background-size:cover;background-position:center}
 .ava-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -644,7 +644,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v133 test: поиск стихов появляется по кнопке «закладки»; шапка под все темы --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v134 test: шапка матовая (сливается во всех темах), тейп на полароиде под тему --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
