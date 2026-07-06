@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="135" />
+<meta name="app-version" content="136" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -117,8 +117,8 @@ button{font-family:inherit;cursor:pointer}
 .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
 
 /* header */
-header{position:sticky;top:0;z-index:40;background:transparent;
-  backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);
+header{position:sticky;top:0;z-index:40;background:var(--paper);
+  
   border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:10px;height:64px}
 .bar-side{flex:1 1 0;display:flex;align-items:center;min-width:0}
@@ -644,7 +644,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v135 test: статус-бар телефона обновляется под тему (пересоздаём meta theme-color) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v136 test: шапка сплошная под тему (не прозрачная) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
