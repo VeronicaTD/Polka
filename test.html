@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="132" />
+<meta name="app-version" content="133" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -81,7 +81,7 @@ body[data-theme="matcha"]{
 /* стихи */
 .poem-quote{max-width:520px;margin:2px auto 12px;text-align:center;font-family:"Fraunces",serif;font-style:italic;font-size:15px;color:var(--ink-soft);line-height:1.5}
 .poem-tools{display:flex;justify-content:center;gap:8px;margin:0 auto 10px}
-.poem-search{display:block;width:100%;max-width:340px;box-sizing:border-box;margin:0 auto 14px;padding:9px 15px;border:1px solid var(--line);border-radius:999px;background:var(--paper-2);color:var(--ink);font:inherit;font-size:14px}
+.poem-search{display:none;width:100%;max-width:340px;box-sizing:border-box;margin:0 auto 14px;padding:9px 15px;border:1px solid var(--line);border-radius:999px;background:var(--paper-2);color:var(--ink);font:inherit;font-size:14px}
 .poem-mini{appearance:none;cursor:pointer;font:inherit;font-size:12px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap}
 .poem-mini.on{border-color:var(--accent);color:var(--accent-deep)}
 .poem-book{max-width:378px;margin:0 auto;position:relative;filter:drop-shadow(0 16px 30px rgba(40,10,20,.28))}
@@ -644,7 +644,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v132 test: шапка под тему, закладка цвета любимок, поиск стихов по автору/названию/строчке --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v133 test: поиск стихов появляется по кнопке «закладки»; шапка под все темы --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2072,7 +2072,7 @@ main,footer{position:relative;z-index:1}
   function updatePoemBm(p){ const b=$("#poemBm"); if(!b) return; b.style.display=p?"":"none"; b.classList.toggle("on", !!(p && poemBM.has(p.id))); }
   function fitPoem(){ const pg=$("#poemPage"), t=pg.querySelector(".poem-text"); if(!t) return; let fs=16,g=0; t.style.fontSize=fs+"px"; while(g++<40 && fs>10.5 && pg.scrollHeight>pg.clientHeight+1){ fs-=0.5; t.style.fontSize=fs+"px"; } }
   async function openPoems(){
-    poemFilterBm=false; poemQuery=""; if($("#poemSearch")) $("#poemSearch").value=""; $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки";
+    poemFilterBm=false; poemQuery=""; if($("#poemSearch")){ $("#poemSearch").value=""; $("#poemSearch").style.display="none"; } $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки";
     $("#poemQuote").textContent = POEM_PHRASES[Math.floor(Math.random()*POEM_PHRASES.length)];
     $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent=""; updatePoemBm(null);
     openPage("poemsPage");
@@ -2092,7 +2092,7 @@ main,footer{position:relative;z-index:1}
   $("#poemPrev").addEventListener("click", ()=>poemGo(-1));
   $("#poemNext").addEventListener("click", ()=>poemGo(1));
   $("#poemBm").addEventListener("click", ()=>{ const p=poemList()[poemIdx]; if(!p) return; if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id); savePoemBM(); updatePoemBm(p); toast(poemBM.has(p.id)?"В закладках ♥":"Убрано из закладок"); });
-  $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"❤ закладки"; renderPoem(); });
+  $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"❤ закладки"; const s=$("#poemSearch"); if(s){ s.style.display=poemFilterBm?"block":"none"; if(!poemFilterBm){ poemQuery=""; s.value=""; } } renderPoem(); });
   $("#poemSearch").addEventListener("input", ()=>{ poemQuery=$("#poemSearch").value; poemIdx=0; renderPoem(); });
   $("#poemAdd").addEventListener("click", ()=>{ $("#poemT").value=""; $("#poemA").value=""; $("#poemText").value=""; $("#poemMsg").textContent=""; openPage("poemAddPage"); });
   $("#poemAddBack").addEventListener("click", ()=>{ $("#poemAddPage").classList.remove("open"); });
