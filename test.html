@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="134" />
+<meta name="app-version" content="135" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -644,7 +644,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v134 test: шапка матовая (сливается во всех темах), тейп на полароиде под тему --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v135 test: статус-бар телефона обновляется под тему (пересоздаём meta theme-color) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2325,9 +2325,11 @@ main,footer{position:relative;z-index:1}
     // верхняя плашка телефона (статус-бар браузера) в цвет фона темы
     try{
       const bar = getComputedStyle(document.body).getPropertyValue("--paper").trim();
-      let m = document.querySelector('meta[name="theme-color"]');
-      if(!m){ m = document.createElement("meta"); m.setAttribute("name","theme-color"); document.head.appendChild(m); }
+      // удаляем все старые meta и создаём новую — так iOS/Safari перечитывает цвет статус-бара
+      document.querySelectorAll('meta[name="theme-color"]').forEach(x=>x.remove());
+      const m = document.createElement("meta"); m.setAttribute("name","theme-color");
       if(bar) m.setAttribute("content", bar);
+      document.head.appendChild(m);
     }catch(e){}
   }
   function renderThemes(){
