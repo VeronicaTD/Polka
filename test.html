@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="138" />
+<meta name="app-version" content="140" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -97,7 +97,11 @@ body[data-theme="matcha"]{
 .poem-head-rule::after{content:"";position:absolute;left:50%;top:-2.5px;width:4px;height:4px;border-radius:50%;background:#b79a63;transform:translateX(-50%)}
 .poem-text{white-space:pre-wrap;font-size:16px;line-height:1.6;color:#4a3728}
 .poem-author{margin-top:14px;font-style:italic;font-size:14px;color:#7a6249}
-.poem-by{margin-top:5px;font-size:11.5px;color:#8a7358;opacity:.9;font-family:inherit}
+.poem-by{margin-top:14px;display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#8a7358;font-family:inherit}
+.poem-by.link{cursor:pointer}
+.poem-by.link:active{opacity:.7}
+.poem-by-av{width:26px;height:26px;flex:0 0 26px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;overflow:hidden}
+.poem-by-av img{width:100%;height:100%;object-fit:cover}
 .pb-clip{position:absolute;top:-11px;left:10%;z-index:6;line-height:0}
 .pb-tape{position:absolute;top:-5px;right:11%;width:76px;height:26px;transform:rotate(37deg);z-index:6;background:repeating-linear-gradient(90deg, rgba(232,214,168,.7) 0 5px, rgba(219,199,150,.7) 5px 10px);border-radius:1px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
 .pb-star{position:absolute;right:8%;bottom:5%;z-index:6;color:#b39b74;opacity:.7;line-height:0}
@@ -648,7 +652,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v138 test: бантик на полку (не улетает на десктопе), редактирование опубликованной рецензии --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v140 test: у стихов читателей — аватарка автора + переход на его профиль --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2071,23 +2075,24 @@ main,footer{position:relative;z-index:1}
 
   /* ===== СТИХИ ===== */
   const SEED_POEMS = [
-    {id:"s1", t:"", a:"Фёдор Тютчев", x:"Умом Россию не понять,\nАршином общим не измерить:\nУ ней особенная стать —\nВ Россию можно только верить."},
-    {id:"s2", t:"", a:"Александр Пушкин", x:"Я вас любил: любовь ещё, быть может,\nВ душе моей угасла не совсем;\nНо пусть она вас больше не тревожит;\nЯ не хочу печалить вас ничем.\nЯ вас любил безмолвно, безнадежно,\nТо робостью, то ревностью томим;\nЯ вас любил так искренно, так нежно,\nКак дай вам Бог любимой быть другим."},
-    {id:"s3", t:"", a:"Александр Блок", x:"Ночь, улица, фонарь, аптека,\nБессмысленный и тусклый свет.\nЖиви ещё хоть четверть века —\nВсё будет так. Исхода нет.\n\nУмрёшь — начнёшь опять сначала,\nИ повторится всё, как встарь:\nНочь, ледяная рябь канала,\nАптека, улица, фонарь."},
-    {id:"s4", t:"Парус", a:"Михаил Лермонтов", x:"Белеет парус одинокой\nВ тумане моря голубом!..\nЧто ищет он в стране далёкой?\nЧто кинул он в краю родном?..\n\nИграют волны — ветер свищет,\nИ мачта гнётся и скрыпит...\nУвы! он счастия не ищет\nИ не от счастия бежит!\n\nПод ним струя светлей лазури,\nНад ним луч солнца золотой...\nА он, мятежный, просит бури,\nКак будто в бурях есть покой!"},
-    {id:"s5", t:"", a:"Афанасий Фет", x:"Шёпот, робкое дыханье,\nТрели соловья,\nСеребро и колыханье\nСонного ручья,\n\nСвет ночной, ночные тени,\nТени без конца,\nРяд волшебных изменений\nМилого лица,\n\nВ дымных тучках пурпур розы,\nОтблеск янтаря,\nИ лобзания, и слёзы,\nИ заря, заря!.."}
+    {id:"s2", t:"", a:"Александр Пушкин", x:"Я вас любил: любовь ещё, быть может,\nВ душе моей угасла не совсем;\nНо пусть она вас больше не тревожит;\nЯ не хочу печалить вас ничем.\nЯ вас любил безмолвно, безнадежно,\nТо робостью, то ревностью томим;\nЯ вас любил так искренно, так нежно,\nКак дай вам Бог любимой быть другим."}
   ];
   let poems=[], poemIdx=0, poemFilterBm=false, poemQuery="";
   let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
   const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
   const poemList=()=>{ let l = poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems; const q=(poemQuery||"").trim().toLowerCase(); if(q) l = l.filter(p=>((p.t||"")+" "+(p.a||"")+" "+(p.x||"")).toLowerCase().includes(q)); return l; };
   const POEM_PHRASES = ["Полистай, вдруг эти строчки про тебя?"];
+  function poemByHTML(p){
+    const av = p.byPhoto ? `<span class="poem-by-av"><img src="${esc(p.byPhoto)}" alt=""></span>` : `<span class="poem-by-av">${esc((p.by[0]||"Ч").toUpperCase())}</span>`;
+    const code = p.byCode ? ` data-code="${esc(p.byCode)}"` : "";
+    return `<div class="poem-by${p.byCode?" link":""}"${code}>${av}<span>поделился(-ась): ${esc(p.by)}${p.byCode?" →":""}</span></div>`;
+  }
   function poemContent(p){
     const head = p.t ? esc(p.t) : "📖";
     return `<div class="poem-head">${head}</div><div class="poem-head-rule"></div>`
       + `<div class="poem-text">${esc(p.x||"")}</div>`
       + (p.a?`<div class="poem-author">— ${esc(p.a)}</div>`:"")
-      + (p.by?`<div class="poem-by">поделился(-ась): ${esc(p.by)}</div>`:"");
+      + (p.by?poemByHTML(p):"");
   }
   function updatePoemBm(p){ const b=$("#poemBm"); if(!b) return; b.style.display=p?"":"none"; b.classList.toggle("on", !!(p && poemBM.has(p.id))); }
   function fitPoem(){ const pg=$("#poemPage"), t=pg.querySelector(".poem-text"); if(!t) return; let fs=16,g=0; t.style.fontSize=fs+"px"; while(g++<40 && fs>10.5 && pg.scrollHeight>pg.clientHeight+1){ fs-=0.5; t.style.fontSize=fs+"px"; } }
@@ -2097,7 +2102,7 @@ main,footer{position:relative;z-index:1}
     $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent=""; updatePoemBm(null);
     openPage("poemsPage");
     let community=[]; try{ if(CLOUD()) community = await sbFetchPoems(); }catch(e){ community=[]; }
-    poems = community.map(p=>({id:"c"+p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||""})).concat(SEED_POEMS);
+    poems = community.map(p=>({id:"c"+p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||"", byPhoto:p.photo||"", byCode:p.code||""})).concat(SEED_POEMS);
     poemIdx=0; renderPoem();
   }
   function renderPoem(){
@@ -2111,6 +2116,17 @@ main,footer{position:relative;z-index:1}
   $("#mPoems").addEventListener("click", ()=>{ closeMenu(); openPoems(); });
   $("#poemPrev").addEventListener("click", ()=>poemGo(-1));
   $("#poemNext").addEventListener("click", ()=>poemGo(1));
+  async function viewPoemAuthor(code){
+    if(!code) return;
+    if(!CLOUD()){ toast("Нужно соединение с облаком"); return; }
+    let row; try{ row=await sbFetch(code); }catch(e){ toast("Не удалось открыть профиль"); return; }
+    if(!row||!row.data){ toast("Профиль не найден"); return; }
+    let p; try{ p=decodeCode(row.data); }catch(e){ toast("Профиль повреждён"); return; }
+    const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ toast("Это не профиль"); return; }
+    DEMO_FRIENDS.guest={name:(p&&p.n)||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:(p&&p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    view="guest"; casePage=0; closeModals(); renderAll();
+  }
+  $("#poemPage").addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code); });
   $("#poemBm").addEventListener("click", ()=>{ const p=poemList()[poemIdx]; if(!p) return; if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id); savePoemBM(); updatePoemBm(p); toast(poemBM.has(p.id)?"В закладках ♥":"Убрано из закладок"); });
   $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"❤ закладки"; const s=$("#poemSearch"); if(s){ s.style.display=poemFilterBm?"block":"none"; if(!poemFilterBm){ poemQuery=""; s.value=""; } } renderPoem(); });
   $("#poemSearch").addEventListener("input", ()=>{ poemQuery=$("#poemSearch").value; poemIdx=0; renderPoem(); });
@@ -2121,7 +2137,7 @@ main,footer{position:relative;z-index:1}
     if(x.length<10){ $("#poemMsg").textContent="Впиши строки стихотворения 🙂"; return; }
     if(!CLOUD()){ $("#poemMsg").textContent="Нет соединения с облаком 😔"; return; }
     const btn=$("#poemSave"); btn.disabled=true; $("#poemMsg").textContent="Публикую…";
-    try{ await sbInsertPoem({ title:$("#poemT").value.trim(), author:$("#poemA").value.trim(), text:x, name:myName||"Читатель" }); $("#poemMsg").textContent="Опубликовано! Спасибо 🌸"; $("#poemAddPage").classList.remove("open"); await openPoems(); }
+    try{ await sbInsertPoem({ title:$("#poemT").value.trim(), author:$("#poemA").value.trim(), text:x, name:myName||"Читатель", photo:myPhoto||"", code:myCode||"" }); $("#poemMsg").textContent="Опубликовано! Спасибо 🌸"; $("#poemAddPage").classList.remove("open"); await openPoems(); }
     catch(e){ $("#poemMsg").textContent="Не удалось опубликовать 😔 попробуй ещё раз"; }
     btn.disabled=false;
   });
