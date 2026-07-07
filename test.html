@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="136" />
+<meta name="app-version" content="137" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -330,6 +330,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .rev-book .rb-title{font-family:"Fraunces",serif;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rev-book .rb-author{opacity:.85;white-space:nowrap}
 .review-field{border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
+.rev-actions{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:2px}
+.rev-preview{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--paper-2);margin-top:8px}
+.rev-preview .rev-text{font-size:16px}
+.rev-preview .rev-av{width:46px;height:46px;flex-basis:46px;font-size:18px}
 .rev-msg{display:block;margin-top:6px;font-size:13px;color:var(--accent-deep)}
 .cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:6px;line-height:1.2;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -644,7 +648,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v136 test: шапка сплошная под тему (не прозрачная) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v137 test: предпросмотр рецензии - большое окно как она будет выглядеть --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -689,7 +693,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
-        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><span id="iReviewMsg" class="rev-msg"></span></div>
+        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Прочитать полностью</button><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button></div><span id="iReviewMsg" class="rev-msg"></span></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -867,6 +871,12 @@ main,footer{position:relative;z-index:1}
     <span id="poemMsg" class="rev-msg"></span>
   </div>
 </div>
+<!-- предпросмотр рецензии -->
+<div class="fullpage" id="reviewPreviewPage" aria-label="Предпросмотр рецензии">
+  <div class="fp-head"><button class="fp-back" id="rpBack">← назад</button><h3>Как увидят твою рецензию 👀</h3></div>
+  <div class="fp-body"><div id="rpContent"></div></div>
+</div>
+
 <!-- книга из подборки (полный экран) -->
 <div class="fullpage" id="bookPage" aria-label="Книга">
   <div class="fp-head"><button class="fp-back" id="bpBack">← назад</button><h3>Книга</h3></div>
@@ -2206,7 +2216,7 @@ main,footer{position:relative;z-index:1}
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent="";
+      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none";
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -2234,6 +2244,16 @@ main,footer{position:relative;z-index:1}
   $("#delBook").addEventListener("click", ()=>{
     if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll(); }
   });
+  $("#iReview").addEventListener("input", ()=>{ $("#iPreviewReview").style.display = $("#iReview").value.trim() ? "" : "none"; });
+  $("#iPreviewReview").addEventListener("click", ()=>{
+    const txt=$("#iReview").value.trim(); if(!txt) return;
+    const nm=myName||"Читатель", ph=myPhoto||"";
+    const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
+    const ttl = infoBook?infoBook.t:"";
+    $("#rpContent").innerHTML = `<p class="mp">Так твою рецензию увидят другие читатели${ttl?(" — на книгу «"+esc(ttl)+"»"):""}:</p><div class="rev-item rev-preview"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(txt)}</div></div></div>`;
+    openPage("reviewPreviewPage");
+  });
+  $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
   $("#iPublishReview").addEventListener("click", async ()=>{
     if(!requirePaid()) return;
     const b=infoBook; if(!b) return;
