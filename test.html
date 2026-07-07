@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="149" />
+<meta name="app-version" content="150" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -661,7 +661,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v149 test: фикс первого открытия — показываем первый стих читателя (с автором), а не сид; позицию храним только при наличии кэша --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v150 test: убрал лишнюю перерисовку когда данные не изменились (автор стабилен с первого кадра); кэш с запасным облегчённым сохранением --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2102,7 +2102,7 @@ main,footer{position:relative;z-index:1}
   let poems=[], poemIdx=0, poemFilterBm=false, poemQuery="";
   let poemsCache=null; try{ poemsCache=JSON.parse(localStorage.getItem("polka_poems_cache")||"null"); }catch(e){ poemsCache=null; }
   function mapPoems(community){ return community.map(p=>({id:"c"+p.id, dbId:p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||"", byPhoto:p.photo||"", byCode:p.code||""})); }
-  const savePoemsCache=()=>{ try{ localStorage.setItem("polka_poems_cache", JSON.stringify(poemsCache||[])); }catch(e){} };
+  const savePoemsCache=()=>{ try{ localStorage.setItem("polka_poems_cache", JSON.stringify(poemsCache||[])); }catch(e){ try{ localStorage.setItem("polka_poems_cache", JSON.stringify((poemsCache||[]).map(p=>Object.assign({},p,{byPhoto:""})))); }catch(e2){} } };
   let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
   const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
   const poemList=()=>{ let l = poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems; const q=(poemQuery||"").trim().toLowerCase(); if(q) l = l.filter(p=>((p.t||"")+" "+(p.a||"")+" "+(p.x||"")).toLowerCase().includes(q)); return l; };
@@ -2136,7 +2136,7 @@ main,footer{position:relative;z-index:1}
     if(poemsCache && poemsCache.length){ poems = poemsCache.concat(SEED_POEMS); poemIdx=0; renderPoem(); } else { $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent=""; updatePoemBm(null); poems = SEED_POEMS.slice(); poemIdx=0; }
     openPage("poemsPage");
     let community=null; try{ if(CLOUD()) community = await sbFetchPoems(); }catch(e){ community=null; }
-    if(community){ const hadCache=!!(poemsCache&&poemsCache.length); const curId=(poemList()[poemIdx]||{}).id; poemsCache = mapPoems(community); savePoemsCache(); poems = poemsCache.concat(SEED_POEMS); const ni=poemList().findIndex(p=>p.id===curId); poemIdx = (hadCache && ni>=0)?ni:0; renderPoem(); }
+    if(community){ const fresh=mapPoems(community); if(JSON.stringify(fresh)!==JSON.stringify(poemsCache||[])){ const hadCache=!!(poemsCache&&poemsCache.length); const curId=(poemList()[poemIdx]||{}).id; poemsCache=fresh; savePoemsCache(); poems=poemsCache.concat(SEED_POEMS); const ni=poemList().findIndex(p=>p.id===curId); poemIdx=(hadCache && ni>=0)?ni:0; renderPoem(); } else { poemsCache=fresh; } }
     else if(!poemsCache || !poemsCache.length){ poems = SEED_POEMS.slice(); poemIdx=0; renderPoem(); }
   }
   function renderPoem(){
