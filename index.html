@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="153" />
+<meta name="app-version" content="155" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -662,7 +662,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v153 test: стихи грузятся в фоне при запуске (Поэзия открывается сразу с автором) + подпись автора закреплена внизу карточки --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v155 test: toast-подсказки (напр. «что почитать») не обрезаются на телефоне — ограничена ширина, перенос строк, приподняты над нижним краем --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2194,7 +2194,23 @@ main,footer{position:relative;z-index:1}
     if(x.length<10){ $("#poemMsg").textContent="Впиши строки стихотворения 🙂"; return; }
     if(!CLOUD()){ $("#poemMsg").textContent="Нет соединения с облаком 😔"; return; }
     const btn=$("#poemSave"); btn.disabled=true; $("#poemMsg").textContent=editingPoem?"Сохраняю…":"Публикую…";
-    try{ if(editingPoem&&editingPoem.id){ await sbUpdatePoem(editingPoem.id, { title:$("#poemT").value.trim(), author:$("#poemA").value.trim(), text:x }); $("#poemMsg").textContent="Сохранено 🌸"; } else { await sbInsertPoem({ title:$("#poemT").value.trim(), author:$("#poemA").value.trim(), text:x, name:myName||"Читатель", photo:myPhoto||"", code:myCode||"" }); $("#poemMsg").textContent="Опубликовано! Спасибо 🌸"; } editingPoem=null; $("#poemAddPage").classList.remove("open"); await openPoems(); }
+    try{
+      const title=$("#poemT").value.trim(), author=$("#poemA").value.trim();
+      if(editingPoem&&editingPoem.id){
+        await sbUpdatePoem(editingPoem.id, { title, author, text:x });
+        (poemsCache||[]).forEach(p=>{ if(String(p.dbId)===String(editingPoem.id)){ p.t=title; p.a=author; p.x=x; } });
+        savePoemsCache(); poems=(poemsCache||[]).concat(SEED_POEMS);
+        $("#poemMsg").textContent="Сохранено 🌸";
+      } else {
+        const nid = await sbInsertPoem({ title, author, text:x, name:myName||"Читатель", photo:myPhoto||"", code:myCode||"" });
+        const np={ id:"c"+(nid||("n"+((poemsCache||[]).length))), dbId:nid, t:title, a:author, x:x, by:myName||"Читатель", byPhoto:myPhoto||"", byCode:myCode||"" };
+        poemsCache=[np].concat(poemsCache||[]); savePoemsCache();
+        poemFilterBm=false; poemQuery=""; if($("#poemSearch")){ $("#poemSearch").value=""; $("#poemSearch").style.display="none"; } if($("#poemFilter")){ $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки"; }
+        poems=poemsCache.concat(SEED_POEMS); poemIdx=0;
+        $("#poemMsg").textContent="Опубликовано! Спасибо 🌸";
+      }
+      editingPoem=null; $("#poemAddPage").classList.remove("open"); renderPoem();
+    }
     catch(e){ $("#poemMsg").textContent=editingPoem?"Не удалось сохранить 😔":"Не удалось опубликовать 😔 попробуй ещё раз"; }
     btn.disabled=false;
   });
@@ -2501,7 +2517,7 @@ main,footer{position:relative;z-index:1}
   /* ---- тост ---- */
   function toast(msg){
     const el=document.createElement("div"); el.textContent=msg;
-    el.style.cssText="position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:14px 22px;border-radius:999px;z-index:99;font-weight:600;font-size:14px;box-shadow:var(--shadow)";
+    el.style.cssText="position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:88vw;box-sizing:border-box;background:var(--ink);color:var(--paper);padding:13px 20px;border-radius:20px;z-index:99;font-weight:600;font-size:14px;line-height:1.35;text-align:center;white-space:normal;box-shadow:var(--shadow)";
     document.body.appendChild(el);
     if(!reduce) el.animate([{opacity:0,transform:"translate(-50%,12px)"},{opacity:1,transform:"translate(-50%,0)"}],{duration:250});
     setTimeout(()=>el.remove(),2600);
