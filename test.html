@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="144" />
+<meta name="app-version" content="145" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -661,7 +661,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v144 test: можно удалить своё стихотворение (🗑) и свою рецензию (🗑 Удалить в окне книги) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v145 test: старые стихи (без code) распознаются как свои по имени автора — снова видны ✏️/🗑 --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2107,7 +2107,7 @@ main,footer{position:relative;z-index:1}
   function poemByHTML(p){
     const av = p.byPhoto ? `<span class="poem-by-av"><img src="${esc(p.byPhoto)}" alt=""></span>` : `<span class="poem-by-av">${esc((p.by[0]||"Ч").toUpperCase())}</span>`;
     const code = p.byCode ? ` data-code="${esc(p.byCode)}"` : "";
-    const mine=p.byCode&&p.byCode===myCode;
+    const mine = p.byCode ? (p.byCode===myCode) : (!!p.by && p.by===myName);
     const tap=`<span class="poem-by-tap${p.byCode?" link":""}"${code}>${av}<span class="poem-by-name">${esc(p.by)}</span></span>`;
     return `<div class="poem-by">${tap}${mine?`<button class="poem-edit" data-editpoem="${esc(p.dbId||"")}" title="Редактировать">✏️</button><button class="poem-edit poem-del" data-delpoem="${esc(p.dbId||"")}" title="Удалить">🗑</button>`:""}</div>`;
   }
