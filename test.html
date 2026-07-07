@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="146" />
+<meta name="app-version" content="147" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -661,7 +661,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v146 test: кэш стихов (мгновенное открытие сборника) + кэш профилей и мгновенная реакция при переходе по стиху/рецензии --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v147 test: фоновая подгрузка стихов при старте (Поэзия открывается сразу с авторами) + надёжный кэш --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2101,7 +2101,8 @@ main,footer{position:relative;z-index:1}
   ];
   let poems=[], poemIdx=0, poemFilterBm=false, poemQuery="";
   let poemsCache=null; try{ poemsCache=JSON.parse(localStorage.getItem("polka_poems_cache")||"null"); }catch(e){ poemsCache=null; }
-  const savePoemsCache=()=>{ try{ localStorage.setItem("polka_poems_cache", JSON.stringify(poemsCache)); }catch(e){} };
+  function mapPoems(community){ return community.map(p=>({id:"c"+p.id, dbId:p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||"", byPhoto:p.photo||"", byCode:p.code||""})); }
+  const savePoemsCache=()=>{ try{ localStorage.setItem("polka_poems_cache", JSON.stringify((poemsCache||[]).map(p=>Object.assign({}, p, {byPhoto:""})))); }catch(e){} };
   let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
   const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
   const poemList=()=>{ let l = poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems; const q=(poemQuery||"").trim().toLowerCase(); if(q) l = l.filter(p=>((p.t||"")+" "+(p.a||"")+" "+(p.x||"")).toLowerCase().includes(q)); return l; };
@@ -2122,13 +2123,20 @@ main,footer{position:relative;z-index:1}
   }
   function updatePoemBm(p){ const b=$("#poemBm"); if(!b) return; b.style.display=p?"":"none"; b.classList.toggle("on", !!(p && poemBM.has(p.id))); }
   function fitPoem(){ const pg=$("#poemPage"), t=pg.querySelector(".poem-text"); if(!t) return; let fs=16,g=0; t.style.fontSize=fs+"px"; while(g++<40 && fs>10.5 && pg.scrollHeight>pg.clientHeight+1){ fs-=0.5; t.style.fontSize=fs+"px"; } }
+  async function prewarmPoems(){
+    if(!CLOUD()) return;
+    let community=null; try{ community = await sbFetchPoems(); }catch(e){ return; }
+    if(!community) return;
+    poemsCache = mapPoems(community); savePoemsCache();
+    if($("#poemsPage") && $("#poemsPage").classList.contains("open") && !poemFilterBm && !poemQuery){ const atStart=(poemIdx===0); poems = poemsCache.concat(SEED_POEMS); if(atStart||poemIdx>=poems.length){ poemIdx=0; renderPoem(); } }
+  }
   async function openPoems(){
     poemFilterBm=false; poemQuery=""; if($("#poemSearch")){ $("#poemSearch").value=""; $("#poemSearch").style.display="none"; } $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки";
     $("#poemQuote").textContent = POEM_PHRASES[Math.floor(Math.random()*POEM_PHRASES.length)];
     if(poemsCache && poemsCache.length){ poems = poemsCache.concat(SEED_POEMS); poemIdx=0; renderPoem(); } else { $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent=""; updatePoemBm(null); poems = SEED_POEMS.slice(); poemIdx=0; }
     openPage("poemsPage");
     let community=null; try{ if(CLOUD()) community = await sbFetchPoems(); }catch(e){ community=null; }
-    if(community){ poemsCache = community.map(p=>({id:"c"+p.id, dbId:p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||"", byPhoto:p.photo||"", byCode:p.code||""})); savePoemsCache(); const atStart=(poemIdx===0); poems = poemsCache.concat(SEED_POEMS); if(atStart||poemIdx>=poems.length){ poemIdx=0; renderPoem(); } else { $("#poemCount").textContent = (poemIdx+1)+" / "+poemList().length; } }
+    if(community){ poemsCache = mapPoems(community); savePoemsCache(); const atStart=(poemIdx===0); poems = poemsCache.concat(SEED_POEMS); if(atStart||poemIdx>=poems.length){ poemIdx=0; renderPoem(); } else { $("#poemCount").textContent = (poemIdx+1)+" / "+poemList().length; } }
     else if(!poemsCache || !poemsCache.length){ poems = SEED_POEMS.slice(); poemIdx=0; renderPoem(); }
   }
   function renderPoem(){
@@ -2708,6 +2716,7 @@ main,footer{position:relative;z-index:1}
 
   /* ресайз */
   let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(renderCase,150); });
+  if(CLOUD()) setTimeout(prewarmPoems, 800);
 
   renderAll();
 })();
