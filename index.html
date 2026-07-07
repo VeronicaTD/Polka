@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="128" />
+<meta name="app-version" content="153" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -78,6 +78,50 @@ body[data-theme="matcha"]{
 @keyframes bl-flip{0%,100%{transform:rotateY(0)}45%,55%{transform:rotateY(-172deg)}}
 .loader-box{text-align:center;padding:22px 0}
 .loader-box .mp{margin-top:12px}
+/* стихи */
+.poem-quote{max-width:520px;margin:2px auto 12px;text-align:center;font-family:"Fraunces",serif;font-style:italic;font-size:15px;color:var(--ink-soft);line-height:1.5}
+.poem-tools{display:flex;justify-content:center;gap:8px;margin:0 auto 10px}
+.poem-search{display:none;width:100%;max-width:340px;box-sizing:border-box;margin:0 auto 14px;padding:9px 15px;border:1px solid var(--line);border-radius:999px;background:var(--paper-2);color:var(--ink);font:inherit;font-size:14px}
+.poem-mini{appearance:none;cursor:pointer;font:inherit;font-size:12px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap}
+.poem-mini.on{border-color:var(--accent);color:var(--accent-deep)}
+.poem-book{max-width:378px;margin:0 auto;position:relative;filter:drop-shadow(0 16px 30px rgba(40,10,20,.28))}
+.pb-cover{position:relative;padding:15px 15px 17px;border-radius:14px;background:var(--accent-deep);background-image:linear-gradient(155deg, rgba(255,255,255,.10), rgba(255,255,255,0) 42%, rgba(0,0,0,.16))}
+.pb-cover::before{content:"";position:absolute;inset:7px;border:1.5px dashed rgba(255,255,255,.22);border-radius:9px;pointer-events:none}
+.pb-page{position:relative;background:#f5e8c9;border-radius:7px;aspect-ratio:3/4;box-shadow:0 2px 10px rgba(60,20,10,.22), inset 0 0 45px rgba(175,140,90,.12);overflow:hidden;transform:rotate(-.5deg)}
+.poem-textwrap{position:absolute;inset:0;padding:15% 13% 12%;box-sizing:border-box}
+.poem-page{width:100%;height:100%;overflow:hidden;font-family:"Fraunces",serif;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center}
+.poem-page::-webkit-scrollbar{width:0;height:0}
+.poem-page.anim{animation:poemfade .34s ease}
+@keyframes poemfade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.poem-head{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(15px,4.4vw,18px);line-height:1.2;color:#4a3320;margin-bottom:7px;flex:0 0 auto}
+.poem-head-rule{width:56%;max-width:120px;border-top:1px solid #cbb488;position:relative;margin:0 auto 14px;flex:0 0 auto}
+.poem-head-rule::after{content:"";position:absolute;left:50%;top:-2.5px;width:4px;height:4px;border-radius:50%;background:#b79a63;transform:translateX(-50%)}
+.poem-text{white-space:pre-wrap;font-size:16px;line-height:1.6;color:#4a3728;width:100%;flex:0 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.poem-text::-webkit-scrollbar{width:0;height:0}
+.poem-author{margin-top:14px;font-style:italic;font-size:14px;color:#7a6249;flex:0 0 auto}
+.poem-by{margin-top:14px;display:inline-flex;align-items:center;gap:9px;font-size:12px;color:#8a7358;font-family:inherit;flex:0 0 auto}
+.poem-by-tap{display:inline-flex;align-items:center;gap:7px}
+.poem-by-tap.link{cursor:pointer}
+.poem-by-name{font-weight:500}
+.poem-by-tap.link:active{opacity:.65}
+.poem-by-av{width:26px;height:26px;flex:0 0 26px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;overflow:hidden}
+.poem-by-av img{width:100%;height:100%;object-fit:cover}
+.rev-link{cursor:pointer}
+.rev-name.rev-link{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.rev-av.rev-link:active,.rev-name.rev-link:active{opacity:.7}
+.poem-edit{border:1px solid var(--line);background:transparent;color:#8a7358;font:inherit;font-size:13px;line-height:1;padding:5px 9px;border-radius:20px;cursor:pointer}
+.poem-edit:active{opacity:.7}
+.poem-del{color:#c0392b}
+.pb-clip{position:absolute;top:-11px;left:10%;z-index:6;line-height:0}
+.pb-tape{position:absolute;top:-5px;right:11%;width:76px;height:26px;transform:rotate(37deg);z-index:6;background:repeating-linear-gradient(90deg, rgba(232,214,168,.7) 0 5px, rgba(219,199,150,.7) 5px 10px);border-radius:1px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.pb-star{position:absolute;right:8%;bottom:5%;z-index:6;color:#b39b74;opacity:.7;line-height:0}
+.poem-bm{position:absolute;right:-7px;top:33%;width:30px;height:40px;z-index:9;appearance:none;border:none;cursor:pointer;padding:0;background:var(--accent);background-image:linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,0) 40%);border-radius:3px 3px 0 0;clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%);box-shadow:2px 2px 5px rgba(0,0,0,.22)}
+.poem-bm::after{content:"\2665";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-bottom:7px;font-size:14px;color:var(--accent-deep);opacity:.5}
+.poem-bm.on::after{opacity:1;color:#e0556a;font-size:17px;filter:drop-shadow(0 1px 2px rgba(200,70,90,.5))}
+.poem-controls{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:16px}
+.poem-nav{appearance:none;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);cursor:pointer;width:44px;height:44px;border-radius:50%;font-size:22px;line-height:1}
+.poem-nav:hover{border-color:var(--ink)}
+.poem-count{color:var(--ink-soft);font-size:14px;min-width:54px;text-align:center}
 body{margin:0;background:var(--paper);color:var(--ink);
   font-family:"Fredoka",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
   background-image:radial-gradient(circle at 15% 0%, rgba(184,73,58,.05), transparent 38%),
@@ -87,9 +131,9 @@ button{font-family:inherit;cursor:pointer}
 .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
 
 /* header */
-header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper) 60%,transparent);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
+header{position:sticky;top:0;z-index:40;background:var(--paper);
+  
+  border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:10px;height:64px}
 .bar-side{flex:1 1 0;display:flex;align-items:center;min-width:0}
 .bar-side.right{justify-content:flex-end}
@@ -131,7 +175,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .polaroid{background:#fff;padding:7px 7px 16px;border-radius:3px;box-shadow:var(--shadow);
   transform:rotate(-3deg);position:relative;flex:0 0 auto}
 .polaroid::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-5deg);
-  width:48px;height:18px;background:rgba(184,137,63,.45);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+  width:48px;height:18px;background:var(--accent);opacity:.4;box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;position:relative;overflow:hidden;
   font-family:"Fredoka",sans-serif;font-weight:600;font-size:44px;color:#fff;background-size:cover;background-position:center}
 .ava-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -300,6 +344,10 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .rev-book .rb-title{font-family:"Fraunces",serif;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rev-book .rb-author{opacity:.85;white-space:nowrap}
 .review-field{border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
+.rev-actions{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:2px}
+.rev-preview{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--paper-2);margin-top:8px}
+.rev-preview .rev-text{font-size:16px}
+.rev-preview .rev-av{width:46px;height:46px;flex-basis:46px;font-size:18px}
 .rev-msg{display:block;margin-top:6px;font-size:13px;color:var(--accent-deep)}
 .cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:6px;line-height:1.2;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -341,7 +389,7 @@ header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--paper
 .wb-del{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:12px;line-height:1;display:grid;place-items:center;padding:0;z-index:5}
 
 /* скрапбук-детали */
-#caseWrap{position:relative;margin-top:4px}
+#caseWrap{position:relative;max-width:860px;margin:4px auto 0}
 .tape{position:absolute;z-index:4;width:74px;height:22px;top:-12px;
   background:repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 6px,transparent 6px 12px),var(--tcol,rgba(184,137,63,.5));
   box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -419,6 +467,10 @@ footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--ink-soft
 .decor svg:nth-of-type(12){animation-delay:-2.8s}
 @keyframes bob{0%,100%{transform:rotate(var(--r)) translateY(0)}50%{transform:rotate(var(--r)) translateY(-12px)}}
 main,footer{position:relative;z-index:1}
+.fp-decor{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.fp-decor svg{position:absolute;display:block;transform:rotate(var(--r,0deg));animation:bob 8s ease-in-out infinite}
+.fp-decor svg:nth-of-type(2){animation-delay:-2s}.fp-decor svg:nth-of-type(3){animation-delay:-4s}.fp-decor svg:nth-of-type(4){animation-delay:-1s}.fp-decor svg:nth-of-type(5){animation-delay:-3s}.fp-decor svg:nth-of-type(6){animation-delay:-5s}.fp-decor svg:nth-of-type(7){animation-delay:-1.5s}.fp-decor svg:nth-of-type(8){animation-delay:-3.5s}.fp-decor svg:nth-of-type(9){animation-delay:-2.2s}.fp-decor svg:nth-of-type(10){animation-delay:-4.4s}.fp-decor svg:nth-of-type(11){animation-delay:-.8s}.fp-decor svg:nth-of-type(12){animation-delay:-2.8s}
+.fullpage>.fp-head,.fullpage>.fp-body{position:relative;z-index:1}
 
 /* модалки */
 .overlay{position:fixed;inset:0;background:rgba(40,30,18,.5);opacity:0;pointer-events:none;transition:.25s;z-index:80}
@@ -549,6 +601,7 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
+  <button class="menu-item" id="mPoems">✒️ Поэзия</button>
   <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
@@ -609,7 +662,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v128: убран раздел Поэзия; всё остальное как было (любимки, авто-обновление и пр.) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v153 test: стихи грузятся в фоне при запуске (Поэзия открывается сразу с автором) + подпись автора закреплена внизу карточки --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -654,7 +707,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
-        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><span id="iReviewMsg" class="rev-msg"></span></div>
+        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Прочитать полностью</button><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><button type="button" class="linklike" id="iDeleteReview" style="display:none;color:#c0392b">🗑 Удалить</button></div><span id="iReviewMsg" class="rev-msg"></span></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -789,6 +842,53 @@ main,footer{position:relative;z-index:1}
     <p class="mp">Живая лента: что читатели пишут о книгах — в том числе о тех, которых нет в подборках. Своё мнение можно оставить в любой своей книге → «Опубликовать рецензию».</p>
     <div id="reviewsFeed"></div>
   </div>
+</div>
+
+<!-- стихи -->
+<div class="fullpage" id="poemsPage" aria-label="Поэзия">
+  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Поэзия ✒️</h3></div>
+  <div class="fp-body">
+    <div class="poem-quote" id="poemQuote"></div>
+    <div class="poem-tools">
+      <button class="poem-mini" id="poemFilter" type="button">❤ закладки</button>
+      <button class="poem-mini" id="poemAdd" type="button">＋ поделиться</button>
+    </div>
+    <input class="poem-search" id="poemSearch" type="search" placeholder="Найти: автор, название или строчка…">
+    <div class="poem-book">
+      <div class="pb-cover">
+        <div class="pb-page">
+          <div class="poem-textwrap"><div class="poem-page" id="poemPage"></div></div>
+          <span class="pb-clip" aria-hidden="true"><svg viewBox="0 0 26 64" width="24" height="59"><defs><linearGradient id="pbg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c99a3e"/><stop offset=".5" stop-color="#f2dc92"/><stop offset="1" stop-color="#b0862c"/></linearGradient></defs><path d="M9 9 v37 a4.3 4.3 0 0 0 8.6 0 V13 a2.8 2.8 0 0 0 -5.6 0 v35" fill="none" stroke="url(#pbg)" stroke-width="2.6" stroke-linecap="round"/></svg></span>
+          <span class="pb-tape" aria-hidden="true"></span>
+          <span class="pb-star" aria-hidden="true"><svg viewBox="0 0 44 44" width="30" height="30"><path d="M22 6 l4.6 10.4 11.4 1 -8.6 7.6 2.7 11.2 -10.1-6 -10.1 6 2.7-11.2 -8.6-7.6 11.4-1 z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="36.5" cy="9" r="1.1" fill="currentColor"/><circle cx="39" cy="14" r=".7" fill="currentColor"/></svg></span>
+        </div>
+        <button class="poem-bm" id="poemBm" title="Закладка" aria-label="В закладки"></button>
+      </div>
+    </div>
+    <div class="poem-controls">
+      <button class="poem-nav" id="poemPrev" aria-label="предыдущее">‹</button>
+      <span class="poem-count" id="poemCount"></span>
+      <button class="poem-nav" id="poemNext" aria-label="следующее">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- поделиться стихотворением -->
+<div class="fullpage" id="poemAddPage" aria-label="Поделиться стихотворением">
+  <div class="fp-head"><button class="fp-back" id="poemAddBack">← назад</button><h3 id="poemAddTitle">Поделиться стихотворением ✒️</h3></div>
+  <div class="fp-body">
+    <p class="mp">Строки, которые тебя тронули — их прочитают и другие читатели.</p>
+    <div class="field"><label>Название <span style="font-weight:400">(если есть)</span></label><input id="poemT" maxlength="120" placeholder="например, «Парус»"></div>
+    <div class="field"><label>Автор <span style="font-weight:400">(если знаешь)</span></label><input id="poemA" maxlength="80" placeholder="имя поэта"></div>
+    <div class="field"><label>Текст стихотворения</label><textarea id="poemText" rows="10" placeholder="впиши строки…"></textarea></div>
+    <button class="btn" id="poemSave" type="button" style="width:100%;justify-content:center;display:flex">Поделиться</button>
+    <span id="poemMsg" class="rev-msg"></span>
+  </div>
+</div>
+<!-- предпросмотр рецензии -->
+<div class="fullpage" id="reviewPreviewPage" aria-label="Предпросмотр рецензии">
+  <div class="fp-head"><button class="fp-back" id="rpBack">← назад</button><h3>Как увидят твою рецензию 👀</h3></div>
+  <div class="fp-body"><div id="rpContent"></div></div>
 </div>
 
 <!-- книга из подборки (полный экран) -->
@@ -928,7 +1028,33 @@ main,footer{position:relative;z-index:1}
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
   async function sbInsertReview(row){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews",{method:"POST",headers:{...SB_H(),Prefer:"return=representation"},body:JSON.stringify(row)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+    const a=await r.json().catch(()=>null); return (Array.isArray(a)&&a[0]&&a[0].id)?a[0].id:null;
+  }
+  async function sbUpdateReview(id, patch){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(patch)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+  }
+  async function sbDeleteReview(id){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{...SB_H(),Prefer:"return=minimal"}});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+  }
+  async function sbUpdatePoem(id, patch){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(patch)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+  }
+  async function sbDeletePoem(id){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{...SB_H(),Prefer:"return=minimal"}});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+  }
+  async function sbFetchPoems(){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems?select=*&order=created_at.desc&limit=300",{headers:SB_H()});
+    if(!r.ok) return [];
+    const a = await r.json(); return Array.isArray(a)?a:[];
+  }
+  async function sbInsertPoem(row){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
   }
   function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
@@ -1301,7 +1427,7 @@ main,footer{position:relative;z-index:1}
 
     let shelvesAll = [];
     if(!books.length){
-      const ph = `<span class="placeholder">${me?"Поставьте сюда первый прочитанный томик →":"Полка пока пустая 🤍"}</span>`;
+      const _ld=!me&&friend()&&friend().loading; const ph = `<span class="placeholder">${_ld?"Загружаю полку… 📚":(me?"Поставьте сюда первый прочитанный томик →":"Полка пока пустая 🤍")}</span>`;
       const add = me?`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`:"";
       shelvesAll = [ph + add];
     } else {
@@ -1466,7 +1592,8 @@ main,footer{position:relative;z-index:1}
   }
 
   /* мои цитаты */
-  function openPage(id){ $("#"+id).classList.add("open"); }
+  const FP_STARS = `<svg class="d-star s1" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s2" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s3" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s4" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s5" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s6" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s7" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-spark k1" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k2" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k3" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k4" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k5" viewBox="0 0 100 100"><use href="#spark"/></svg>`;
+  function openPage(id){ const el=$("#"+id); if(el && !el.querySelector(".fp-decor")){ const d=document.createElement("div"); d.className="fp-decor"; d.setAttribute("aria-hidden","true"); d.innerHTML=FP_STARS; el.insertBefore(d, el.firstChild); } el.classList.add("open"); }
   function openQuotesPage(forMe){
     const books = forMe ? myBooks : ((friend()&&friend().books)||[]);
     const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
@@ -1953,16 +2080,125 @@ main,footer{position:relative;z-index:1}
     $("#bpReviews").innerHTML = list.map(rv=>{
       const nm = rv.name||"Читатель", ph=rv.photo||"";
       const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
-      return `<div class="rev-item"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
+      return `<div class="rev-item"><div class="rev-av${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}" data-name="${esc(nm)}"`:""}>${av}</div><div class="rev-body"><div class="rev-name${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}" data-name="${esc(nm)}"`:""}>${esc(nm)}${rv.code?" →":""}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
     }).join("");
   }
+  let myReviews={}; try{ myReviews=JSON.parse(localStorage.getItem("polka_myreviews")||"{}"); }catch(e){ myReviews={}; }
+  const saveMyReviews=()=>{ try{ localStorage.setItem("polka_myreviews", JSON.stringify(myReviews)); }catch(e){} };
   async function publishReview(t,a,text){
     if(!CLOUD()) throw new Error("нет облака");
-    await sbInsertReview({ book:bookKey(t,a), title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", text:text });
+    const bk=bookKey(t,a), ex=myReviews[bk], row={ book:bk, title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", code:myCode||"", text:text };
+    if(ex && ex.id){ await sbUpdateReview(ex.id, {text:text, title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", code:myCode||""}); myReviews[bk]={id:ex.id, text:text}; }
+    else { const id=await sbInsertReview(row); myReviews[bk]={id:id, text:text}; }
+    saveMyReviews();
   }
   const BOOK_LOADER = `<div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div>`;
   function loaderBox(msg){ return `<div class="loader-box">${BOOK_LOADER}${msg?`<p class="mp">${esc(msg)}</p>`:""}</div>`; }
 
+  /* ===== СТИХИ ===== */
+  const SEED_POEMS = [
+    {id:"s2", t:"", a:"Александр Пушкин", x:"Я вас любил: любовь ещё, быть может,\nВ душе моей угасла не совсем;\nНо пусть она вас больше не тревожит;\nЯ не хочу печалить вас ничем.\nЯ вас любил безмолвно, безнадежно,\nТо робостью, то ревностью томим;\nЯ вас любил так искренно, так нежно,\nКак дай вам Бог любимой быть другим."},
+    {id:"s3", t:"Лиличка!", a:"Владимир Маяковский", x:"Дым табачный воздух выел.\nКомната —\nглава в крученыховском аде.\nВспомни —\nза этим окном\nвпервые\nруки твои, исступленный, гладил.\nСегодня сидишь вот,\nсердце в железе.\nДень еще —\nвыгонишь,\nможет быть, изругав.\nВ мутной передней долго не влезет\nсломанная дрожью рука в рукав.\nВыбегу,\nтело в улицу брошу я.\nДикий,\nобезумлюсь,\nотчаяньем иссечась.\nНе надо этого,\nдорогая,\nхорошая,\nдай простимся сейчас.\nВсе равно\nлюбовь моя —\nтяжкая гиря ведь —\nвисит на тебе,\nкуда ни бежала б.\nДай в последнем крике выреветь\nгоречь обиженных жалоб.\nЕсли быка трудом уморят —\nон уйдет,\nразляжется в холодных водах.\nКроме любви твоей,\nмне\nнету моря,\nа у любви твоей и плачем не вымолишь отдых.\nЗахочет покоя уставший слон —\nцарственный ляжет в опожаренном песке.\nКроме любви твоей,\nмне\nнету солнца,\nа я и не знаю, где ты и с кем.\nЕсли б так поэта измучила,\nон\nлюбимую на деньги б и славу выменял,\nа мне\nни один не радостен звон,\nкроме звона твоего любимого имени.\nИ в пролет не брошусь,\nи не выпью яда,\nи курок не смогу над виском нажать.\nНадо мною,\nкроме твоего взгляда,\nне властно лезвие ни одного ножа.\nЗавтра забудешь,\nчто тебя короновал,\nчто душу цветущую любовью выжег,\nи суетных дней взметенный карнавал\nрастреплет страницы моих книжек...\nСлов моих сухие листья ли\nзаставят остановиться,\nжадно дыша?\nДай хоть\nпоследней нежностью выстелить\nтвой уходящий шаг."}
+  ];
+  let poems=[], poemIdx=0, poemFilterBm=false, poemQuery="";
+  let poemsCache=null; try{ poemsCache=JSON.parse(localStorage.getItem("polka_poems_cache")||"null"); }catch(e){ poemsCache=null; }
+  function mapPoems(community){ return community.map(p=>({id:"c"+p.id, dbId:p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||"", byPhoto:p.photo||"", byCode:p.code||""})); }
+  const savePoemsCache=()=>{ try{ localStorage.setItem("polka_poems_cache", JSON.stringify(poemsCache||[])); }catch(e){ try{ localStorage.setItem("polka_poems_cache", JSON.stringify((poemsCache||[]).map(p=>Object.assign({},p,{byPhoto:""})))); }catch(e2){} } };
+  let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
+  const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
+  const poemList=()=>{ let l = poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems; const q=(poemQuery||"").trim().toLowerCase(); if(q) l = l.filter(p=>((p.t||"")+" "+(p.a||"")+" "+(p.x||"")).toLowerCase().includes(q)); return l; };
+  const POEM_PHRASES = ["Полистай, вдруг эти строчки про тебя?"];
+  function poemByHTML(p){
+    const av = p.byPhoto ? `<span class="poem-by-av"><img src="${esc(p.byPhoto)}" alt=""></span>` : `<span class="poem-by-av">${esc((p.by[0]||"Ч").toUpperCase())}</span>`;
+    const code = p.byCode ? ` data-code="${esc(p.byCode)}"` : "";
+    const mine = p.byCode ? (p.byCode===myCode) : (!!p.by && p.by===myName);
+    const tap=`<span class="poem-by-tap${p.byCode?" link":""}"${code}>${av}<span class="poem-by-name">${esc(p.by)}</span></span>`;
+    return `<div class="poem-by">${tap}${mine?`<button class="poem-edit" data-editpoem="${esc(p.dbId||"")}" title="Редактировать">✏️</button><button class="poem-edit poem-del" data-delpoem="${esc(p.dbId||"")}" title="Удалить">🗑</button>`:""}</div>`;
+  }
+  function poemContent(p){
+    const head = p.t ? esc(p.t) : "📖";
+    return `<div class="poem-head">${head}</div><div class="poem-head-rule"></div>`
+      + `<div class="poem-text">${esc(p.x||"")}</div>`
+      + (p.a?`<div class="poem-author">— ${esc(p.a)}</div>`:"")
+      + (p.by?poemByHTML(p):"");
+  }
+  function updatePoemBm(p){ const b=$("#poemBm"); if(!b) return; b.style.display=p?"":"none"; b.classList.toggle("on", !!(p && poemBM.has(p.id))); }
+  function fitPoem(){ const pg=$("#poemPage"), t=pg.querySelector(".poem-text"); if(!t) return; let fs=16,g=0; t.style.fontSize=fs+"px"; while(g++<40 && fs>9 && t.scrollHeight>t.clientHeight+1){ fs-=0.5; t.style.fontSize=fs+"px"; } }
+  async function prewarmPoems(){
+    if(!CLOUD()) return;
+    let community=null; try{ community = await sbFetchPoems(); }catch(e){ return; }
+    if(!community) return;
+    poemsCache = mapPoems(community); savePoemsCache();
+    if($("#poemsPage") && $("#poemsPage").classList.contains("open") && !poemFilterBm && !poemQuery){ const atStart=(poemIdx===0); poems = poemsCache.concat(SEED_POEMS); if(atStart||poemIdx>=poems.length){ poemIdx=0; renderPoem(); } }
+  }
+  async function openPoems(){
+    poemFilterBm=false; poemQuery=""; if($("#poemSearch")){ $("#poemSearch").value=""; $("#poemSearch").style.display="none"; } $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки";
+    $("#poemQuote").textContent = POEM_PHRASES[Math.floor(Math.random()*POEM_PHRASES.length)];
+    openPage("poemsPage");
+    if(poemsCache && poemsCache.length){ poems = poemsCache.concat(SEED_POEMS); poemIdx=0; renderPoem(); } else { $("#poemPage").innerHTML = loaderBox("Открываю сборник…"); $("#poemCount").textContent=""; updatePoemBm(null); poems = SEED_POEMS.slice(); poemIdx=0; }
+    let community=null; try{ if(CLOUD()) community = await sbFetchPoems(); }catch(e){ community=null; }
+    if(community){ const fresh=mapPoems(community); if(JSON.stringify(fresh)!==JSON.stringify(poemsCache||[])){ const hadCache=!!(poemsCache&&poemsCache.length); const curId=(poemList()[poemIdx]||{}).id; poemsCache=fresh; savePoemsCache(); poems=poemsCache.concat(SEED_POEMS); const ni=poemList().findIndex(p=>p.id===curId); poemIdx=(hadCache && ni>=0)?ni:0; renderPoem(); } else { poemsCache=fresh; } }
+    else if(!poemsCache || !poemsCache.length){ poems = SEED_POEMS.slice(); poemIdx=0; renderPoem(); }
+  }
+  function renderPoem(){
+    const list=poemList();
+    if(!list.length){ $("#poemPage").innerHTML = `<div class="loader-box"><p class="mp">${poemQuery?("По запросу «"+esc(poemQuery)+"» ничего не нашлось 🔍"):(poemFilterBm?"Пока нет закладок ❤ — открой стих и нажми на сердечко":"Здесь пока пусто. Поделись первым стихотворением ✒️")}</p>${BOOK_LOADER}</div>`; $("#poemCount").textContent=""; updatePoemBm(null); return; }
+    if(poemIdx>=list.length) poemIdx=0; if(poemIdx<0) poemIdx=list.length-1;
+    const p=list[poemIdx]; $("#poemPage").innerHTML = poemContent(p);
+    $("#poemCount").textContent = `${poemIdx+1} / ${list.length}`; updatePoemBm(p); fitPoem(); requestAnimationFrame(fitPoem);
+  }
+  function poemGo(d){ const list=poemList(); if(!list.length) return; poemIdx=(poemIdx+d+list.length)%list.length; renderPoem(); if(reduce) return; const pg=$("#poemPage"); pg.classList.remove("anim"); void pg.offsetWidth; pg.classList.add("anim"); }
+  $("#mPoems").addEventListener("click", ()=>{ closeMenu(); openPoems(); });
+  let editingPoem=null;
+  async function deletePoem(id){
+    if(!id) return;
+    const p=poemList()[poemIdx];
+    if(!confirm("Удалить своё стихотворение"+(p&&p.t?" «"+p.t+"»":"")+"?")) return;
+    if(!CLOUD()){ toast("Нужно соединение с облаком"); return; }
+    try{ await sbDeletePoem(id); toast("Стихотворение удалено"); await openPoems(); }
+    catch(e){ toast("Не удалось удалить 😔"); }
+  }
+  function editPoem(id){
+    const p=poemList()[poemIdx]; if(!p) return;
+    editingPoem={ id };
+    $("#poemT").value=p.t||""; $("#poemA").value=p.a||""; $("#poemText").value=p.x||""; $("#poemMsg").textContent="";
+    if($("#poemSave"))$("#poemSave").textContent="Сохранить изменения";
+    if($("#poemAddTitle"))$("#poemAddTitle").textContent="Редактировать стихотворение ✒️";
+    openPage("poemAddPage");
+  }
+  $("#poemPrev").addEventListener("click", ()=>poemGo(-1));
+  $("#poemNext").addEventListener("click", ()=>poemGo(1));
+  const profileCache={};
+  function showGuest(g){ DEMO_FRIENDS.guest=g; view="guest"; casePage=0; closeModals(); renderAll(); }
+  async function viewPoemAuthor(code, name, photo){
+    if(!code) return;
+    if(!CLOUD()){ toast("Нужно соединение с облаком"); return; }
+    const cached=profileCache[code]; if(cached){ showGuest(cached.g); } else { showGuest({name:name||"Читатель", color:"#b8493a", quote:"", books:[], stickers:[], photo:photo||"", reading:"", wishlist:[], loading:true}); }
+    let row; try{ row=await sbFetch(code); }catch(e){ if(!cached) toast("Не удалось открыть профиль"); return; }
+    if(!row||!row.data){ if(!cached) toast("Профиль не найден"); return; }
+    if(cached && row.data===cached.raw) return;
+    let p; try{ p=decodeCode(row.data); }catch(e){ if(!cached) toast("Профиль повреждён"); return; }
+    const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ if(!cached) toast("Это не профиль"); return; }
+    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:(p&&p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    profileCache[code]={g, raw:row.data};
+    if(!cached || view==="guest") showGuest(g);
+  }
+  $("#poemPage").addEventListener("click", e=>{ const dl=e.target.closest("[data-delpoem]"); if(dl){ deletePoem(dl.dataset.delpoem); return; } const ed=e.target.closest("[data-editpoem]"); if(ed){ editPoem(ed.dataset.editpoem); return; } const el=e.target.closest("[data-code]"); if(el){ const p=poemList()[poemIdx]||{}; viewPoemAuthor(el.dataset.code, p.by, p.byPhoto); } });
+  $("#poemBm").addEventListener("click", ()=>{ const p=poemList()[poemIdx]; if(!p) return; if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id); savePoemBM(); updatePoemBm(p); toast(poemBM.has(p.id)?"В закладках ♥":"Убрано из закладок"); });
+  $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"❤ закладки"; const s=$("#poemSearch"); if(s){ s.style.display=poemFilterBm?"block":"none"; if(!poemFilterBm){ poemQuery=""; s.value=""; } } renderPoem(); });
+  $("#poemSearch").addEventListener("input", ()=>{ poemQuery=$("#poemSearch").value; poemIdx=0; renderPoem(); });
+  $("#poemAdd").addEventListener("click", ()=>{ editingPoem=null; $("#poemT").value=""; $("#poemA").value=""; $("#poemText").value=""; $("#poemMsg").textContent=""; if($("#poemSave"))$("#poemSave").textContent="Поделиться"; if($("#poemAddTitle"))$("#poemAddTitle").textContent="Поделиться стихотворением ✒️"; openPage("poemAddPage"); });
+  $("#poemAddBack").addEventListener("click", ()=>{ $("#poemAddPage").classList.remove("open"); });
+  $("#poemSave").addEventListener("click", async ()=>{
+    const x=$("#poemText").value.trim();
+    if(x.length<10){ $("#poemMsg").textContent="Впиши строки стихотворения 🙂"; return; }
+    if(!CLOUD()){ $("#poemMsg").textContent="Нет соединения с облаком 😔"; return; }
+    const btn=$("#poemSave"); btn.disabled=true; $("#poemMsg").textContent=editingPoem?"Сохраняю…":"Публикую…";
+    try{ if(editingPoem&&editingPoem.id){ await sbUpdatePoem(editingPoem.id, { title:$("#poemT").value.trim(), author:$("#poemA").value.trim(), text:x }); $("#poemMsg").textContent="Сохранено 🌸"; } else { await sbInsertPoem({ title:$("#poemT").value.trim(), author:$("#poemA").value.trim(), text:x, name:myName||"Читатель", photo:myPhoto||"", code:myCode||"" }); $("#poemMsg").textContent="Опубликовано! Спасибо 🌸"; } editingPoem=null; $("#poemAddPage").classList.remove("open"); await openPoems(); }
+    catch(e){ $("#poemMsg").textContent=editingPoem?"Не удалось сохранить 😔":"Не удалось опубликовать 😔 попробуй ещё раз"; }
+    btn.disabled=false;
+  });
+  (function(){ let px=null; const bk=$("#poemPage"); bk.addEventListener("pointerdown", e=>{ px=e.clientX; }); bk.addEventListener("pointerup", e=>{ if(px==null) return; const dx=e.clientX-px; px=null; if(Math.abs(dx)>50 && !e.target.closest("#poemBm")) poemGo(dx<0?1:-1); }); })();
   async function openReviewsFeed(){
     $("#reviewsFeed").innerHTML = loaderBox("Листаю рецензии…");
     openPage("reviewsPage");
@@ -1974,9 +2210,11 @@ main,footer{position:relative;z-index:1}
       const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
       const col = COLORS[(ttl.length+(ttl.charCodeAt(0)||0))%COLORS.length];
       const spine = ttl?`<div class="rev-book" style="background:${col};color:${pickFg(col)}"><span class="rb-title">${esc(ttl)}</span>${au?`<span class="rb-author">· ${esc(au)}</span>`:""}</div>`:"";
-      return `<div class="rev-item"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(rv.text||"")}</div>${spine}</div></div>`;
+      return `<div class="rev-item"><div class="rev-av${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}" data-name="${esc(nm)}"`:""}>${av}</div><div class="rev-body"><div class="rev-name${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}" data-name="${esc(nm)}"`:""}>${esc(nm)}${rv.code?" →":""}</div><div class="rev-text">${esc(rv.text||"")}</div>${spine}</div></div>`;
     }).join("");
   }
+  { const _bpr=$("#bpReviews"); if(_bpr) _bpr.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
+  { const _rf=$("#reviewsFeed"); if(_rf) _rf.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
   $("#bpWish").addEventListener("click", ()=>{ if(bpBook) addCatToWish(bpBook.t, bpBook.a); });
   $("#bpBookmate").addEventListener("click", ()=>{ if(bpBook) copyForSearch(bpBook.t); });
   $("#bpBack").addEventListener("click", ()=>{ $("#bookPage").classList.remove("open"); });   // назад — только закрыть книгу, подборки остаются
@@ -2063,7 +2301,7 @@ main,footer{position:relative;z-index:1}
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent="";
+      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _rv=myReviews[bookKey(b.t,b.a)]; if(_rv&&_rv.text){ $("#iReview").value=_rv.text; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=(_rv&&_rv.text)?"":"none"; }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -2091,6 +2329,32 @@ main,footer{position:relative;z-index:1}
   $("#delBook").addEventListener("click", ()=>{
     if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll(); }
   });
+  $("#iReview").addEventListener("input", ()=>{ $("#iPreviewReview").style.display = $("#iReview").value.trim() ? "" : "none"; });
+  $("#iPreviewReview").addEventListener("click", ()=>{
+    const txt=$("#iReview").value.trim(); if(!txt) return;
+    const nm=myName||"Читатель", ph=myPhoto||"";
+    const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
+    const ttl = infoBook?infoBook.t:"";
+    $("#rpContent").innerHTML = `<p class="mp">Так твою рецензию увидят другие читатели${ttl?(" — на книгу «"+esc(ttl)+"»"):""}:</p><div class="rev-item rev-preview"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(txt)}</div></div></div>`;
+    openPage("reviewPreviewPage");
+  });
+  $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
+  $("#iDeleteReview").addEventListener("click", async ()=>{
+    const b=infoBook; if(!b) return;
+    const bk=bookKey(b.t,b.a), rv=myReviews[bk];
+    if(!rv||!rv.id){ if(myReviews[bk]){ delete myReviews[bk]; saveMyReviews(); } $("#iReview").value=""; $("#iDeleteReview").style.display="none"; $("#iPublishReview").textContent="Опубликовать рецензию"; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; return; }
+    if(!confirm("Удалить твою рецензию на «"+b.t+"»?")) return;
+    const btn=$("#iDeleteReview"); btn.disabled=true; $("#iReviewMsg").textContent="Удаляю…";
+    try{
+      await sbDeleteReview(rv.id);
+      delete myReviews[bk]; saveMyReviews();
+      $("#iReview").value=""; $("#iReviewMsg").textContent="Рецензия удалена";
+      if($("#iPreviewReview")) $("#iPreviewReview").style.display="none";
+      $("#iPublishReview").textContent="Опубликовать рецензию";
+      btn.style.display="none";
+    }catch(e){ $("#iReviewMsg").textContent="Не удалось удалить 😔"; }
+    btn.disabled=false;
+  });
   $("#iPublishReview").addEventListener("click", async ()=>{
     if(!requirePaid()) return;
     const b=infoBook; if(!b) return;
@@ -2098,8 +2362,11 @@ main,footer{position:relative;z-index:1}
     if(text.length<10){ $("#iReviewMsg").textContent="Напиши чуть подробнее 🙂"; return; }
     const btn=$("#iPublishReview"); btn.disabled=true; $("#iReviewMsg").textContent="Публикую…";
     try{
+      const wasEdit = !!(myReviews[bookKey(b.t,b.a)]);
       await publishReview(b.t, b.a, text);
-      $("#iReview").value=""; $("#iReviewMsg").textContent="Опубликовано! Спасибо 🌸";
+      $("#iReviewMsg").textContent = wasEdit ? "Рецензия обновлена ✏️" : "Опубликовано! Спасибо 🌸";
+      $("#iPublishReview").textContent = "Обновить рецензию";
+      if($("#iDeleteReview")) $("#iDeleteReview").style.display="";
     }catch(e){ $("#iReviewMsg").textContent="Не удалось опубликовать 😔 попробуй ещё раз"; }
     btn.disabled=false;
   });
@@ -2182,9 +2449,11 @@ main,footer{position:relative;z-index:1}
     // верхняя плашка телефона (статус-бар браузера) в цвет фона темы
     try{
       const bar = getComputedStyle(document.body).getPropertyValue("--paper").trim();
-      let m = document.querySelector('meta[name="theme-color"]');
-      if(!m){ m = document.createElement("meta"); m.setAttribute("name","theme-color"); document.head.appendChild(m); }
+      // удаляем все старые meta и создаём новую — так iOS/Safari перечитывает цвет статус-бара
+      document.querySelectorAll('meta[name="theme-color"]').forEach(x=>x.remove());
+      const m = document.createElement("meta"); m.setAttribute("name","theme-color");
       if(bar) m.setAttribute("content", bar);
+      document.head.appendChild(m);
     }catch(e){}
   }
   function renderThemes(){
@@ -2448,6 +2717,7 @@ main,footer{position:relative;z-index:1}
 
   /* ресайз */
   let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(renderCase,150); });
+  if(CLOUD()) setTimeout(prewarmPoems, 300);
 
   renderAll();
 })();
