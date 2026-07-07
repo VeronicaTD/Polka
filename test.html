@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="142" />
+<meta name="app-version" content="144" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -110,6 +110,7 @@ body[data-theme="matcha"]{
 .rev-av.rev-link:active,.rev-name.rev-link:active{opacity:.7}
 .poem-edit{border:1px solid var(--line);background:transparent;color:#8a7358;font:inherit;font-size:13px;line-height:1;padding:5px 9px;border-radius:20px;cursor:pointer}
 .poem-edit:active{opacity:.7}
+.poem-del{color:#c0392b}
 .pb-clip{position:absolute;top:-11px;left:10%;z-index:6;line-height:0}
 .pb-tape{position:absolute;top:-5px;right:11%;width:76px;height:26px;transform:rotate(37deg);z-index:6;background:repeating-linear-gradient(90deg, rgba(232,214,168,.7) 0 5px, rgba(219,199,150,.7) 5px 10px);border-radius:1px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
 .pb-star{position:absolute;right:8%;bottom:5%;z-index:6;color:#b39b74;opacity:.7;line-height:0}
@@ -660,7 +661,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v142 test: подпись стиха = аватар+имя (клик всегда на профиль); + Маяковский Лиличка; длинные стихи скроллятся --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v144 test: можно удалить своё стихотворение (🗑) и свою рецензию (🗑 Удалить в окне книги) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -705,7 +706,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
-        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Прочитать полностью</button><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button></div><span id="iReviewMsg" class="rev-msg"></span></div>
+        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Прочитать полностью</button><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><button type="button" class="linklike" id="iDeleteReview" style="display:none;color:#c0392b">🗑 Удалить</button></div><span id="iReviewMsg" class="rev-msg"></span></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -1034,8 +1035,16 @@ main,footer{position:relative;z-index:1}
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(patch)});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
   }
+  async function sbDeleteReview(id){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{...SB_H(),Prefer:"return=minimal"}});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+  }
   async function sbUpdatePoem(id, patch){
     const r = await fetch(SUPABASE_URL+"/rest/v1/poems?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(patch)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+  }
+  async function sbDeletePoem(id){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{...SB_H(),Prefer:"return=minimal"}});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
   }
   async function sbFetchPoems(){
@@ -2100,7 +2109,7 @@ main,footer{position:relative;z-index:1}
     const code = p.byCode ? ` data-code="${esc(p.byCode)}"` : "";
     const mine=p.byCode&&p.byCode===myCode;
     const tap=`<span class="poem-by-tap${p.byCode?" link":""}"${code}>${av}<span class="poem-by-name">${esc(p.by)}</span></span>`;
-    return `<div class="poem-by">${tap}${mine?`<button class="poem-edit" data-editpoem="${esc(p.dbId||"")}" title="Редактировать">✏️</button>`:""}</div>`;
+    return `<div class="poem-by">${tap}${mine?`<button class="poem-edit" data-editpoem="${esc(p.dbId||"")}" title="Редактировать">✏️</button><button class="poem-edit poem-del" data-delpoem="${esc(p.dbId||"")}" title="Удалить">🗑</button>`:""}</div>`;
   }
   function poemContent(p){
     const head = p.t ? esc(p.t) : "📖";
@@ -2130,6 +2139,14 @@ main,footer{position:relative;z-index:1}
   function poemGo(d){ const list=poemList(); if(!list.length) return; poemIdx=(poemIdx+d+list.length)%list.length; renderPoem(); if(reduce) return; const pg=$("#poemPage"); pg.classList.remove("anim"); void pg.offsetWidth; pg.classList.add("anim"); }
   $("#mPoems").addEventListener("click", ()=>{ closeMenu(); openPoems(); });
   let editingPoem=null;
+  async function deletePoem(id){
+    if(!id) return;
+    const p=poemList()[poemIdx];
+    if(!confirm("Удалить своё стихотворение"+(p&&p.t?" «"+p.t+"»":"")+"?")) return;
+    if(!CLOUD()){ toast("Нужно соединение с облаком"); return; }
+    try{ await sbDeletePoem(id); toast("Стихотворение удалено"); await openPoems(); }
+    catch(e){ toast("Не удалось удалить 😔"); }
+  }
   function editPoem(id){
     const p=poemList()[poemIdx]; if(!p) return;
     editingPoem={ id };
@@ -2150,7 +2167,7 @@ main,footer{position:relative;z-index:1}
     DEMO_FRIENDS.guest={name:(p&&p.n)||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:(p&&p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
     view="guest"; casePage=0; closeModals(); renderAll();
   }
-  $("#poemPage").addEventListener("click", e=>{ const ed=e.target.closest("[data-editpoem]"); if(ed){ editPoem(ed.dataset.editpoem); return; } const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code); });
+  $("#poemPage").addEventListener("click", e=>{ const dl=e.target.closest("[data-delpoem]"); if(dl){ deletePoem(dl.dataset.delpoem); return; } const ed=e.target.closest("[data-editpoem]"); if(ed){ editPoem(ed.dataset.editpoem); return; } const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code); });
   $("#poemBm").addEventListener("click", ()=>{ const p=poemList()[poemIdx]; if(!p) return; if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id); savePoemBM(); updatePoemBm(p); toast(poemBM.has(p.id)?"В закладках ♥":"Убрано из закладок"); });
   $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"❤ закладки"; const s=$("#poemSearch"); if(s){ s.style.display=poemFilterBm?"block":"none"; if(!poemFilterBm){ poemQuery=""; s.value=""; } } renderPoem(); });
   $("#poemSearch").addEventListener("input", ()=>{ poemQuery=$("#poemSearch").value; poemIdx=0; renderPoem(); });
@@ -2180,8 +2197,8 @@ main,footer{position:relative;z-index:1}
       return `<div class="rev-item"><div class="rev-av${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}"`:""}>${av}</div><div class="rev-body"><div class="rev-name${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}"`:""}>${esc(nm)}${rv.code?" →":""}</div><div class="rev-text">${esc(rv.text||"")}</div>${spine}</div></div>`;
     }).join("");
   }
-  $("#bpReviews").addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code); });
-  $("#reviewsFeed").addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code); });
+  { const _bpr=$("#bpReviews"); if(_bpr) _bpr.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code); }); }
+  { const _rf=$("#reviewsFeed"); if(_rf) _rf.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code); }); }
   $("#bpWish").addEventListener("click", ()=>{ if(bpBook) addCatToWish(bpBook.t, bpBook.a); });
   $("#bpBookmate").addEventListener("click", ()=>{ if(bpBook) copyForSearch(bpBook.t); });
   $("#bpBack").addEventListener("click", ()=>{ $("#bookPage").classList.remove("open"); });   // назад — только закрыть книгу, подборки остаются
@@ -2268,7 +2285,7 @@ main,footer{position:relative;z-index:1}
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _rv=myReviews[bookKey(b.t,b.a)]; if(_rv&&_rv.text){ $("#iReview").value=_rv.text; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; }
+      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _rv=myReviews[bookKey(b.t,b.a)]; if(_rv&&_rv.text){ $("#iReview").value=_rv.text; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=(_rv&&_rv.text)?"":"none"; }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -2306,6 +2323,22 @@ main,footer{position:relative;z-index:1}
     openPage("reviewPreviewPage");
   });
   $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
+  $("#iDeleteReview").addEventListener("click", async ()=>{
+    const b=infoBook; if(!b) return;
+    const bk=bookKey(b.t,b.a), rv=myReviews[bk];
+    if(!rv||!rv.id){ if(myReviews[bk]){ delete myReviews[bk]; saveMyReviews(); } $("#iReview").value=""; $("#iDeleteReview").style.display="none"; $("#iPublishReview").textContent="Опубликовать рецензию"; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; return; }
+    if(!confirm("Удалить твою рецензию на «"+b.t+"»?")) return;
+    const btn=$("#iDeleteReview"); btn.disabled=true; $("#iReviewMsg").textContent="Удаляю…";
+    try{
+      await sbDeleteReview(rv.id);
+      delete myReviews[bk]; saveMyReviews();
+      $("#iReview").value=""; $("#iReviewMsg").textContent="Рецензия удалена";
+      if($("#iPreviewReview")) $("#iPreviewReview").style.display="none";
+      $("#iPublishReview").textContent="Опубликовать рецензию";
+      btn.style.display="none";
+    }catch(e){ $("#iReviewMsg").textContent="Не удалось удалить 😔"; }
+    btn.disabled=false;
+  });
   $("#iPublishReview").addEventListener("click", async ()=>{
     if(!requirePaid()) return;
     const b=infoBook; if(!b) return;
@@ -2317,6 +2350,7 @@ main,footer{position:relative;z-index:1}
       await publishReview(b.t, b.a, text);
       $("#iReviewMsg").textContent = wasEdit ? "Рецензия обновлена ✏️" : "Опубликовано! Спасибо 🌸";
       $("#iPublishReview").textContent = "Обновить рецензию";
+      if($("#iDeleteReview")) $("#iDeleteReview").style.display="";
     }catch(e){ $("#iReviewMsg").textContent="Не удалось опубликовать 😔 попробуй ещё раз"; }
     btn.disabled=false;
   });
