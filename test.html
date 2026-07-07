@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="137" />
+<meta name="app-version" content="138" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -375,7 +375,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .wb-del{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:12px;line-height:1;display:grid;place-items:center;padding:0;z-index:5}
 
 /* скрапбук-детали */
-#caseWrap{position:relative;margin-top:4px}
+#caseWrap{position:relative;max-width:860px;margin:4px auto 0}
 .tape{position:absolute;z-index:4;width:74px;height:22px;top:-12px;
   background:repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 6px,transparent 6px 12px),var(--tcol,rgba(184,137,63,.5));
   box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -648,7 +648,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v137 test: предпросмотр рецензии - большое окно как она будет выглядеть --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v138 test: бантик на полку (не улетает на десктопе), редактирование опубликованной рецензии --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1014,7 +1014,12 @@ main,footer{position:relative;z-index:1}
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
   async function sbInsertReview(row){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews",{method:"POST",headers:{...SB_H(),Prefer:"return=representation"},body:JSON.stringify(row)});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+    const a=await r.json().catch(()=>null); return (Array.isArray(a)&&a[0]&&a[0].id)?a[0].id:null;
+  }
+  async function sbUpdateReview(id, patch){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?id=eq."+encodeURIComponent(id),{method:"PATCH",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(patch)});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
   }
   async function sbFetchPoems(){
@@ -2052,9 +2057,14 @@ main,footer{position:relative;z-index:1}
       return `<div class="rev-item"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
     }).join("");
   }
+  let myReviews={}; try{ myReviews=JSON.parse(localStorage.getItem("polka_myreviews")||"{}"); }catch(e){ myReviews={}; }
+  const saveMyReviews=()=>{ try{ localStorage.setItem("polka_myreviews", JSON.stringify(myReviews)); }catch(e){} };
   async function publishReview(t,a,text){
     if(!CLOUD()) throw new Error("нет облака");
-    await sbInsertReview({ book:bookKey(t,a), title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", text:text });
+    const bk=bookKey(t,a), ex=myReviews[bk], row={ book:bk, title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", text:text };
+    if(ex && ex.id){ await sbUpdateReview(ex.id, {text:text, title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||""}); myReviews[bk]={id:ex.id, text:text}; }
+    else { const id=await sbInsertReview(row); myReviews[bk]={id:id, text:text}; }
+    saveMyReviews();
   }
   const BOOK_LOADER = `<div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div>`;
   function loaderBox(msg){ return `<div class="loader-box">${BOOK_LOADER}${msg?`<p class="mp">${esc(msg)}</p>`:""}</div>`; }
@@ -2216,7 +2226,7 @@ main,footer{position:relative;z-index:1}
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none";
+      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _rv=myReviews[bookKey(b.t,b.a)]; if(_rv&&_rv.text){ $("#iReview").value=_rv.text; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -2261,8 +2271,10 @@ main,footer{position:relative;z-index:1}
     if(text.length<10){ $("#iReviewMsg").textContent="Напиши чуть подробнее 🙂"; return; }
     const btn=$("#iPublishReview"); btn.disabled=true; $("#iReviewMsg").textContent="Публикую…";
     try{
+      const wasEdit = !!(myReviews[bookKey(b.t,b.a)]);
       await publishReview(b.t, b.a, text);
-      $("#iReview").value=""; $("#iReviewMsg").textContent="Опубликовано! Спасибо 🌸";
+      $("#iReviewMsg").textContent = wasEdit ? "Рецензия обновлена ✏️" : "Опубликовано! Спасибо 🌸";
+      $("#iPublishReview").textContent = "Обновить рецензию";
     }catch(e){ $("#iReviewMsg").textContent="Не удалось опубликовать 😔 попробуй ещё раз"; }
     btn.disabled=false;
   });
