@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="155" />
+<meta name="app-version" content="156" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -346,7 +346,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .review-field{border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
 .rev-actions{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:2px}
 .rev-preview{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--paper-2);margin-top:8px}
-.rev-preview .rev-text{font-size:16px}
+.rev-preview .rev-text{font-size:13.5px;line-height:1.5}
 .rev-preview .rev-av{width:46px;height:46px;flex-basis:46px;font-size:18px}
 .rev-msg{display:block;margin-top:6px;font-size:13px;color:var(--accent-deep)}
 .cat-book .cat-t{font-size:12.5px;color:var(--ink);font-weight:600;margin-top:6px;line-height:1.2;
@@ -479,6 +479,11 @@ main,footer{position:relative;z-index:1}
   width:min(460px,92vw);max-height:90dvh;overflow:auto;background:var(--paper);border-radius:var(--radius);padding:26px;
   box-shadow:var(--shadow);transition:.3s cubic-bezier(.16,1,.3,1)}
 .modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#iReview{min-height:130px}
+@media(max-width:560px){
+  #infoModal{width:100vw;max-width:none;height:100dvh;max-height:100dvh;border-radius:0;padding:22px 18px calc(20px + env(safe-area-inset-bottom,0px))}
+  #infoModal #iReview{min-height:200px}
+}
 .modal h3{margin:0 0 6px;font-family:var(--display);font-weight:400;letter-spacing:0;font-size:24px}
 .mp{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
 .field{margin-bottom:14px}
@@ -662,7 +667,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v155 test: toast-подсказки (напр. «что почитать») не обрезаются на телефоне — ограничена ширина, перенос строк, приподняты над нижним краем --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v156 test: чужой видит на книге кнопку «Имя написал рецензию — прочитать» (открывается в отдельном окне); модалка книги на весь экран на телефоне; предпросмотр рецензии мельче текстом --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -715,6 +720,7 @@ main,footer{position:relative;z-index:1}
         <div class="stars" id="infoStars"></div>
         <div id="infoComment"></div>
         <div id="infoQuotes"></div>
+        <div id="infoReview" style="display:none;margin-top:10px"></div>
       </div>
     </div>
   </div>
@@ -887,7 +893,7 @@ main,footer{position:relative;z-index:1}
 </div>
 <!-- предпросмотр рецензии -->
 <div class="fullpage" id="reviewPreviewPage" aria-label="Предпросмотр рецензии">
-  <div class="fp-head"><button class="fp-back" id="rpBack">← назад</button><h3>Как увидят твою рецензию 👀</h3></div>
+  <div class="fp-head"><button class="fp-back" id="rpBack">← назад</button><h3 id="rpTitle">Как увидят твою рецензию 👀</h3></div>
   <div class="fp-body"><div id="rpContent"></div></div>
 </div>
 
@@ -2294,7 +2300,7 @@ main,footer{position:relative;z-index:1}
   });
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
-  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0];
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], infoReviewData=null;
   function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
   function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); }
   $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); $("#infoSpine").style.background=iSelColor; });
@@ -2302,6 +2308,7 @@ main,footer{position:relative;z-index:1}
   $("#iFav").addEventListener("click", ()=>{ iFav=!iFav; paintIFav(); });
   function openInfo(i){
     const b = currentList()[i]; if(!b) return; infoBook=b;
+    { const _rb=$("#infoReview"); if(_rb){ _rb.style.display="none"; _rb.innerHTML=""; } infoReviewData=null; }
     $("#infoTitle").textContent = b.t;
     $("#infoMeta").textContent = `${b.a} · ${b.g}`;
     const bq = encodeURIComponent(b.t + " " + (b.a||""));
@@ -2329,6 +2336,19 @@ main,footer{position:relative;z-index:1}
       const qs=quotesOf(b), qb=$("#infoQuotes");
       if(qs.length){ qb.style.display=""; qb.innerHTML = `<div class="ir-label">Любимые цитаты</div>` + qs.map(q=>`<div class="ir-quote">«${esc(q)}»</div>`).join(""); }
       else qb.style.display="none";
+      // рецензия владельца полки на эту книгу — кнопка «прочитать»
+      const fr=friend(), bk0=bookKey(b.t,b.a);
+      if(CLOUD() && fr){ (async()=>{
+        let list=[]; try{ list=await sbFetchReviews(bk0); }catch(e){ return; }
+        if(!infoBook || bookKey(infoBook.t,infoBook.a)!==bk0) return;
+        const own = list.find(rv=> (fr.code && rv.code && rv.code===fr.code) || (rv.name && fr.name && rv.name===fr.name));
+        if(own && (own.text||"").trim()){
+          infoReviewData = own;
+          const rb=$("#infoReview");
+          rb.style.display="";
+          rb.innerHTML = `<button type="button" class="read-link" id="infoReadReview" style="width:100%;justify-content:center;display:flex;text-align:center;padding:11px 15px;font-size:13.5px;cursor:pointer">📢 «${esc(fr.name||"Читатель")}» написал(а) рецензию — прочитать</button>`;
+        }
+      })(); }
     }
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
@@ -2351,10 +2371,20 @@ main,footer{position:relative;z-index:1}
     const nm=myName||"Читатель", ph=myPhoto||"";
     const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
     const ttl = infoBook?infoBook.t:"";
+    if($("#rpTitle")) $("#rpTitle").textContent="Как увидят твою рецензию 👀";
     $("#rpContent").innerHTML = `<p class="mp">Так твою рецензию увидят другие читатели${ttl?(" — на книгу «"+esc(ttl)+"»"):""}:</p><div class="rev-item rev-preview"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(txt)}</div></div></div>`;
     openPage("reviewPreviewPage");
   });
   $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
+  function openReadReview(rv){
+    const nm=rv.name||"Читатель", ph=rv.photo||"";
+    const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
+    const ttl = infoBook?infoBook.t:"";
+    if($("#rpTitle")) $("#rpTitle").textContent="Рецензия 📢";
+    $("#rpContent").innerHTML = `<p class="mp">Рецензия читателя «${esc(nm)}»${ttl?(" на книгу «"+esc(ttl)+"»"):""}:</p><div class="rev-item rev-preview"><div class="rev-av">${av}</div><div class="rev-body"><div class="rev-name">${esc(nm)}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
+    openPage("reviewPreviewPage");
+  }
+  $("#infoReview").addEventListener("click", e=>{ if(e.target.closest("#infoReadReview") && infoReviewData) openReadReview(infoReviewData); });
   $("#iDeleteReview").addEventListener("click", async ()=>{
     const b=infoBook; if(!b) return;
     const bk=bookKey(b.t,b.a), rv=myReviews[bk];
