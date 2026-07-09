@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="163" />
+<meta name="app-version" content="164" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -497,7 +497,7 @@ main,footer{position:relative;z-index:1}
 .confirm-back{position:fixed;inset:0;z-index:210;background:rgba(30,20,10,.5);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;animation:cf-in .18s forwards}
 @keyframes cf-in{to{opacity:1}}
 .confirm-box{background:var(--paper);border-radius:18px;padding:24px 22px 18px;max-width:340px;width:100%;box-shadow:var(--shadow);text-align:center}
-.confirm-box p{margin:0 0 20px;font-size:15.5px;color:var(--ink);line-height:1.45}
+.confirm-box p{margin:0 0 20px;font-size:15px;color:var(--ink);line-height:1.5;white-space:pre-line;text-align:left}
 .confirm-btns{display:flex;gap:10px}
 .confirm-btns button{flex:1;border-radius:999px;padding:12px;font-weight:700;font-size:14px;border:1px solid var(--line);cursor:pointer}
 .confirm-no{background:var(--paper-2);color:var(--ink)}
@@ -696,7 +696,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v163 test: уход по «← назад» со страницы рецензии тоже публикует (не теряется); убрана кнопка «как увидят другие»; устойчивая публикация (повтор без фото при сбое) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v164 test: ЗАЩИТА от перезаписи чужого аккаунта — syncUp пишет в облако только после загрузки реальных данных полки (bootLoaded); режим ?restore для восстановления полки из уцелевшего браузера --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1274,8 +1274,10 @@ main,footer{position:relative;z-index:1}
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
   function setUrlLogin(){ if(CLOUD() && myCode){ try{ history.replaceState(null, "", location.pathname + "?login=" + encodeURIComponent(myCode)); }catch(e){} } }
+  let bootLoaded=false;   // true только после загрузки настоящих данных этой полки из облака (или явного входа)
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
+    if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
     const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist});
     try{ await sbUpsert({code:myCode, name:myName, data}); lastCloudData = data; return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
@@ -2759,6 +2761,7 @@ main,footer{position:relative;z-index:1}
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
+    bootLoaded=true;   // явный вход в аккаунт — данные загружены, запись разрешена
     setUrlLogin();
     view="me"; closeModals(); renderAll(); hideSplash(); toast("С возвращением, "+myName.split(" ")[0]+"!");
     loadFriends((p && Array.isArray(p.fr)) ? p.fr : []);
@@ -2788,9 +2791,11 @@ main,footer{position:relative;z-index:1}
         if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
         myReading = cp.rd || ""; try{ localStorage.setItem("polka_reading", myReading); }catch(e){}
         if(cp.pd){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} }
+        bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
         renderAll();
       }catch(e){} }
     } else {
+      bootLoaded=true;   // новая полка (в облаке ещё нет) — создаём
       myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){}
       const ok = await syncUp(); if(!ok) toast("Не удалось записать полку в облако — проверьте Supabase");
     }
@@ -2798,8 +2803,18 @@ main,footer{position:relative;z-index:1}
     refreshReqBadge();
     loadFriends(cloudFr || savedFriends.map(f=>f.code));
   }
+  const restoreMode = /[?&#]restore(\b|=)/.test(location.href);
   const loginMatch = location.href.match(/[?#]login=([^&#]+)/);
-  if(loginMatch){
+  if(restoreMode){
+    // РЕЖИМ ВОССТАНОВЛЕНИЯ: не тянем из облака (чтобы не затереть уцелевшие локальные данные), а записываем их в облако
+    bootLoaded=true;
+    setTimeout(async ()=>{ try{ hideSplash(); }catch(e){}
+      const cnt=Array.isArray(myBooks)?myBooks.length:0;
+      const okc=await askConfirm("Восстановление полки.\nЗаписать данные С ЭТОГО устройства в облако?\n\nИмя: "+myName+"\nЦитата: "+(myQuote||"—")+"\nСейчас читаю: "+(myReading||"—")+"\nКниг: "+cnt+"\nКод полки: "+myCode+"\n\n(Перезапишет облачную полку данными отсюда.)", "Да, записать в облако");
+      if(okc){ const r=await syncUp(); toast(r?"✅ Полка записана в облако!":"Не удалось записать 😔"); }
+      else { toast("Отменено"); }
+    }, 700);
+  } else if(loginMatch){
     const lcode = decodeURIComponent(loginMatch[1]);
     if(localStorage.getItem("polka_registered") && myCode && lcode.toUpperCase()===myCode.toUpperCase()){
       bootCloud();                 // уже в этом аккаунте — просто открываем
@@ -2812,6 +2827,8 @@ main,footer{position:relative;z-index:1}
   }
   /* автоподтягивание: тихо проверяем облако и обновляем полку, если изменилось на другом устройстве */
   async function pullCloud(){
+    if(restoreMode) return;                               // в режиме восстановления облако не тянем
+    if(!bootLoaded) return;                               // ещё не загрузили реальные данные — не трогаем
     if(!CLOUD() || !myCode || !localStorage.getItem("polka_registered")) return;
     if(!isMe()) return;                                   // в гостях не трогаем
     if(overlay.classList.contains("open")) return;        // открыто окно — не мешаем
