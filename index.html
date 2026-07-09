@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="158" />
+<meta name="app-version" content="160" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -493,7 +493,20 @@ main,footer{position:relative;z-index:1}
 .rr-stars{color:#d9a441;font-size:15px;letter-spacing:2px}
 .rr-quotes{margin:0 0 16px}
 .rr-quote{margin:0 0 10px;padding:6px 0 6px 14px;border-left:3px solid var(--accent);font-style:italic;color:var(--ink-soft);font-size:14px;line-height:1.55}
-.rr-body{font-size:15.5px;line-height:1.75;color:var(--ink);white-space:pre-wrap;word-wrap:break-word}
+.rr-body{font-size:15.5px;line-height:1.75;color:#3a2e22;white-space:pre-wrap;word-wrap:break-word;background:#fdfaf3;border:1px solid #ece3d2;border-radius:14px;padding:16px 18px}
+.confirm-back{position:fixed;inset:0;z-index:210;background:rgba(30,20,10,.5);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;animation:cf-in .18s forwards}
+@keyframes cf-in{to{opacity:1}}
+.confirm-box{background:var(--paper);border-radius:18px;padding:24px 22px 18px;max-width:340px;width:100%;box-shadow:var(--shadow);text-align:center}
+.confirm-box p{margin:0 0 20px;font-size:15.5px;color:var(--ink);line-height:1.45}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btns button{flex:1;border-radius:999px;padding:12px;font-weight:700;font-size:14px;border:1px solid var(--line);cursor:pointer}
+.confirm-no{background:var(--paper-2);color:var(--ink)}
+.confirm-yes{background:#c0392b;color:#fff;border-color:#c0392b}
+.rq-picker{margin:10px 0 2px;display:flex;flex-direction:column;gap:6px}
+.rq-picker-label{font-size:12px;color:var(--ink-soft);font-weight:600;margin-bottom:1px}
+.rq-chip{text-align:left;border:1px solid var(--line);background:var(--paper-2);border-radius:12px;padding:8px 11px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;line-height:1.4;transition:.15s;font-family:inherit;font-style:italic}
+.rq-chip.on{border-color:var(--accent);color:var(--ink);background:var(--paper);font-style:normal}
+.rq-chip .rq-mark{color:var(--accent);font-weight:700;margin-right:6px;font-style:normal}
 .modal h3{margin:0 0 6px;font-family:var(--display);font-weight:400;letter-spacing:0;font-size:24px}
 .mp{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
 .field{margin-bottom:14px}
@@ -677,7 +690,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v158 test: чтение/предпросмотр рецензии в виде широкой «статьи» (карточка книги + оценка + цитаты + текст в комфортной ширине и шрифте, как в LiveLib) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v160 test: можно выбрать какие цитаты прикрепить к рецензии (чипы под полем); в чтении показываются только выбранные --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -722,7 +735,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
-        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Прочитать полностью</button><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><button type="button" class="linklike" id="iDeleteReview" style="display:none;color:#c0392b">🗑 Удалить</button></div><span id="iReviewMsg" class="rev-msg"></span></div>
+        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><div id="iReviewQuotes" class="rq-picker"></div><div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Прочитать полностью</button><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><button type="button" class="linklike" id="iDeleteReview" style="display:none;color:#c0392b">🗑 Удалить</button></div><span id="iReviewMsg" class="rev-msg"></span></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -2103,16 +2116,27 @@ main,footer{position:relative;z-index:1}
   const saveMyReviews=()=>{ try{ localStorage.setItem("polka_myreviews", JSON.stringify(myReviews)); }catch(e){} };
   let reviewDrafts={}; try{ reviewDrafts=JSON.parse(localStorage.getItem("polka_review_drafts")||"{}"); }catch(e){ reviewDrafts={}; }
   const saveReviewDrafts=()=>{ try{ localStorage.setItem("polka_review_drafts", JSON.stringify(reviewDrafts)); }catch(e){} };
-  function publishReview(t,a,text){
+  let reviewQSel=[];   // какие цитаты прикреплены к рецензии
+  function renderReviewQuotes(){
+    const box=$("#iReviewQuotes"); if(!box) return;
+    const qs=collectQuotes("iQuotes");
+    if(!qs.length){ box.innerHTML=""; box.style.display="none"; return; }
+    box.style.display="";
+    box.innerHTML=`<div class="rq-picker-label">Какие цитаты прикрепить к рецензии:</div>`+
+      qs.map(q=>`<button type="button" class="rq-chip${reviewQSel.includes(q)?" on":""}" data-q="${esc(q)}"><span class="rq-mark">${reviewQSel.includes(q)?"✓":"+"}</span>«${esc(q)}»</button>`).join("");
+  }
+  function publishReview(t,a,text,quotes){
     const bk=bookKey(t,a), ex=myReviews[bk];
-    myReviews[bk]={ id: ex&&ex.id?ex.id:null, text:text }; saveMyReviews();   // локально сразу — не потеряется
+    const qarr=Array.isArray(quotes)?quotes:[];
+    myReviews[bk]={ id: ex&&ex.id?ex.id:null, text:text, quotes:qarr }; saveMyReviews();   // локально сразу — не потеряется
     if(!CLOUD()) return;
     const clearDraft=()=>{ if(reviewDrafts[bk]!=null){ delete reviewDrafts[bk]; saveReviewDrafts(); } };
     const fail=()=>toast("Рецензия сохранена, но пока не ушла в облако — попробуй позже");
-    const meta={ title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", code:myCode||"" };
+    const meta={ title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", code:myCode||"", quotes:JSON.stringify(qarr) };
     if(ex && ex.id){ sbUpdateReview(ex.id, Object.assign({text:text}, meta)).then(clearDraft).catch(fail); }
-    else { sbInsertReview(Object.assign({book:bk, text:text}, meta)).then(id=>{ if(id){ myReviews[bk]={id:id, text:text}; saveMyReviews(); } clearDraft(); }).catch(fail); }
+    else { sbInsertReview(Object.assign({book:bk, text:text}, meta)).then(id=>{ if(id){ myReviews[bk]={id:id, text:text, quotes:qarr}; saveMyReviews(); } clearDraft(); }).catch(fail); }
   }
+  const selReviewQuotes=()=>{ const cur=collectQuotes("iQuotes"); return reviewQSel.filter(q=>cur.includes(q)); };
   const BOOK_LOADER = `<div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div>`;
   function loaderBox(msg){ return `<div class="loader-box">${BOOK_LOADER}${msg?`<p class="mp">${esc(msg)}</p>`:""}</div>`; }
 
@@ -2174,7 +2198,7 @@ main,footer{position:relative;z-index:1}
   async function deletePoem(id){
     if(!id) return;
     const p=poemList()[poemIdx];
-    if(!confirm("Удалить своё стихотворение"+(p&&p.t?" «"+p.t+"»":"")+"?")) return;
+    if(!(await askConfirm("Удалить своё стихотворение"+(p&&p.t?" «"+p.t+"»":"")+"?"))) return;
     if(!CLOUD()){ toast("Нужно соединение с облаком"); return; }
     try{ await sbDeletePoem(id); toast("Стихотворение удалено"); await openPoems(); }
     catch(e){ toast("Не удалось удалить 😔"); }
@@ -2194,13 +2218,13 @@ main,footer{position:relative;z-index:1}
   async function viewPoemAuthor(code, name, photo){
     if(!code) return;
     if(!CLOUD()){ toast("Нужно соединение с облаком"); return; }
-    const cached=profileCache[code]; if(cached){ showGuest(cached.g); } else { showGuest({name:name||"Читатель", color:"#b8493a", quote:"", books:[], stickers:[], photo:photo||"", reading:"", wishlist:[], loading:true}); }
+    const cached=profileCache[code]; if(cached){ showGuest(cached.g); } else { showGuest({name:name||"Читатель", color:"#b8493a", quote:"", books:[], stickers:[], photo:photo||"", reading:"", wishlist:[], code:code, loading:true}); }
     let row; try{ row=await sbFetch(code); }catch(e){ if(!cached) toast("Не удалось открыть профиль"); return; }
     if(!row||!row.data){ if(!cached) toast("Профиль не найден"); return; }
     if(cached && row.data===cached.raw) return;
     let p; try{ p=decodeCode(row.data); }catch(e){ if(!cached) toast("Профиль повреждён"); return; }
     const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ if(!cached) toast("Это не профиль"); return; }
-    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:(p&&p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:(p&&p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code};
     profileCache[code]={g, raw:row.data};
     if(!cached || view==="guest") showGuest(g);
   }
@@ -2339,7 +2363,7 @@ main,footer{position:relative;z-index:1}
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _txt=(_rv&&_rv.text)?_rv.text:(reviewDrafts[_bk]||""); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=(_rv&&_rv.text)?"":"none"; }
+      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _txt=(_rv&&_rv.text)?_rv.text:(reviewDrafts[_bk]||""); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=(_rv&&_rv.text)?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -2375,22 +2399,26 @@ main,footer{position:relative;z-index:1}
       infoBook.g = $("#iGenre").value;
       infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
       const _rt=$("#iReview").value.trim();
-      if(_rt.length>=10){ const _bk=bookKey(infoBook.t,infoBook.a); const _cur=myReviews[_bk]; if(!_cur || _cur.text!==_rt) publishReview(infoBook.t, infoBook.a, _rt); }
+      if(_rt.length>=10){ const _bk=bookKey(infoBook.t,infoBook.a); const _cur=myReviews[_bk]; if(!_cur || _cur.text!==_rt) publishReview(infoBook.t, infoBook.a, _rt, selReviewQuotes()); }
       saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
     }
   });
-  $("#delBook").addEventListener("click", ()=>{
-    if(infoBook && isMe()){ const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll(); }
+  $("#delBook").addEventListener("click", async ()=>{
+    if(infoBook && isMe()){
+      if(!(await askConfirm("Удалить книгу «"+infoBook.t+"» с полки? Рецензию и цитаты тоже потеряешь."))) return;
+      const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll();
+    }
   });
   $("#iReview").addEventListener("input", ()=>{ $("#iPreviewReview").style.display = $("#iReview").value.trim() ? "" : "none"; if(infoBook && isMe()){ const bk=bookKey(infoBook.t,infoBook.a); reviewDrafts[bk]=$("#iReview").value; saveReviewDrafts(); } });
   const REV_EXPAND_PROPS=[["width","100vw"],["max-width","100vw"],["height","100dvh"],["max-height","100dvh"],["left","0"],["top","0"],["transform","none"],["border-radius","0"]];
   function collapseInfoModal(){ if(!infoModal) return; infoModal.classList.remove("rev-expand"); REV_EXPAND_PROPS.forEach(p=>infoModal.style.removeProperty(p[0])); }
-  $("#iReview").addEventListener("focus", ()=>{ if(!infoModal) return; infoModal.classList.add("rev-expand"); REV_EXPAND_PROPS.forEach(p=>infoModal.style.setProperty(p[0],p[1],"important")); setTimeout(()=>{ try{ $("#iReview").scrollIntoView({block:"center"}); }catch(e){} }, 60); });
+  $("#iReview").addEventListener("focus", ()=>{ if(!infoModal) return; infoModal.classList.add("rev-expand"); REV_EXPAND_PROPS.forEach(p=>infoModal.style.setProperty(p[0],p[1],"important")); renderReviewQuotes(); setTimeout(()=>{ try{ $("#iReview").scrollIntoView({block:"center"}); }catch(e){} }, 60); });
+  $("#iReviewQuotes").addEventListener("click", e=>{ const c=e.target.closest(".rq-chip"); if(!c) return; const q=c.dataset.q; const i=reviewQSel.indexOf(q); if(i>-1) reviewQSel.splice(i,1); else reviewQSel.push(q); renderReviewQuotes(); });
   $("#iPreviewReview").addEventListener("click", ()=>{
     const txt=$("#iReview").value.trim(); if(!txt) return;
     const ttl = infoBook?infoBook.t:"", au = infoBook?infoBook.a:"";
     if($("#rpTitle")) $("#rpTitle").textContent="Как увидят твою рецензию 👀";
-    $("#rpContent").innerHTML = reviewArticleHTML(myName||"Читатель", myPhoto||"", ttl, au, iRate||0, collectQuotes("iQuotes"), txt, "так тебя увидят другие");
+    $("#rpContent").innerHTML = reviewArticleHTML(myName||"Читатель", myPhoto||"", ttl, au, iRate||0, selReviewQuotes(), txt, "так тебя увидят другие");
     openPage("reviewPreviewPage");
   });
   $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
@@ -2404,7 +2432,7 @@ main,footer{position:relative;z-index:1}
   function openReadReview(rv){
     const ttl=infoBook?infoBook.t:"", au=infoBook?infoBook.a:"";
     const rating=(infoBook&&infoBook.r)?infoBook.r:0;
-    const qs=infoBook?quotesOf(infoBook):[];
+    let qs=[]; try{ qs=JSON.parse(rv.quotes||"[]"); }catch(e){ qs=[]; } if(!Array.isArray(qs)) qs=[];
     if($("#rpTitle")) $("#rpTitle").textContent="Рецензия 📢";
     $("#rpContent").innerHTML = reviewArticleHTML(rv.name||"Читатель", rv.photo||"", ttl, au, rating, qs, rv.text||"", "рецензия читателя");
     openPage("reviewPreviewPage");
@@ -2414,7 +2442,7 @@ main,footer{position:relative;z-index:1}
     const b=infoBook; if(!b) return;
     const bk=bookKey(b.t,b.a), rv=myReviews[bk];
     if(!rv||!rv.id){ if(myReviews[bk]){ delete myReviews[bk]; saveMyReviews(); } $("#iReview").value=""; $("#iDeleteReview").style.display="none"; $("#iPublishReview").textContent="Опубликовать рецензию"; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; return; }
-    if(!confirm("Удалить твою рецензию на «"+b.t+"»?")) return;
+    if(!(await askConfirm("Удалить твою рецензию на «"+b.t+"»?"))) return;
     const btn=$("#iDeleteReview"); btn.disabled=true; $("#iReviewMsg").textContent="Удаляю…";
     try{
       await sbDeleteReview(rv.id);
@@ -2432,7 +2460,7 @@ main,footer{position:relative;z-index:1}
     const text=$("#iReview").value.trim();
     if(text.length<10){ $("#iReviewMsg").textContent="Напиши чуть подробнее 🙂"; return; }
     const cur=myReviews[bookKey(b.t,b.a)]; const wasEdit=!!(cur&&cur.id);
-    publishReview(b.t, b.a, text);
+    publishReview(b.t, b.a, text, selReviewQuotes());
     $("#iReviewMsg").textContent = wasEdit ? "Рецензия обновлена ✏️" : "Опубликовано! Спасибо 🌸";
     $("#iPublishReview").textContent = "Обновить рецензию";
     if($("#iDeleteReview")) $("#iDeleteReview").style.display="";
@@ -2566,6 +2594,18 @@ main,footer{position:relative;z-index:1}
   }
 
   /* ---- тост ---- */
+  function askConfirm(msg, yesLabel){
+    return new Promise(res=>{
+      const back=document.createElement("div"); back.className="confirm-back";
+      const box=document.createElement("div"); box.className="confirm-box";
+      box.innerHTML=`<p>${esc(msg)}</p><div class="confirm-btns"><button class="confirm-no" type="button">Нет</button><button class="confirm-yes" type="button">${esc(yesLabel||"Да, удалить")}</button></div>`;
+      back.appendChild(box); document.body.appendChild(back);
+      const done=v=>{ try{ back.remove(); }catch(e){} res(v); };
+      box.querySelector(".confirm-no").addEventListener("click", ()=>done(false));
+      box.querySelector(".confirm-yes").addEventListener("click", ()=>done(true));
+      back.addEventListener("click", e=>{ if(e.target===back) done(false); });
+    });
+  }
   function toast(msg){
     const el=document.createElement("div"); el.textContent=msg;
     el.style.cssText="position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:88vw;box-sizing:border-box;background:var(--ink);color:var(--paper);padding:13px 20px;border-radius:20px;z-index:99;font-weight:600;font-size:14px;line-height:1.35;text-align:center;white-space:normal;box-shadow:var(--shadow)";
