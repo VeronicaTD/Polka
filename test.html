@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="164" />
+<meta name="app-version" content="165" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -696,7 +696,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v164 test: ЗАЩИТА от перезаписи чужого аккаунта — syncUp пишет в облако только после загрузки реальных данных полки (bootLoaded); режим ?restore для восстановления полки из уцелевшего браузера --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v165 test: ?restore убирает себя из адреса после показа (не всплывает при перезагрузке) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2808,6 +2808,7 @@ main,footer{position:relative;z-index:1}
   if(restoreMode){
     // РЕЖИМ ВОССТАНОВЛЕНИЯ: не тянем из облака (чтобы не затереть уцелевшие локальные данные), а записываем их в облако
     bootLoaded=true;
+    try{ history.replaceState(null,"",location.pathname); }catch(e){}   // убираем ?restore из адреса, чтобы не всплывало снова
     setTimeout(async ()=>{ try{ hideSplash(); }catch(e){}
       const cnt=Array.isArray(myBooks)?myBooks.length:0;
       const okc=await askConfirm("Восстановление полки.\nЗаписать данные С ЭТОГО устройства в облако?\n\nИмя: "+myName+"\nЦитата: "+(myQuote||"—")+"\nСейчас читаю: "+(myReading||"—")+"\nКниг: "+cnt+"\nКод полки: "+myCode+"\n\n(Перезапишет облачную полку данными отсюда.)", "Да, записать в облако");
