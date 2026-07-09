@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="162" />
+<meta name="app-version" content="163" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -696,7 +696,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v162 test: рецензия пишется на отдельной странице (кнопка «Написать рецензию» → полноэкранный редактор с карточкой книги, полем, выбором цитат, предпросмотром и публикацией); убраны старые комментарии --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v163 test: уход по «← назад» со страницы рецензии тоже публикует (не теряется); убрана кнопка «как увидят другие»; устойчивая публикация (повтор без фото при сбое) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -933,7 +933,7 @@ main,footer{position:relative;z-index:1}
     <div id="reBookCard"></div>
     <textarea id="iReview" placeholder="Поделись мыслями об этой книге…"></textarea>
     <div id="iReviewQuotes" class="rq-picker"></div>
-    <div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Как увидят другие</button></div>
+    <div class="rev-actions" style="display:none"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Как увидят другие</button></div>
     <span id="iReviewMsg" class="rev-msg"></span>
     <div class="re-foot"><button class="del" id="iDeleteReview" type="button" style="display:none">🗑 Удалить</button><button class="btn" id="iPublishReview" type="button">Опубликовать рецензию</button></div>
   </div>
@@ -2180,10 +2180,16 @@ main,footer{position:relative;z-index:1}
     myReviews[bk]={ id: ex&&ex.id?ex.id:null, text:text, quotes:qarr }; saveMyReviews();   // локально сразу — не потеряется
     if(!CLOUD()) return;
     const clearDraft=()=>{ if(reviewDrafts[bk]!=null){ delete reviewDrafts[bk]; saveReviewDrafts(); } };
-    const fail=()=>toast("Рецензия сохранена, но пока не ушла в облако — попробуй позже");
-    const meta={ title:t, author:a||"", name:myName||"Читатель", photo:myPhoto||"", code:myCode||"", quotes:JSON.stringify(qarr) };
-    if(ex && ex.id){ sbUpdateReview(ex.id, Object.assign({text:text}, meta)).then(clearDraft).catch(fail); }
-    else { sbInsertReview(Object.assign({book:bk, text:text}, meta)).then(id=>{ if(id){ myReviews[bk]={id:id, text:text, quotes:qarr}; saveMyReviews(); } clearDraft(); }).catch(fail); }
+    const fail=(e)=>{ const m=(e&&e.message)?String(e.message):"неизвестная ошибка"; try{ $("#iReviewMsg").textContent="⚠ Не ушло в облако: "+m; $("#iReviewMsg").style.color="#c0392b"; }catch(x){} toast("Рецензия не ушла в облако 😔"); };
+    const onId=(id)=>{ if(id){ myReviews[bk]={id:id, text:text, quotes:qarr}; saveMyReviews(); } clearDraft(); };
+    const meta=(withPhoto)=>({ title:t, author:a||"", name:myName||"Читатель", photo:withPhoto?(myPhoto||""):"", code:myCode||"", quotes:JSON.stringify(qarr) });
+    if(ex && ex.id){
+      sbUpdateReview(ex.id, Object.assign({text:text}, meta(true))).then(clearDraft)
+        .catch(()=> sbUpdateReview(ex.id, Object.assign({text:text}, meta(false))).then(clearDraft).catch(fail));
+    } else {
+      sbInsertReview(Object.assign({book:bk, text:text}, meta(true))).then(onId)
+        .catch(()=> sbInsertReview(Object.assign({book:bk, text:text}, meta(false))).then(onId).catch(fail));
+    }
   }
   const selReviewQuotes=()=>{ const cur=collectQuotes("iQuotes"); return reviewQSel.filter(q=>cur.includes(q)); };
   const BOOK_LOADER = `<div class="book-loader" aria-hidden="true"><div class="bl-side bl-left"></div><div class="bl-side bl-right"></div><div class="bl-spine"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div><div class="bl-page"></div></div>`;
@@ -2469,7 +2475,11 @@ main,footer{position:relative;z-index:1}
     openPage("reviewPreviewPage");
   });
   $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
-  $("#reBack").addEventListener("click", ()=>{ $("#reviewEditPage").classList.remove("open"); });
+  $("#reBack").addEventListener("click", ()=>{
+    const b=infoBook, text=($("#iReview").value||"").trim();
+    if(b && text.length>=10){ const cur=myReviews[bookKey(b.t,b.a)]; if(!cur || cur.text!==text){ publishReview(b.t, b.a, text, selReviewQuotes()); if($("#openReviewBtn")) $("#openReviewBtn").textContent="✏️ Редактировать рецензию"; toast("Рецензия опубликована 🌸"); } }
+    $("#reviewEditPage").classList.remove("open");
+  });
   $("#openReviewBtn").addEventListener("click", ()=>{
     const b=infoBook; if(!b) return;
     const rating=b.r||0; const stars=rating?`<span class="rr-stars">${"★".repeat(rating)}${"☆".repeat(5-rating)}</span>`:"";
@@ -2888,7 +2898,29 @@ main,footer{position:relative;z-index:1}
   let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(renderCase,150); });
   if(CLOUD()) setTimeout(prewarmPoems, 300);
   // одноразовая чистка старых комментариев (опции больше нет)
-  (function(){ if(!Array.isArray(myBooks)) return; let ch=false; myBooks.forEach(b=>{ if(b && b.note!=null){ delete b.note; ch=true; } }); if(ch){ try{ saveMine(); }catch(e){} try{ if(localStorage.getItem("polka_registered")) syncUp(); }catch(e){} } })();
+  (function(){ if(!Array.isArray(myBooks)) return; let ch=false; myBooks.forEach(b=>{ if(b && b.note!=null){ delete b.note; ch=true; } }); if(ch){ try{ saveMine(); }catch(e){} } })();
+  // дозалить в облако рецензии, написанные раньше (локально есть, в облаке нет)
+  if(CLOUD()) setTimeout(syncMyReviews, 1800);
+  async function syncMyReviews(){
+    if(!CLOUD() || !myCode || !Array.isArray(myBooks)) return;
+    const keys=new Set([...Object.keys(myReviews||{}), ...Object.keys(reviewDrafts||{})]);
+    if(!keys.size) return;
+    let cloud=[]; try{ const r=await fetch(SUPABASE_URL+"/rest/v1/reviews?select=book&code=eq."+encodeURIComponent(myCode),{headers:SB_H()}); if(!r.ok) return; cloud=await r.json(); }catch(e){ return; }
+    const inCloud=new Set((cloud||[]).map(rv=>rv.book));
+    let any=false;
+    keys.forEach(bk=>{
+      if(inCloud.has(bk)) return;
+      const text=(((myReviews[bk]&&myReviews[bk].text)||reviewDrafts[bk]||"")).trim();
+      if(text.length<10) return;
+      const b=myBooks.find(x=>bookKey(x.t,x.a)===bk);
+      if(!b) return;
+      const quotes=(myReviews[bk]&&Array.isArray(myReviews[bk].quotes))?myReviews[bk].quotes:[];
+      myReviews[bk]={id:null, text:text, quotes:quotes};
+      publishReview(b.t, b.a, text, quotes);
+      any=true;
+    });
+    if(any){ try{ saveMyReviews(); }catch(e){} toast("Твои рецензии загружаются в облако 🌸"); }
+  }
 
   renderAll();
 })();
