@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="160" />
+<meta name="app-version" content="162" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -507,6 +507,12 @@ main,footer{position:relative;z-index:1}
 .rq-chip{text-align:left;border:1px solid var(--line);background:var(--paper-2);border-radius:12px;padding:8px 11px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;line-height:1.4;transition:.15s;font-family:inherit;font-style:italic}
 .rq-chip.on{border-color:var(--accent);color:var(--ink);background:var(--paper);font-style:normal}
 .rq-chip .rq-mark{color:var(--accent);font-weight:700;margin-right:6px;font-style:normal}
+#reviewEditPage textarea{width:100%;min-height:min(46dvh,300px);border:1px solid #ece3d2;border-radius:14px;padding:16px 18px;font-size:15.5px;line-height:1.7;font-family:inherit;background:#fdfaf3;color:#3a2e22;resize:vertical;box-sizing:border-box}
+#reviewEditPage textarea:focus{outline:none;border-color:var(--accent)}
+#reBookCard{margin-bottom:16px}
+.re-foot{display:flex;gap:10px;margin-top:20px;align-items:center}
+.re-foot .btn{flex:1;justify-content:center;display:flex}
+.re-foot .del{background:transparent;border:1px solid var(--line);color:#c0392b;border-radius:999px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer}
 .modal h3{margin:0 0 6px;font-family:var(--display);font-weight:400;letter-spacing:0;font-size:24px}
 .mp{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
 .field{margin-bottom:14px}
@@ -690,7 +696,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v160 test: можно выбрать какие цитаты прикрепить к рецензии (чипы под полем); в чтении показываются только выбранные --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v162 test: рецензия пишется на отдельной странице (кнопка «Написать рецензию» → полноэкранный редактор с карточкой книги, полем, выбором цитат, предпросмотром и публикацией); убраны старые комментарии --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -735,7 +741,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
-        <div class="field review-field"><label>📢 Рецензия</label><textarea id="iReview" placeholder="поделись мнением о книге"></textarea><div id="iReviewQuotes" class="rq-picker"></div><div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Прочитать полностью</button><button type="button" class="linklike" id="iPublishReview">Опубликовать рецензию</button><button type="button" class="linklike" id="iDeleteReview" style="display:none;color:#c0392b">🗑 Удалить</button></div><span id="iReviewMsg" class="rev-msg"></span></div>
+        <div class="field review-field"><label>📢 Рецензия</label><button class="read-link" id="openReviewBtn" type="button" style="width:100%;justify-content:center;display:flex;padding:12px;font-size:14px;cursor:pointer">✍️ Написать рецензию</button></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
@@ -918,6 +924,19 @@ main,footer{position:relative;z-index:1}
 <div class="fullpage" id="reviewPreviewPage" aria-label="Предпросмотр рецензии">
   <div class="fp-head"><button class="fp-back" id="rpBack">← назад</button><h3 id="rpTitle">Как увидят твою рецензию 👀</h3></div>
   <div class="fp-body"><div id="rpContent"></div></div>
+</div>
+
+<!-- написать рецензию (отдельная страница) -->
+<div class="fullpage" id="reviewEditPage" aria-label="Написать рецензию">
+  <div class="fp-head"><button class="fp-back" id="reBack">← назад</button><h3>Твоя рецензия ✍️</h3></div>
+  <div class="fp-body">
+    <div id="reBookCard"></div>
+    <textarea id="iReview" placeholder="Поделись мыслями об этой книге…"></textarea>
+    <div id="iReviewQuotes" class="rq-picker"></div>
+    <div class="rev-actions"><button type="button" class="linklike" id="iPreviewReview" style="display:none">👁 Как увидят другие</button></div>
+    <span id="iReviewMsg" class="rev-msg"></span>
+    <div class="re-foot"><button class="del" id="iDeleteReview" type="button" style="display:none">🗑 Удалить</button><button class="btn" id="iPublishReview" type="button">Опубликовать рецензию</button></div>
+  </div>
 </div>
 
 <!-- книга из подборки (полный экран) -->
@@ -1503,15 +1522,45 @@ main,footer{position:relative;z-index:1}
     {t:"Гордость и предубеждение",a:"Дж. Остин"},{t:"Зулейха открывает глаза",a:"Г. Яхина"},
     {t:"Дом, в котором…",a:"М. Петросян"},{t:"Вино из одуванчиков",a:"Р. Брэдбери"},
     {t:"Сто лет одиночества",a:"Г. Маркес"},{t:"Маленькие женщины",a:"Л. Олкотт"},
-    {t:"Маленькая жизнь",a:"Х. Янагихара"},{t:"Щегол",a:"Д. Тартт"}
+    {t:"Маленькая жизнь",a:"Х. Янагихара"},{t:"Щегол",a:"Д. Тартт"},
+    {t:"Мастер и Маргарита",a:"М. Булгаков"},{t:"Преступление и наказание",a:"Ф. Достоевский"},
+    {t:"Анна Каренина",a:"Л. Толстой"},{t:"Идиот",a:"Ф. Достоевский"},
+    {t:"Братья Карамазовы",a:"Ф. Достоевский"},{t:"Джейн Эйр",a:"Ш. Бронте"},
+    {t:"Грозовой перевал",a:"Э. Бронте"},{t:"Великий Гэтсби",a:"Ф. Фицджеральд"},
+    {t:"Три товарища",a:"Э. М. Ремарк"},{t:"На Западном фронте без перемен",a:"Э. М. Ремарк"},
+    {t:"Триумфальная арка",a:"Э. М. Ремарк"},{t:"Старик и море",a:"Э. Хемингуэй"},
+    {t:"Портрет Дориана Грея",a:"О. Уайльд"},{t:"Граф Монте-Кристо",a:"А. Дюма"},
+    {t:"Три мушкетёра",a:"А. Дюма"},{t:"Тайная история",a:"Д. Тартт"},
+    {t:"Убийство в Восточном экспрессе",a:"А. Кристи"},{t:"Десять негритят",a:"А. Кристи"},
+    {t:"Тень ветра",a:"К. Р. Сафон"},{t:"Хоббит",a:"Дж. Р. Р. Толкин"},
+    {t:"Властелин колец",a:"Дж. Р. Р. Толкин"},{t:"Гарри Поттер и философский камень",a:"Дж. Роулинг"},
+    {t:"Голодные игры",a:"С. Коллинз"},{t:"Книжный вор",a:"М. Зусак"},
+    {t:"Вторая жизнь Уве",a:"Ф. Бакман"},{t:"Тревожные люди",a:"Ф. Бакман"},
+    {t:"Бабушка велела кланяться",a:"Ф. Бакман"},{t:"Кафка на пляже",a:"Х. Мураками"},
+    {t:"1Q84",a:"Х. Мураками"},{t:"До встречи с тобой",a:"Дж. Мойес"},
+    {t:"Виноваты звёзды",a:"Дж. Грин"},{t:"Элеанор Олифант в полном порядке",a:"Г. Ханимен"},
+    {t:"Проект «Рози»",a:"Г. Симсион"},{t:"Зелёная миля",a:"С. Кинг"},
+    {t:"11/22/63",a:"С. Кинг"},{t:"Мизери",a:"С. Кинг"},
+    {t:"Лавр",a:"Е. Водолазкин"},{t:"Авиатор",a:"Е. Водолазкин"},
+    {t:"Обитель",a:"З. Прилепин"},{t:"С неба упали три яблока",a:"Н. Абгарян"},
+    {t:"Манюня",a:"Н. Абгарян"},{t:"Женщины Лазаря",a:"М. Степнова"},
+    {t:"Сердце пармы",a:"А. Иванов"},{t:"Таинственный сад",a:"Ф. Бёрнетт"},
+    {t:"Анна из Зелёных Мезонинов",a:"Л. Монтгомери"},{t:"Поллианна",a:"Э. Портер"},
+    {t:"Хроники Нарнии",a:"К. Льюис"},{t:"Пеппи Длинныйчулок",a:"А. Линдгрен"},
+    {t:"Собор Парижской Богоматери",a:"В. Гюго"},{t:"Отверженные",a:"В. Гюго"},
+    {t:"Эмма",a:"Дж. Остин"},{t:"Разум и чувства",a:"Дж. Остин"},
+    {t:"Шантарам",a:"Г. Д. Робертс"},{t:"Комната",a:"Э. Донохью"}
   ];
+  let lastSug="";
   $("#diceBtn").addEventListener("click", ()=>{
     const norm = s => String(s||"").trim().toLowerCase();
     const have = new Set(myBooks.map(b=>norm(b.t)));
-    const fresh = SUGGESTIONS.filter(b=>!have.has(norm(b.t)));
-    const list = fresh.length ? fresh : SUGGESTIONS;
-    const slot = Math.floor(Date.now()/(8*3600*1000));   // совет меняется раз в 8 часов
-    const p = list[slot % list.length];
+    let list = SUGGESTIONS.filter(b=>!have.has(norm(b.t)));
+    if(!list.length) list = SUGGESTIONS.slice();
+    // не повторять только что показанную
+    if(list.length>1){ const f=list.filter(b=>norm(b.t)!==lastSug); if(f.length) list=f; }
+    const p = list[Math.floor(Math.random()*list.length)];
+    lastSug = norm(p.t);
     toast("Совет почитать: «"+p.t+"» — "+p.a);
   });
 
@@ -2363,15 +2412,13 @@ main,footer{position:relative;z-index:1}
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _txt=(_rv&&_rv.text)?_rv.text:(reviewDrafts[_bk]||""); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=(_rv&&_rv.text)?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); }
+      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _txt=(_rv&&_rv.text)?_rv.text:(reviewDrafts[_bk]||""); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=(_rv&&_rv.text)?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); if($("#openReviewBtn")) $("#openReviewBtn").textContent=(_rv&&_rv.text)?"✏️ Редактировать рецензию":"✍️ Написать рецензию"; }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
       $("#infoStars").textContent = (b.r? starsStr(b.r):"") + (isFav(b)?"  ♥":"");
-      // комментарий и цитаты — раздельно
-      const cmt=$("#infoComment");
-      if((b.note||"").trim()){ cmt.style.display=""; cmt.innerHTML = `<div class="ir-label">Комментарий</div><div class="note">${esc(b.note)}</div>`; }
-      else cmt.style.display="none";
+      // комментарии убраны как опция — не показываем
+      const cmt=$("#infoComment"); if(cmt){ cmt.style.display="none"; cmt.innerHTML=""; }
       const qs=quotesOf(b), qb=$("#infoQuotes");
       if(qs.length){ qb.style.display=""; qb.innerHTML = `<div class="ir-label">Любимые цитаты</div>` + qs.map(q=>`<div class="ir-quote">«${esc(q)}»</div>`).join(""); }
       else qb.style.display="none";
@@ -2412,7 +2459,7 @@ main,footer{position:relative;z-index:1}
   $("#iReview").addEventListener("input", ()=>{ $("#iPreviewReview").style.display = $("#iReview").value.trim() ? "" : "none"; if(infoBook && isMe()){ const bk=bookKey(infoBook.t,infoBook.a); reviewDrafts[bk]=$("#iReview").value; saveReviewDrafts(); } });
   const REV_EXPAND_PROPS=[["width","100vw"],["max-width","100vw"],["height","100dvh"],["max-height","100dvh"],["left","0"],["top","0"],["transform","none"],["border-radius","0"]];
   function collapseInfoModal(){ if(!infoModal) return; infoModal.classList.remove("rev-expand"); REV_EXPAND_PROPS.forEach(p=>infoModal.style.removeProperty(p[0])); }
-  $("#iReview").addEventListener("focus", ()=>{ if(!infoModal) return; infoModal.classList.add("rev-expand"); REV_EXPAND_PROPS.forEach(p=>infoModal.style.setProperty(p[0],p[1],"important")); renderReviewQuotes(); setTimeout(()=>{ try{ $("#iReview").scrollIntoView({block:"center"}); }catch(e){} }, 60); });
+  $("#iReview").addEventListener("focus", ()=>{ renderReviewQuotes(); });
   $("#iReviewQuotes").addEventListener("click", e=>{ const c=e.target.closest(".rq-chip"); if(!c) return; const q=c.dataset.q; const i=reviewQSel.indexOf(q); if(i>-1) reviewQSel.splice(i,1); else reviewQSel.push(q); renderReviewQuotes(); });
   $("#iPreviewReview").addEventListener("click", ()=>{
     const txt=$("#iReview").value.trim(); if(!txt) return;
@@ -2422,6 +2469,15 @@ main,footer{position:relative;z-index:1}
     openPage("reviewPreviewPage");
   });
   $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
+  $("#reBack").addEventListener("click", ()=>{ $("#reviewEditPage").classList.remove("open"); });
+  $("#openReviewBtn").addEventListener("click", ()=>{
+    const b=infoBook; if(!b) return;
+    const rating=b.r||0; const stars=rating?`<span class="rr-stars">${"★".repeat(rating)}${"☆".repeat(5-rating)}</span>`:"";
+    $("#reBookCard").innerHTML=`<div class="rr-book"><div class="rr-bookinfo"><div class="rr-btitle">${esc(b.t)}</div>${b.a?`<div class="rr-bauthor">${esc(b.a)}</div>`:""}${stars?`<div class="rr-brate">${stars}</div>`:""}</div></div>`;
+    renderReviewQuotes();
+    openPage("reviewEditPage");
+    setTimeout(()=>{ try{ $("#iReview").focus(); }catch(e){} }, 120);
+  });
   function reviewArticleHTML(nm, ph, ttl, au, rating, quotes, text, sub){
     const av = ph?`<img src="${esc(ph)}" alt="">`:esc((nm[0]||"Ч").toUpperCase());
     const stars = rating?`<span class="rr-stars">${"★".repeat(rating)}${"☆".repeat(5-rating)}</span>`:"";
@@ -2451,6 +2507,9 @@ main,footer{position:relative;z-index:1}
       if($("#iPreviewReview")) $("#iPreviewReview").style.display="none";
       $("#iPublishReview").textContent="Опубликовать рецензию";
       btn.style.display="none";
+      if($("#openReviewBtn")) $("#openReviewBtn").textContent="✍️ Написать рецензию";
+      toast("Рецензия удалена");
+      setTimeout(()=>{ $("#reviewEditPage").classList.remove("open"); }, 300);
     }catch(e){ $("#iReviewMsg").textContent="Не удалось удалить 😔"; }
     btn.disabled=false;
   });
@@ -2464,6 +2523,9 @@ main,footer{position:relative;z-index:1}
     $("#iReviewMsg").textContent = wasEdit ? "Рецензия обновлена ✏️" : "Опубликовано! Спасибо 🌸";
     $("#iPublishReview").textContent = "Обновить рецензию";
     if($("#iDeleteReview")) $("#iDeleteReview").style.display="";
+    if($("#openReviewBtn")) $("#openReviewBtn").textContent="✏️ Редактировать рецензию";
+    toast(wasEdit?"Рецензия обновлена 🌸":"Рецензия опубликована 🌸");
+    setTimeout(()=>{ $("#reviewEditPage").classList.remove("open"); }, 350);
   });
 
   /* ---- профиль: редактирование ---- */
@@ -2825,6 +2887,8 @@ main,footer{position:relative;z-index:1}
   /* ресайз */
   let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(renderCase,150); });
   if(CLOUD()) setTimeout(prewarmPoems, 300);
+  // одноразовая чистка старых комментариев (опции больше нет)
+  (function(){ if(!Array.isArray(myBooks)) return; let ch=false; myBooks.forEach(b=>{ if(b && b.note!=null){ delete b.note; ch=true; } }); if(ch){ try{ saveMine(); }catch(e){} try{ if(localStorage.getItem("polka_registered")) syncUp(); }catch(e){} } })();
 
   renderAll();
 })();
