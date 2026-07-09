@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="165" />
+<meta name="app-version" content="166" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -696,7 +696,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v165 test: ?restore убирает себя из адреса после показа (не всплывает при перезагрузке) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v166 test: «← назад» на странице рецензии больше НЕ публикует — только сохраняет черновик (не теряется, можно вернуться); публикация только по кнопке «Опубликовать» --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2420,7 +2420,7 @@ main,footer{position:relative;z-index:1}
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _txt=(_rv&&_rv.text)?_rv.text:(reviewDrafts[_bk]||""); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=(_rv&&_rv.text)?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=(_rv&&_rv.text)?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); if($("#openReviewBtn")) $("#openReviewBtn").textContent=(_rv&&_rv.text)?"✏️ Редактировать рецензию":"✍️ Написать рецензию"; }
+      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _draft=reviewDrafts[_bk]; const _txt=(_draft&&_draft.trim())?_draft:((_rv&&_rv.text)||""); const _hasPub=!!(_rv&&_rv.text); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=_hasPub?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=_hasPub?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); if($("#openReviewBtn")) $("#openReviewBtn").textContent=(_hasPub||(_draft&&_draft.trim()))?"✏️ Редактировать рецензию":"✍️ Написать рецензию"; }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -2453,8 +2453,6 @@ main,footer{position:relative;z-index:1}
       infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
       infoBook.g = $("#iGenre").value;
       infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
-      const _rt=$("#iReview").value.trim();
-      if(_rt.length>=10){ const _bk=bookKey(infoBook.t,infoBook.a); const _cur=myReviews[_bk]; if(!_cur || _cur.text!==_rt) publishReview(infoBook.t, infoBook.a, _rt, selReviewQuotes()); }
       saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
     }
   });
@@ -2478,8 +2476,8 @@ main,footer{position:relative;z-index:1}
   });
   $("#rpBack").addEventListener("click", ()=>{ $("#reviewPreviewPage").classList.remove("open"); });
   $("#reBack").addEventListener("click", ()=>{
-    const b=infoBook, text=($("#iReview").value||"").trim();
-    if(b && text.length>=10){ const cur=myReviews[bookKey(b.t,b.a)]; if(!cur || cur.text!==text){ publishReview(b.t, b.a, text, selReviewQuotes()); if($("#openReviewBtn")) $("#openReviewBtn").textContent="✏️ Редактировать рецензию"; toast("Рецензия опубликована 🌸"); } }
+    // НЕ публикуем — только сохраняем черновик, чтобы ничего не потерялось (опубликовать можно потом)
+    const b=infoBook; if(b){ const bk=bookKey(b.t,b.a); reviewDrafts[bk]=$("#iReview").value||""; saveReviewDrafts(); }
     $("#reviewEditPage").classList.remove("open");
   });
   $("#openReviewBtn").addEventListener("click", ()=>{
@@ -2921,14 +2919,14 @@ main,footer{position:relative;z-index:1}
   if(CLOUD()) setTimeout(syncMyReviews, 1800);
   async function syncMyReviews(){
     if(!CLOUD() || !myCode || !Array.isArray(myBooks)) return;
-    const keys=new Set([...Object.keys(myReviews||{}), ...Object.keys(reviewDrafts||{})]);
-    if(!keys.size) return;
+    const keys=Object.keys(myReviews||{});   // только ОПУБЛИКОВАННЫЕ (черновики не трогаем — они не публикуются, пока не нажали «Опубликовать»)
+    if(!keys.length) return;
     let cloud=[]; try{ const r=await fetch(SUPABASE_URL+"/rest/v1/reviews?select=book&code=eq."+encodeURIComponent(myCode),{headers:SB_H()}); if(!r.ok) return; cloud=await r.json(); }catch(e){ return; }
     const inCloud=new Set((cloud||[]).map(rv=>rv.book));
     let any=false;
     keys.forEach(bk=>{
       if(inCloud.has(bk)) return;
-      const text=(((myReviews[bk]&&myReviews[bk].text)||reviewDrafts[bk]||"")).trim();
+      const text=((myReviews[bk]&&myReviews[bk].text)||"").trim();
       if(text.length<10) return;
       const b=myBooks.find(x=>bookKey(x.t,x.a)===bk);
       if(!b) return;
