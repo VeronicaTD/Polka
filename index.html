@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="167" />
+<meta name="app-version" content="168" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -696,7 +696,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v167 test: добавлены 3 новых стикера (книжный клуб) — 6/7/8.png --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v168 test: переход по автору стиха/рецензии — если это друг, открывается его существующая полка (без дубликата-гостя); если это я — открывается «моя» --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2277,6 +2277,12 @@ main,footer{position:relative;z-index:1}
   function showGuest(g){ DEMO_FRIENDS.guest=g; view="guest"; casePage=0; closeModals(); renderAll(); }
   async function viewPoemAuthor(code, name, photo){
     if(!code) return;
+    const _uc=String(code).toUpperCase();
+    // это моя собственная полка — открываем «мою»
+    if(myCode && _uc===String(myCode).toUpperCase()){ view="me"; casePage=0; closeModals(); renderAll(); return; }
+    // автор уже в друзьях — открываем его СУЩЕСТВУЮЩУЮ полку, без дубликата-гостя
+    const _exF=savedFriends.find(f=>f.code && String(f.code).toUpperCase()===_uc);
+    if(_exF){ view=_exF.id; casePage=0; closeModals(); renderAll(); return; }
     if(!CLOUD()){ toast("Нужно соединение с облаком"); return; }
     const cached=profileCache[code]; if(cached){ showGuest(cached.g); } else { showGuest({name:name||"Читатель", color:"#b8493a", quote:"", books:[], stickers:[], photo:photo||"", reading:"", wishlist:[], code:code, loading:true}); }
     let row; try{ row=await sbFetch(code); }catch(e){ if(!cached) toast("Не удалось открыть профиль"); return; }
