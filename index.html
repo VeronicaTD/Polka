@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="168" />
+<meta name="app-version" content="169" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -185,6 +185,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
   color:var(--ink-soft);font-size:14px}
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
 .fav-pill{appearance:none;cursor:pointer;font:inherit;font-size:13px;border:1px solid #e0556a;color:#c73f56;background:rgba(224,85,106,.06);border-radius:999px;padding:5px 12px;white-space:nowrap;line-height:1.1}
+.vibe-pill{border-color:var(--accent);color:#fff;background:var(--accent);font-weight:600}
+.vibe-pill:active{opacity:.8}
 .fav-pill.on{background:#e0556a;color:#fff;border-color:#e0556a}
 .tab .tab-heart{font-size:11px;margin-left:2px}
 .tab.fav{border-color:#e0556a}
@@ -651,6 +653,7 @@ main,footer{position:relative;z-index:1}
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
         <button class="fav-pill" id="favFriendBtn" style="display:none">🤍 в любимки</button>
+        <button class="fav-pill vibe-pill" id="addFriendVibe" style="display:none">🤍 хочу следить за полкой</button>
       </div>
       <div class="sub" id="pSub"></div>
       <div class="reading" id="pReading"></div>
@@ -696,7 +699,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v168 test: переход по автору стиха/рецензии — если это друг, открывается его существующая полка (без дубликата-гостя); если это я — открывается «моя» --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v169 test: у незнакомца (гость из стиха/рецензии) кнопка «🤍 хочу следить за полкой» — добавляет его в друзья --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1344,6 +1347,10 @@ main,footer{position:relative;z-index:1}
     saveFavFriends(); renderTabs(); renderProfile();
     toast(favFriends.has(f.code) ? "В любимых ❤" : "Убрано из любимых");
   });
+  $("#addFriendVibe").addEventListener("click", ()=>{
+    const f = friend(); if(!f || !f.code) return;
+    addFriendByCode(f.code);   // добавить незнакомца в друзья (откроет его постоянную полку)
+  });
 
   /* профиль */
   function setAva(photo, color, initial){
@@ -1359,13 +1366,16 @@ main,footer{position:relative;z-index:1}
       $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
       $("#editProfile").style.display = "";
       $("#favFriendBtn").style.display = "none";
+      { const _av=$("#addFriendVibe"); if(_av) _av.style.display="none"; }
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
       $("#pName").textContent = f.name;
       $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
       $("#editProfile").style.display = "none";
-      const fb = $("#favFriendBtn"); fb.style.display = f.code ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
+      const _isStranger = (view==="guest");   // гость из стиха/ссылки, ещё не в друзьях
+      const fb = $("#favFriendBtn"); fb.style.display = (!_isStranger && f.code) ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
+      const _av=$("#addFriendVibe"); if(_av) _av.style.display = (_isStranger && f.code) ? "" : "none";
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
     $("#stTotal").textContent = books.length;
@@ -2666,7 +2676,7 @@ main,footer{position:relative;z-index:1}
     const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:(p && p.rd)||""};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
-    DEMO_FRIENDS[id]=friendObj; syncUp();
+    DEMO_FRIENDS[id]=friendObj; delete DEMO_FRIENDS.guest; syncUp();
     view=id; casePage=0; closeModals(); renderAll(); toast("Полка «"+name+"» добавлена!");
     // уведомить друга, что его добавили (запрос «добавить в ответ»)
     if(CLOUD() && used && myCode && used!==myCode){
