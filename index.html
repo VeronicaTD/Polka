@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="169" />
+<meta name="app-version" content="170" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -699,7 +699,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v169 test: у незнакомца (гость из стиха/рецензии) кнопка «🤍 хочу следить за полкой» — добавляет его в друзья --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v170 test: новая полка создаётся полностью чистой — сбрасываются друзья, любимки, «сейчас читаю», хотелки, фото (раньше новый аккаунт тянул друзей предыдущего) --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2723,11 +2723,16 @@ main,footer{position:relative;z-index:1}
   let pendingName = "";
   function createShelf(name){
     myName = name || "Моя полка";
-    myBooks = []; myQuote = ""; myStickers = [];          // новая полка — пустая
+    myBooks = []; myQuote = ""; myStickers = []; myReading = ""; myWishlist = []; myPhoto = "";   // новая полка — полностью пустая
+    savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
+    Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
+    view = "me";
     myCode = CLOUD() ? genCode() : "";
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote","");
       localStorage.setItem("polka_books","[]"); localStorage.setItem("polka_stickers","[]");
+      localStorage.setItem("polka_reading",""); localStorage.setItem("polka_wishlist","[]"); localStorage.removeItem("polka_photo");
+      localStorage.setItem("polka_friends","[]"); localStorage.setItem("polka_favfriends","[]");
       localStorage.setItem("polka_registered","1");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
