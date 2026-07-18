@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="170" />
+<meta name="app-version" content="171" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -699,7 +699,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v170 test: новая полка создаётся полностью чистой — сбрасываются друзья, любимки, «сейчас читаю», хотелки, фото (раньше новый аккаунт тянул друзей предыдущего) --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v171 test: КРИТ. ФИКС — новая полка теперь реально сохраняется в облако (bootLoaded=true в createShelf; раньше syncUp блокировался защитой → полка не писалась и при перезагрузке стиралась «Эта полка была удалена»). Коды доступа проверены: база активирует, 19 живых. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2728,6 +2728,7 @@ main,footer{position:relative;z-index:1}
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
     view = "me";
     myCode = CLOUD() ? genCode() : "";
+    bootLoaded = true;   // это свежесозданный уникальный код — в облаке его ещё нет, перезаписывать нечего, поэтому запись в облако разрешена (иначе новая полка не сохранится и при перезагрузке сотрётся)
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote","");
       localStorage.setItem("polka_books","[]"); localStorage.setItem("polka_stickers","[]");
