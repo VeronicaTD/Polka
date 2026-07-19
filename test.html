@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="172" />
+<meta name="app-version" content="173" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -325,6 +325,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 #bpCover .cat-cover{width:130px;height:190px;cursor:default}
 .bp-anno{margin-top:6px;font-size:15px;color:var(--ink);line-height:1.55;white-space:pre-wrap}
 #bpAnno{margin-top:18px}
+.bp-section{margin-top:22px}
+.ir-quote-who{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:normal}
+.q-openbook{cursor:pointer;border-radius:8px;transition:transform .12s}
+.q-openbook:active{transform:scale(.95)}
 .bp-actions{margin-top:20px;flex-wrap:wrap;gap:8px}
 /* вкладки книги */
 .bp-tabs{display:flex;gap:4px;margin:18px 0 4px;border-bottom:1px solid var(--line)}
@@ -699,7 +703,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v172 test: из хотелок «поставить на полку» теперь открывает полное окно книги (openInfo) — можно сразу менять всё И написать рецензию, как из полки (раньше открывалась урезанная форма без рецензии). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v173 test: у каждой книги теперь своя страница (обложка + аннотация + рецензии людей + их цитаты). Открывается: кнопкой «📖 страница книги» в окне книги, тапом по книге в разделе цитат (у себя и у друга). В каталоге — новый раздел «✨ Выбор читателей» (книги, на которые люди написали рецензии). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -732,7 +736,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><a id="readLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button></div>
+      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><a id="readLitres" class="read-link" target="_blank" rel="noopener">Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -959,6 +963,8 @@ main,footer{position:relative;z-index:1}
       <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
       <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
     </div>
+    <div id="bpQuotes" class="bp-section" style="display:none"></div>
+    <div id="bpReviews" class="bp-section"></div>
   </div>
 </div>
 
@@ -1687,18 +1693,21 @@ main,footer{position:relative;z-index:1}
   /* мои цитаты */
   const FP_STARS = `<svg class="d-star s1" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s2" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s3" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s4" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s5" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s6" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s7" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-spark k1" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k2" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k3" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k4" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k5" viewBox="0 0 100 100"><use href="#spark"/></svg>`;
   function openPage(id){ const el=$("#"+id); if(el && !el.querySelector(".fp-decor")){ const d=document.createElement("div"); d.className="fp-decor"; d.setAttribute("aria-hidden","true"); d.innerHTML=FP_STARS; el.insertBefore(d, el.firstChild); } el.classList.add("open"); }
+  let qpBooks = [];   // книги текущего раздела цитат — чтобы по тапу открыть страницу книги с её цитатами
   function openQuotesPage(forMe){
     const books = forMe ? myBooks : ((friend()&&friend().books)||[]);
+    qpBooks = books;
     const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
     $("#quotesTitle").textContent = forMe ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
-    $("#quotesSub").textContent = forMe ? "Цитаты, которые вы сохранили из своих книг." : `Любимые цитаты из книг — ${fn}.`;
+    $("#quotesSub").textContent = forMe ? "Цитаты, которые вы сохранили из своих книг. Нажми на книгу справа — откроется её страница." : `Любимые цитаты из книг — ${fn}. Нажми на книгу справа — откроется её страница.`;
     const items = [];
     books.forEach(b=> quotesOf(b).forEach(q=> items.push({q, b})));
     $("#quotesList").innerHTML = items.length
-      ? items.map(({q,b})=>`<div class="q-row"><span class="q-text">«${esc(q)}»</span><div class="q-side"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
+      ? items.map(({q,b})=>`<div class="q-row"><span class="q-text">«${esc(q)}»</span><div class="q-side q-openbook" data-t="${esc(b.t)}" data-a="${esc(b.a||"")}" title="открыть страницу книги"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
       : `<p class="mp">${forMe ? "Пока нет цитат. Откройте книгу и впишите любимую цитату из неё." : "У друга пока нет сохранённых цитат."}</p>`;
     openPage("quotesPage");
   }
+  { const _ql=$("#quotesList"); if(_ql) _ql.addEventListener("click", e=>{ const el=e.target.closest(".q-openbook"); if(!el) return; const t=el.dataset.t, a=el.dataset.a; const b=(qpBooks||[]).find(x=>bookKey(x.t,x.a)===bookKey(t,a)); openBookPage(t, a, b?quotesOf(b):[]); }); }
   $("#quotesBtn").addEventListener("click", ()=> openQuotesPage(false));   // нижняя кнопка — цитаты друга
 
   /* книжные хотелки — стоят как книги на полке */
@@ -1868,6 +1877,7 @@ main,footer{position:relative;z-index:1}
   $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
   $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
   $("#readWish").addEventListener("click", ()=>{ if(infoBook){ addToMyWish(infoBook.t, infoBook.a); closeModals(); } });
+  $("#infoBookPage").addEventListener("click", ()=>{ if(infoBook) openBookPage(infoBook.t, infoBook.a, quotesOf(infoBook)); });   // страница книги: аннотация, обложка, рецензии людей, их цитаты
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
@@ -2134,7 +2144,7 @@ main,footer{position:relative;z-index:1}
     list.forEach(rv=>{ if(!rv.title) return; const k=rv.book||bookKey(rv.title,rv.author||""); if(!seen.has(k)){ seen.add(k); books.push({t:rv.title,a:rv.author||""}); } });
     if(!books.length || !$("#catalogList")) return;
     const motif="💬";
-    const html = `<div class="cat-genre">💬 Книги с рецензиями читателей</div>
+    const html = `<div class="cat-genre">✨ Выбор читателей</div>
      <div class="cat-scroll"><button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>
      <div class="cat-row">` +
      books.map((b,i)=>`<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
@@ -2145,7 +2155,7 @@ main,footer{position:relative;z-index:1}
     $("#catalogList").insertAdjacentHTML("afterbegin", html);
     hydrateCovers($("#catalogList"));
   }
-  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); openPage("catalogPage"); });
+  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); injectReviewedBooks(); openPage("catalogPage"); });   // «Выбор читателей» — книги, на которые люди написали рецензии
   $("#catalogList").addEventListener("click", e=>{
     const ar=e.target.closest(".cat-arrow");
     if(ar){ const row=ar.parentElement.querySelector(".cat-row"); if(row) row.scrollBy({left:(+ar.dataset.dir)*row.clientWidth*0.8, behavior:"smooth"}); return; }
@@ -2164,7 +2174,7 @@ main,footer{position:relative;z-index:1}
     $("#bpPaneAnno").hidden = !anno;
     $("#bpPaneRevs").hidden = anno;
   }
-  function openBookPage(t,a){
+  function openBookPage(t,a,seedQuotes){
     bpBook={t,a};
     const motif="📖", bg=COLORS[(t.length)%COLORS.length];
     $("#bpCover").outerHTML = `<div id="bpCover">${coverHTML({t,a}, motif, bg)}</div>`;
@@ -2175,19 +2185,38 @@ main,footer{position:relative;z-index:1}
     ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки
     const anno = ANNO[t+"|"+a] || "";                    // авторская аннотация (не Википедия)
     $("#bpAnno").innerHTML = anno ? `<div class="bp-anno">${esc(anno)}</div>` : `<p class="mp">Аннотация скоро появится 🌱</p>`;
+    if($("#bpQuotes")){ $("#bpQuotes").style.display="none"; $("#bpQuotes").innerHTML=""; }
+    if($("#bpReviews")) $("#bpReviews").innerHTML = loaderBox("Смотрю, что пишут читатели…");
     openPage("bookPage");
+    loadBookExtras(t, a, seedQuotes);                    // рецензии людей + их цитаты
   }
   const stillOn=(t,a)=> bpBook && bookKey(bpBook.t,bpBook.a)===bookKey(t,a);
-  async function loadReviews(t,a){
+  // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
+  async function loadBookExtras(t,a,seedQuotes){
+    const revBox=$("#bpReviews"), qBox=$("#bpQuotes");
     let list=[];
     try{ if(CLOUD()) list = await sbFetchReviews(bookKey(t,a)); }catch(e){ list=[]; }
     if(!stillOn(t,a)) return;
-    if(!list.length){ $("#bpReviews").innerHTML = `<div class="loader-box"><p class="mp">На эту книгу пока нет рецензий ✍️</p>${BOOK_LOADER}</div>`; return; }
-    $("#bpReviews").innerHTML = list.map(rv=>{
-      const nm = rv.name||"Читатель", ph=rv.photo||"";
-      const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
-      return `<div class="rev-item"><div class="rev-av${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}" data-name="${esc(nm)}"`:""}>${av}</div><div class="rev-body"><div class="rev-name${rv.code?" rev-link":""}"${rv.code?` data-code="${esc(rv.code)}" data-name="${esc(nm)}"`:""}>${esc(nm)}${rv.code?" →":""}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
-    }).join("");
+    // --- рецензии ---
+    if(revBox){
+      if(!list.length){ revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div><p class="mp">Пока никто не написал рецензию на эту книгу ✍️</p>`; }
+      else revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div>` + list.map(rv=>{
+        const nm = rv.name||"Читатель", ph=rv.photo||"";
+        const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
+        const link = rv.code ? ` data-code="${esc(rv.code)}" data-name="${esc(nm)}"` : "";
+        return `<div class="rev-item"><div class="rev-av${rv.code?" rev-link":""}"${link}>${av}</div><div class="rev-body"><div class="rev-name${rv.code?" rev-link":""}"${link}>${esc(nm)}${rv.code?" →":""}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
+      }).join("");
+    }
+    // --- цитаты: из книги, с которой открыли + всё, что читатели прикрепили к рецензиям ---
+    const seen=new Set(), quotes=[];
+    const push=(q,who)=>{ q=String(q||"").trim(); if(!q) return; const k=q.toLowerCase(); if(seen.has(k)) return; seen.add(k); quotes.push({q,who}); };
+    (Array.isArray(seedQuotes)?seedQuotes:[]).forEach(q=>push(q,""));
+    list.forEach(rv=>{ let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } (arr||[]).forEach(q=>push(q, rv.name||"")); });
+    if(qBox){
+      if(!quotes.length){ qBox.style.display="none"; qBox.innerHTML=""; }
+      else { qBox.style.display=""; qBox.innerHTML = `<div class="ir-label">Любимые цитаты читателей</div>` +
+        quotes.map(({q,who})=>`<div class="ir-quote">«${esc(q)}»${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join(""); }
+    }
   }
   let myReviews={}; try{ myReviews=JSON.parse(localStorage.getItem("polka_myreviews")||"{}"); }catch(e){ myReviews={}; }
   const saveMyReviews=()=>{ try{ localStorage.setItem("polka_myreviews", JSON.stringify(myReviews)); }catch(e){} };
