@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="171" />
+<meta name="app-version" content="172" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -699,7 +699,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v171 test: КРИТ. ФИКС — новая полка теперь реально сохраняется в облако (bootLoaded=true в createShelf; раньше syncUp блокировался защитой → полка не писалась и при перезагрузке стиралась «Эта полка была удалена»). Коды доступа проверены: база активирует, 19 живых. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v172 test: из хотелок «поставить на полку» теперь открывает полное окно книги (openInfo) — можно сразу менять всё И написать рецензию, как из полки (раньше открывалась урезанная форма без рецензии). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1840,8 +1840,21 @@ main,footer{position:relative;z-index:1}
   $("#waClose").addEventListener("click", closeWishAct);
   $("#waBack").addEventListener("click", closeWishAct);
   $("#waShelf").addEventListener("click", ()=>{
-    const i=waIdx, w=waBook; closeWishAct(); closeModals();
-    if(w){ pendingWish=i; openAdd({t:w.t, a:w.a}); }
+    if(!requirePaid()) return;
+    const w=waBook; closeWishAct(); closeModals();
+    if(!w) return;
+    view="me";
+    // если книга уже на полке — просто открыть её; иначе поставить и открыть в полном окне (с рецензией, как из полки)
+    let nb = myBooks.find(b=>bookKey(b.t,b.a)===bookKey(w.t,w.a));
+    if(!nb){
+      nb = { t:w.t, a:w.a||"неизвестный автор", g:"Проза", c:COLORS[myBooks.length%COLORS.length], fav:false, r:0, note:"", qt:[] };
+      myBooks.push(nb);
+      const wi = myWishlist.findIndex(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a));
+      if(wi>-1) myWishlist.splice(wi,1);
+      saveMine(); saveWish(); syncUp();
+    }
+    renderAll();
+    openInfo(myBooks.indexOf(nb));   // полное окно: можно менять всё И написать рецензию
   });
   // добавить книгу друга в свои хотелки (можно и находясь в гостях)
   function addToMyWish(t,a){
