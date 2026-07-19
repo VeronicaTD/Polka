@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="178" />
+<meta name="app-version" content="179" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v178 test: карусель цитат — убрал подсказку «листай»; на телефоне свайп как у книг, на компьютере стрелки ‹ › (min-width 761px). Убрал scroll-snap (мешал стрелкам), прокрутка стрелок мгновенным scrollLeft. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v179 test: подключил ключ Google Books (ограничен доменом veronicatd.github.io) — аннотации/обложки грузятся стабильно, без лимитов 429. Ключ проверен: HTTP 200 с реферером сайта, чужие рефереры блокируются. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2261,6 +2261,7 @@ main,footer{position:relative;z-index:1}
   // описание и обложка книги из Google Books (кэшируем в localStorage, чтобы не дёргать каждый раз)
   // ВАЖНО: Википедию НЕ используем — она по названию-омониму отдаёт статью про слово/термин («бойфренд» → про англицизм). Google Books ищет только по книгам.
   let bookInfoCache={}; try{ bookInfoCache=JSON.parse(localStorage.getItem("polka_bookinfo")||"{}"); }catch(e){ bookInfoCache={}; }
+  const GBOOKS_KEY = "AIzaSyAI8ETBvBRmjsgbSG_6Q5hPG1aNCp3nMRM";   // ключ Google Books (ограничен доменом veronicatd.github.io — работает только с сайта Polka)
   const normTitle = s => String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9 ]/gi," ").replace(/\s+/g," ").trim();
   async function fetchBookInfo(t,a){
     const key=t+"|"+(a||"");
@@ -2269,7 +2270,7 @@ main,footer{position:relative;z-index:1}
     const ot=normTitle(t);
     try{
       const q=encodeURIComponent(`intitle:${t}`+(a?` inauthor:${a}`:""));
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&country=RU`);
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
       if(r.ok){ const d=await r.json(); const items=d.items||[];
         for(const it of items){ const v=it.volumeInfo; if(!v) continue;
           const rt=normTitle(v.title);
