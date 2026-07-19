@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="175" />
+<meta name="app-version" content="176" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -332,6 +332,14 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .bpq-card{flex:0 0 82%;max-width:340px;scroll-snap-align:center;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
 .bpq-card .bpq-q{font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;line-height:1.5;color:var(--ink);white-space:pre-wrap}
 .bpq-hint{text-align:center;font-size:11px;letter-spacing:.08em;color:var(--ink-soft);margin-top:6px;text-transform:uppercase}
+.bp-rev{background:#fffdf9;border:1px solid var(--line);border-radius:16px;padding:15px 17px;margin-bottom:13px;box-shadow:var(--shadow)}
+.bp-rev-top{display:flex;align-items:center;gap:11px;margin-bottom:9px}
+.bp-rev-top .rev-av{flex:0 0 38px;width:38px;height:38px}
+.bp-rev-top .rev-name{margin:0;font-size:14px}
+.bp-revtext{font-size:14.5px;line-height:1.6;color:#3a2e22;white-space:pre-wrap}
+.bp-clamp.clamped{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.bp-more{margin-top:8px;background:none;border:none;color:var(--accent);font-weight:600;font-size:13.5px;cursor:pointer;padding:2px 0;font-family:inherit}
+.bp-more:active{opacity:.6}
 .ir-quote-who{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:normal}
 .q-openbook{cursor:pointer;border-radius:8px;transition:transform .12s}
 .q-openbook:active{transform:scale(.95)}
@@ -709,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v175 test: «Выбор читателей» теперь = ВСЕ книги, что кто-либо добавлял на полку или рецензировал (собираются со всех полок в облаке, а не только с рецензией). Цитаты на странице книги — карусель со ВСЕМИ цитатами, что люди выделяли (полки + рецензии), рецензии идут списком ниже. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v176 test: «Выбор читателей» перенесён в КОНЕЦ подборок. В хотелки можно добавлять с чужой полки (убрал ложное «вернись на свою полку»). Рецензии на странице книги — на белом фоне, свёрнуты с «читать дальше». Аннотации подгружаются из Википедии (точная статья по названию → поиск), обложка — Википедия/Google Books; кэшируются. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2143,7 +2151,7 @@ main,footer{position:relative;z-index:1}
     hydrateCovers($("#catalogList"));
   }
   function addCatToWish(t,a){
-    if(!isMe()){ toast("Добавлять можно только на своей полке"); return; }
+    // хотелки всегда МОИ — добавлять можно, даже когда смотришь чужую полку
     if(myBooks.some(b=>bookKey(b.t,b.a)===bookKey(t,a))){ toast("Эта книга уже на твоей полке 📚"); return; }
     if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в хотелках 📌"); return; }
     myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в хотелки 📌");
@@ -2194,10 +2202,10 @@ main,footer{position:relative;z-index:1}
         <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
         <div class="cat-acts"><button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button></div></div>`).join("")
      + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div></div>`;
-    list.insertAdjacentHTML("afterbegin", html);
+    list.insertAdjacentHTML("beforeend", html);   // в КОНЕЦ подборок
     hydrateCovers(list);
   }
-  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); injectReviewedBooks(); openPage("catalogPage"); });   // «Выбор читателей» — все книги, что добавляли читатели
+  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); injectReviewedBooks(); openPage("catalogPage"); });   // «Выбор читателей» — все книги, что добавляли читатели (в конце)
   $("#catalogList").addEventListener("click", e=>{
     const ar=e.target.closest(".cat-arrow");
     if(ar){ const row=ar.parentElement.querySelector(".cat-row"); if(row) row.scrollBy({left:(+ar.dataset.dir)*row.clientWidth*0.8, behavior:"smooth"}); return; }
@@ -2224,9 +2232,20 @@ main,footer{position:relative;z-index:1}
     const bq=encodeURIComponent(t+" "+(a||""));
     $("#bpLitres").href="https://www.litres.ru/search/?q="+bq;
     $("#bpBookmate").href="https://books.yandex.ru/search?query="+bq;
-    ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки
+    ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки (если есть свой ID)
     const anno = ANNO[t+"|"+a] || "";                    // авторская аннотация (не Википедия)
-    $("#bpAnno").innerHTML = anno ? `<div class="bp-anno">${esc(anno)}</div>` : `<p class="mp">Аннотация скоро появится 🌱</p>`;
+    if(anno){ $("#bpAnno").innerHTML = renderAnno(anno); }
+    else {
+      $("#bpAnno").innerHTML = `<p class="mp">Загружаю описание…</p>`;
+      fetchBookInfo(t,a).then(info=>{
+        if(!stillOn(t,a)) return;
+        $("#bpAnno").innerHTML = info.desc ? renderAnno(info.desc) : `<p class="mp">Описание для этой книги не нашлось 🌱</p>`;
+        if(info.img && !GBID[t+"|"+a]){       // обложка из Google Books, если своей нет
+          const cov=$("#bpCover .cat-cover");
+          if(cov && !cov.querySelector(".cc-img")){ const im=new Image(); im.className="cc-img"; im.alt=""; im.onload=()=>im.classList.add("loaded"); im.onerror=()=>im.remove(); im.src=String(info.img).replace(/^http:/,"https:"); cov.appendChild(im); }
+        }
+      });
+    }
     if($("#bpQuotes")){ $("#bpQuotes").style.display="none"; $("#bpQuotes").innerHTML=""; }
     if($("#bpReviews")) $("#bpReviews").innerHTML = loaderBox("Смотрю, что пишут читатели…");
     setBpWishState();                                    // «в хотелки» / «в хотелках» / скрыть, если уже на полке
@@ -2234,6 +2253,41 @@ main,footer{position:relative;z-index:1}
     loadBookExtras(t, a, seedQuotes);                    // рецензии людей + их цитаты
   }
   const stillOn=(t,a)=> bpBook && bookKey(bpBook.t,bpBook.a)===bookKey(t,a);
+  // аннотация: длинную сворачиваем с «читать дальше»
+  function renderAnno(text){
+    const s=String(text||"").trim(); const long=s.length>320;
+    return `<div class="bp-anno${long?" bp-clamp clamped":""}">${esc(s)}</div>`+(long?`<button type="button" class="bp-more">читать дальше</button>`:``);
+  }
+  // описание и обложка книги из Google Books (кэшируем в localStorage, чтобы не дёргать каждый раз)
+  let bookInfoCache={}; try{ bookInfoCache=JSON.parse(localStorage.getItem("polka_bookinfo")||"{}"); }catch(e){ bookInfoCache={}; }
+  async function fetchBookInfo(t,a){
+    const key=t+"|"+(a||"");
+    if(bookInfoCache[key]) return bookInfoCache[key];
+    const info={desc:"", img:""};
+    // 1) Википедия: точная статья по НАЗВАНИЮ — обычно это сама книга (а не автор)
+    try{
+      const r=await fetch('https://ru.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(t));
+      if(r.ok){ const d=await r.json(); if(d && d.type==="standard" && d.extract){ info.desc=String(d.extract).replace(/\s+/g," ").trim(); if(d.thumbnail&&d.thumbnail.source) info.img=d.thumbnail.source; } }
+    }catch(e){}
+    // 2) не нашли — поиск по «название + автор», берём первую статью
+    if(!info.desc){ try{
+      const s=encodeURIComponent(`${t} ${a||""}`.trim());
+      const r=await fetch(`https://ru.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${s}&gsrlimit=1&prop=extracts|pageimages&exintro&explaintext&piprop=thumbnail&pithumbsize=280&format=json&origin=*`);
+      if(r.ok){ const d=await r.json(); const pages=d.query&&d.query.pages; if(pages){ const p=pages[Object.keys(pages)[0]];
+        if(p){ if(p.extract) info.desc=String(p.extract).replace(/\s+/g," ").trim(); if(p.thumbnail&&p.thumbnail.source&&!info.img) info.img=p.thumbnail.source; } } }
+    }catch(e){} }
+    // 3) Google Books — запасной (обложка/описание, если Википедия не дала; может упереться в лимит — тогда пропускаем)
+    if(!info.desc || !info.img){ try{
+      const q=encodeURIComponent(`intitle:${t}`+(a?` inauthor:${a}`:""));
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&country=RU`);
+      if(r.ok){ const d=await r.json(); const v=d.items&&d.items[0]&&d.items[0].volumeInfo; if(v){
+        if(!info.desc && v.description) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+        if(!info.img && v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||""; } }
+    }catch(e){} }
+    if(info.desc || info.img) bookInfoCache[key]=info;   // не кэшируем пустой ответ (при временном сбое можно попробовать снова)
+    try{ localStorage.setItem("polka_bookinfo", JSON.stringify(bookInfoCache)); }catch(e){}
+    return info;
+  }
   // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
   async function loadBookExtras(t,a,seedQuotes){
     const revBox=$("#bpReviews"), qBox=$("#bpQuotes"), bk=bookKey(t,a);
@@ -2247,7 +2301,8 @@ main,footer{position:relative;z-index:1}
         const nm = rv.name||"Читатель", ph=rv.photo||"";
         const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
         const link = rv.code ? ` data-code="${esc(rv.code)}" data-name="${esc(nm)}"` : "";
-        return `<div class="rev-item"><div class="rev-av${rv.code?" rev-link":""}"${link}>${av}</div><div class="rev-body"><div class="rev-name${rv.code?" rev-link":""}"${link}>${esc(nm)}${rv.code?" →":""}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
+        const txt = rv.text||""; const long = txt.length>260;   // длинную рецензию сворачиваем
+        return `<div class="bp-rev"><div class="bp-rev-top"><div class="rev-av${rv.code?" rev-link":""}"${link}>${av}</div><div class="rev-name${rv.code?" rev-link":""}"${link}>${esc(nm)}${rv.code?" →":""}</div></div><div class="bp-revtext${long?" bp-clamp clamped":""}">${esc(txt)}</div>${long?`<button type="button" class="bp-more">читать дальше</button>`:``}</div>`;
       }).join("");
     }
     // --- цитаты: ВСЕ, что люди выделяли к этой книге (со всех полок) + прикреплённые к рецензиям + текущая книга ---
@@ -2438,6 +2493,8 @@ main,footer{position:relative;z-index:1}
     }).join("");
   }
   { const _bpr=$("#bpReviews"); if(_bpr) _bpr.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
+  // «читать дальше» — раскрыть свёрнутую аннотацию/рецензию
+  { const _bp=$("#bookPage"); if(_bp) _bp.addEventListener("click", e=>{ const m=e.target.closest(".bp-more"); if(!m) return; const cl=m.parentElement.querySelector(".clamped"); if(cl){ cl.classList.remove("clamped"); m.remove(); } }); }
   { const _rf=$("#reviewsFeed"); if(_rf) _rf.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
   // состояние кнопки «в хотелки» на странице книги: на полке → нет кнопки; в хотелках → «в хотелках»; иначе → можно добавить
   function setBpWishState(){
