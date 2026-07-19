@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="174" />
+<meta name="app-version" content="175" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -327,6 +327,11 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 #bpAnno{margin-top:18px}
 .bp-section{margin-top:22px}
 .read-link.done{opacity:.85;background:var(--accent);color:#fff;border-color:var(--accent);cursor:default}
+.bpq-carousel{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.bpq-carousel::-webkit-scrollbar{height:0;display:none}
+.bpq-card{flex:0 0 82%;max-width:340px;scroll-snap-align:center;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.bpq-card .bpq-q{font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;line-height:1.5;color:var(--ink);white-space:pre-wrap}
+.bpq-hint{text-align:center;font-size:11px;letter-spacing:.08em;color:var(--ink-soft);margin-top:6px;text-transform:uppercase}
 .ir-quote-who{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:normal}
 .q-openbook{cursor:pointer;border-radius:8px;transition:transform .12s}
 .q-openbook:active{transform:scale(.95)}
@@ -704,7 +709,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v174 test: кнопка «в хотелки» на странице книги теперь даёт отклик — toast «Добавлено в хотелки» (был скрыт за страницей: z-index 99→9999) и кнопка меняется на «✓ в хотелках». Если книга уже на полке — кнопки нет; если уже в хотелках — «✓ в хотелках» (неактивна). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v175 test: «Выбор читателей» теперь = ВСЕ книги, что кто-либо добавлял на полку или рецензировал (собираются со всех полок в облаке, а не только с рецензией). Цитаты на странице книги — карусель со ВСЕМИ цитатами, что люди выделяли (полки + рецензии), рецензии идут списком ниже. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1082,6 +1087,11 @@ main,footer{position:relative;z-index:1}
   }
   async function sbFetchAllReviews(){
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?select=*&order=created_at.desc&limit=100",{headers:SB_H()});
+    if(!r.ok) return [];
+    const a = await r.json(); return Array.isArray(a)?a:[];
+  }
+  async function sbFetchAllShelves(){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/shelves?select=code,name,data&limit=500",{headers:SB_H()});
     if(!r.ok) return [];
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
@@ -2138,25 +2148,56 @@ main,footer{position:relative;z-index:1}
     if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в хотелках 📌"); return; }
     myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в хотелки 📌");
   }
-  // книги, на которые читатели написали рецензии — попадают в подборки автоматически
+  // ОБЩИЙ ИНДЕКС: собираем все книги и все цитаты со ВСЕХ полок в облаке (кэшируем на сессию)
+  let readersData = null, readersDataPromise = null;
+  async function loadReadersData(force){
+    if(readersData && !force) return readersData;
+    if(readersDataPromise && !force) return readersDataPromise;
+    readersDataPromise = (async()=>{
+      let shelves=[], reviews=[];
+      try{ if(CLOUD()){ [shelves, reviews] = await Promise.all([ sbFetchAllShelves().catch(()=>[]), sbFetchAllReviews().catch(()=>[]) ]); } }catch(e){}
+      const bmap=new Map(), qmap={};
+      const addBook=(t,a,who,qs)=>{
+        if(!t) return;
+        const k=bookKey(t, a||"");
+        const e=bmap.get(k)||{t, a:a||"", count:0}; e.count++; bmap.set(k,e);
+        (qs||[]).forEach(q=>{ (qmap[k]||(qmap[k]=[])).push({q, who}); });
+      };
+      // книги + цитаты со всех полок
+      shelves.forEach(row=>{
+        if(!row || !row.data) return;
+        let p; try{ p=decodeCode(row.data); }catch(e){ return; }
+        const who=(p&&p.n)||row.name||"";
+        ((p&&p.b)||[]).forEach(b=>{ if(b && b.t) addBook(b.t, b.a, who, quotesOf(b)); });
+      });
+      // книги + цитаты из рецензий (на случай, если книги уже нет на полке)
+      reviews.forEach(rv=>{ if(!rv || !rv.title) return; let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } addBook(rv.title, rv.author||"", rv.name||"", arr); });
+      const books=[...bmap.values()].sort((x,y)=> y.count-x.count || String(x.t).localeCompare(String(y.t)));
+      readersData={ books, quotes:qmap };
+      return readersData;
+    })();
+    return readersDataPromise;
+  }
+  // «Выбор читателей» — ВСЕ книги, которые кто-либо когда-либо добавлял на полку
   async function injectReviewedBooks(){
-    let list=[]; try{ if(CLOUD()) list=await sbFetchAllReviews(); }catch(e){ list=[]; }
-    const seen=new Set(), books=[];
-    list.forEach(rv=>{ if(!rv.title) return; const k=rv.book||bookKey(rv.title,rv.author||""); if(!seen.has(k)){ seen.add(k); books.push({t:rv.title,a:rv.author||""}); } });
-    if(!books.length || !$("#catalogList")) return;
-    const motif="💬";
-    const html = `<div class="cat-genre">✨ Выбор читателей</div>
+    const data = await loadReadersData();
+    const books = (data.books||[]).slice(0,120);
+    const list=$("#catalogList"); if(!list) return;
+    list.querySelectorAll(".rc-block").forEach(x=>x.remove());   // без дублей при переоткрытии
+    if(!books.length) return;
+    const motif="✨";
+    const html = `<div class="rc-block"><div class="cat-genre">✨ Выбор читателей</div>
      <div class="cat-scroll"><button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>
      <div class="cat-row">` +
      books.map((b,i)=>`<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
         ${coverHTML(b, motif, COLORS[i%COLORS.length])}
         <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
         <div class="cat-acts"><button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button></div></div>`).join("")
-     + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div>`;
-    $("#catalogList").insertAdjacentHTML("afterbegin", html);
-    hydrateCovers($("#catalogList"));
+     + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div></div>`;
+    list.insertAdjacentHTML("afterbegin", html);
+    hydrateCovers(list);
   }
-  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); injectReviewedBooks(); openPage("catalogPage"); });   // «Выбор читателей» — книги, на которые люди написали рецензии
+  $("#catalogBtn").addEventListener("click", ()=>{ renderCatalog(); injectReviewedBooks(); openPage("catalogPage"); });   // «Выбор читателей» — все книги, что добавляли читатели
   $("#catalogList").addEventListener("click", e=>{
     const ar=e.target.closest(".cat-arrow");
     if(ar){ const row=ar.parentElement.querySelector(".cat-row"); if(row) row.scrollBy({left:(+ar.dataset.dir)*row.clientWidth*0.8, behavior:"smooth"}); return; }
@@ -2195,11 +2236,11 @@ main,footer{position:relative;z-index:1}
   const stillOn=(t,a)=> bpBook && bookKey(bpBook.t,bpBook.a)===bookKey(t,a);
   // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
   async function loadBookExtras(t,a,seedQuotes){
-    const revBox=$("#bpReviews"), qBox=$("#bpQuotes");
-    let list=[];
-    try{ if(CLOUD()) list = await sbFetchReviews(bookKey(t,a)); }catch(e){ list=[]; }
+    const revBox=$("#bpReviews"), qBox=$("#bpQuotes"), bk=bookKey(t,a);
+    let list=[], rdata={books:[],quotes:{}};
+    try{ if(CLOUD()){ const [rv,rd] = await Promise.all([ sbFetchReviews(bk).catch(()=>[]), loadReadersData().catch(()=>({books:[],quotes:{}})) ]); list=rv||[]; rdata=rd||{books:[],quotes:{}}; } }catch(e){}
     if(!stillOn(t,a)) return;
-    // --- рецензии ---
+    // --- рецензии (списком ниже) ---
     if(revBox){
       if(!list.length){ revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div><p class="mp">Пока никто не написал рецензию на эту книгу ✍️</p>`; }
       else revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div>` + list.map(rv=>{
@@ -2209,15 +2250,17 @@ main,footer{position:relative;z-index:1}
         return `<div class="rev-item"><div class="rev-av${rv.code?" rev-link":""}"${link}>${av}</div><div class="rev-body"><div class="rev-name${rv.code?" rev-link":""}"${link}>${esc(nm)}${rv.code?" →":""}</div><div class="rev-text">${esc(rv.text||"")}</div></div></div>`;
       }).join("");
     }
-    // --- цитаты: из книги, с которой открыли + всё, что читатели прикрепили к рецензиям ---
+    // --- цитаты: ВСЕ, что люди выделяли к этой книге (со всех полок) + прикреплённые к рецензиям + текущая книга ---
     const seen=new Set(), quotes=[];
     const push=(q,who)=>{ q=String(q||"").trim(); if(!q) return; const k=q.toLowerCase(); if(seen.has(k)) return; seen.add(k); quotes.push({q,who}); };
     (Array.isArray(seedQuotes)?seedQuotes:[]).forEach(q=>push(q,""));
+    ((rdata.quotes&&rdata.quotes[bk])||[]).forEach(o=>push(o.q, o.who));
     list.forEach(rv=>{ let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } (arr||[]).forEach(q=>push(q, rv.name||"")); });
     if(qBox){
       if(!quotes.length){ qBox.style.display="none"; qBox.innerHTML=""; }
-      else { qBox.style.display=""; qBox.innerHTML = `<div class="ir-label">Любимые цитаты читателей</div>` +
-        quotes.map(({q,who})=>`<div class="ir-quote">«${esc(q)}»${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join(""); }
+      else { qBox.style.display=""; qBox.innerHTML = `<div class="ir-label">Цитаты читателей</div>`+
+        `<div class="bpq-carousel">`+ quotes.slice(0,60).map(({q,who})=>`<div class="bpq-card"><span class="bpq-q">«${esc(q)}»</span>${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join("") +`</div>`+
+        (quotes.length>1?`<div class="bpq-hint">← листай →</div>`:``); }
     }
   }
   let myReviews={}; try{ myReviews=JSON.parse(localStorage.getItem("polka_myreviews")||"{}"); }catch(e){ myReviews={}; }
