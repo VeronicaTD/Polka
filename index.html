@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="173" />
+<meta name="app-version" content="174" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -326,6 +326,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .bp-anno{margin-top:6px;font-size:15px;color:var(--ink);line-height:1.55;white-space:pre-wrap}
 #bpAnno{margin-top:18px}
 .bp-section{margin-top:22px}
+.read-link.done{opacity:.85;background:var(--accent);color:#fff;border-color:var(--accent);cursor:default}
 .ir-quote-who{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:normal}
 .q-openbook{cursor:pointer;border-radius:8px;transition:transform .12s}
 .q-openbook:active{transform:scale(.95)}
@@ -703,7 +704,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v173 test: у каждой книги теперь своя страница (обложка + аннотация + рецензии людей + их цитаты). Открывается: кнопкой «📖 страница книги» в окне книги, тапом по книге в разделе цитат (у себя и у друга). В каталоге — новый раздел «✨ Выбор читателей» (книги, на которые люди написали рецензии). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v174 test: кнопка «в хотелки» на странице книги теперь даёт отклик — toast «Добавлено в хотелки» (был скрыт за страницей: z-index 99→9999) и кнопка меняется на «✓ в хотелках». Если книга уже на полке — кнопки нет; если уже в хотелках — «✓ в хотелках» (неактивна). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2187,6 +2188,7 @@ main,footer{position:relative;z-index:1}
     $("#bpAnno").innerHTML = anno ? `<div class="bp-anno">${esc(anno)}</div>` : `<p class="mp">Аннотация скоро появится 🌱</p>`;
     if($("#bpQuotes")){ $("#bpQuotes").style.display="none"; $("#bpQuotes").innerHTML=""; }
     if($("#bpReviews")) $("#bpReviews").innerHTML = loaderBox("Смотрю, что пишут читатели…");
+    setBpWishState();                                    // «в хотелки» / «в хотелках» / скрыть, если уже на полке
     openPage("bookPage");
     loadBookExtras(t, a, seedQuotes);                    // рецензии людей + их цитаты
   }
@@ -2394,7 +2396,24 @@ main,footer{position:relative;z-index:1}
   }
   { const _bpr=$("#bpReviews"); if(_bpr) _bpr.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
   { const _rf=$("#reviewsFeed"); if(_rf) _rf.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
-  $("#bpWish").addEventListener("click", ()=>{ if(bpBook) addCatToWish(bpBook.t, bpBook.a); });
+  // состояние кнопки «в хотелки» на странице книги: на полке → нет кнопки; в хотелках → «в хотелках»; иначе → можно добавить
+  function setBpWishState(){
+    const btn=$("#bpWish"); if(!btn || !bpBook) return;
+    const onShelf = myBooks.some(b=>bookKey(b.t,b.a)===bookKey(bpBook.t,bpBook.a));
+    const inWish  = myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(bpBook.t,bpBook.a));
+    if(onShelf){ btn.style.display="none"; return; }        // уже на полке — кнопки нет
+    btn.style.display="";
+    if(inWish){ btn.textContent="✓ в хотелках"; btn.classList.add("done"); btn.disabled=true; }
+    else { btn.textContent="📌 в хотелки"; btn.classList.remove("done"); btn.disabled=false; }
+  }
+  $("#bpWish").addEventListener("click", ()=>{
+    if(!bpBook || $("#bpWish").disabled) return;
+    if(myBooks.some(b=>bookKey(b.t,b.a)===bookKey(bpBook.t,bpBook.a))){ setBpWishState(); return; }
+    if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(bpBook.t,bpBook.a))){ setBpWishState(); return; }
+    myWishlist.push({t:bpBook.t, a:bpBook.a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish();
+    toast("Добавлено в хотелки 📌");
+    setBpWishState();   // кнопка становится «в хотелках»
+  });
   $("#bpBookmate").addEventListener("click", ()=>{ if(bpBook) copyForSearch(bpBook.t); });
   $("#bpBack").addEventListener("click", ()=>{ $("#bookPage").classList.remove("open"); });   // назад — только закрыть книгу, подборки остаются
 
@@ -2741,7 +2760,7 @@ main,footer{position:relative;z-index:1}
   }
   function toast(msg){
     const el=document.createElement("div"); el.textContent=msg;
-    el.style.cssText="position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:88vw;box-sizing:border-box;background:var(--ink);color:var(--paper);padding:13px 20px;border-radius:20px;z-index:99;font-weight:600;font-size:14px;line-height:1.35;text-align:center;white-space:normal;box-shadow:var(--shadow)";
+    el.style.cssText="position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:88vw;box-sizing:border-box;background:var(--ink);color:var(--paper);padding:13px 20px;border-radius:20px;z-index:9999;font-weight:600;font-size:14px;line-height:1.35;text-align:center;white-space:normal;box-shadow:var(--shadow)";
     document.body.appendChild(el);
     if(!reduce) el.animate([{opacity:0,transform:"translate(-50%,12px)"},{opacity:1,transform:"translate(-50%,0)"}],{duration:250});
     setTimeout(()=>el.remove(),2600);
