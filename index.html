@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="176" />
+<meta name="app-version" content="177" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v176 test: «Выбор читателей» перенесён в КОНЕЦ подборок. В хотелки можно добавлять с чужой полки (убрал ложное «вернись на свою полку»). Рецензии на странице книги — на белом фоне, свёрнуты с «читать дальше». Аннотации подгружаются из Википедии (точная статья по названию → поиск), обложка — Википедия/Google Books; кэшируются. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v177 test: УБРАЛ Википедию из аннотаций (она по названию-омониму отдавала статью про слово, напр. «бойфренд» → про англицизм). Теперь только Google Books (база книг) + проверка совпадения названия; если не нашлось — чистая заглушка, без мусора. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2259,32 +2259,28 @@ main,footer{position:relative;z-index:1}
     return `<div class="bp-anno${long?" bp-clamp clamped":""}">${esc(s)}</div>`+(long?`<button type="button" class="bp-more">читать дальше</button>`:``);
   }
   // описание и обложка книги из Google Books (кэшируем в localStorage, чтобы не дёргать каждый раз)
+  // ВАЖНО: Википедию НЕ используем — она по названию-омониму отдаёт статью про слово/термин («бойфренд» → про англицизм). Google Books ищет только по книгам.
   let bookInfoCache={}; try{ bookInfoCache=JSON.parse(localStorage.getItem("polka_bookinfo")||"{}"); }catch(e){ bookInfoCache={}; }
+  const normTitle = s => String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9 ]/gi," ").replace(/\s+/g," ").trim();
   async function fetchBookInfo(t,a){
     const key=t+"|"+(a||"");
     if(bookInfoCache[key]) return bookInfoCache[key];
     const info={desc:"", img:""};
-    // 1) Википедия: точная статья по НАЗВАНИЮ — обычно это сама книга (а не автор)
+    const ot=normTitle(t);
     try{
-      const r=await fetch('https://ru.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(t));
-      if(r.ok){ const d=await r.json(); if(d && d.type==="standard" && d.extract){ info.desc=String(d.extract).replace(/\s+/g," ").trim(); if(d.thumbnail&&d.thumbnail.source) info.img=d.thumbnail.source; } }
-    }catch(e){}
-    // 2) не нашли — поиск по «название + автор», берём первую статью
-    if(!info.desc){ try{
-      const s=encodeURIComponent(`${t} ${a||""}`.trim());
-      const r=await fetch(`https://ru.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${s}&gsrlimit=1&prop=extracts|pageimages&exintro&explaintext&piprop=thumbnail&pithumbsize=280&format=json&origin=*`);
-      if(r.ok){ const d=await r.json(); const pages=d.query&&d.query.pages; if(pages){ const p=pages[Object.keys(pages)[0]];
-        if(p){ if(p.extract) info.desc=String(p.extract).replace(/\s+/g," ").trim(); if(p.thumbnail&&p.thumbnail.source&&!info.img) info.img=p.thumbnail.source; } } }
-    }catch(e){} }
-    // 3) Google Books — запасной (обложка/описание, если Википедия не дала; может упереться в лимит — тогда пропускаем)
-    if(!info.desc || !info.img){ try{
       const q=encodeURIComponent(`intitle:${t}`+(a?` inauthor:${a}`:""));
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&country=RU`);
-      if(r.ok){ const d=await r.json(); const v=d.items&&d.items[0]&&d.items[0].volumeInfo; if(v){
-        if(!info.desc && v.description) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
-        if(!info.img && v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||""; } }
-    }catch(e){} }
-    if(info.desc || info.img) bookInfoCache[key]=info;   // не кэшируем пустой ответ (при временном сбое можно попробовать снова)
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&country=RU`);
+      if(r.ok){ const d=await r.json(); const items=d.items||[];
+        for(const it of items){ const v=it.volumeInfo; if(!v) continue;
+          const rt=normTitle(v.title);
+          if(!(rt && ot && (rt===ot || rt.includes(ot) || ot.includes(rt)))) continue;   // берём только если НАЗВАНИЕ реально совпадает
+          if(v.description) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+          if(v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"";
+          if(info.desc||info.img) break;
+        }
+      }
+    }catch(e){}
+    if(info.desc || info.img) bookInfoCache[key]=info;   // пустое не кэшируем (вдруг был лимит — попробуем позже)
     try{ localStorage.setItem("polka_bookinfo", JSON.stringify(bookInfoCache)); }catch(e){}
     return info;
   }
