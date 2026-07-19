@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="177" />
+<meta name="app-version" content="178" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -327,11 +327,11 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 #bpAnno{margin-top:18px}
 .bp-section{margin-top:22px}
 .read-link.done{opacity:.85;background:var(--accent);color:#fff;border-color:var(--accent);cursor:default}
-.bpq-carousel{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.bpq-carousel{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .bpq-carousel::-webkit-scrollbar{height:0;display:none}
-.bpq-card{flex:0 0 82%;max-width:340px;scroll-snap-align:center;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.bpq-card{flex:0 0 82%;max-width:340px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
 .bpq-card .bpq-q{font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;line-height:1.5;color:var(--ink);white-space:pre-wrap}
-.bpq-hint{text-align:center;font-size:11px;letter-spacing:.08em;color:var(--ink-soft);margin-top:6px;text-transform:uppercase}
+.bpq-scroll .cat-arrow{top:50%;transform:translateY(-50%)}
 .bp-rev{background:#fffdf9;border:1px solid var(--line);border-radius:16px;padding:15px 17px;margin-bottom:13px;box-shadow:var(--shadow)}
 .bp-rev-top{display:flex;align-items:center;gap:11px;margin-bottom:9px}
 .bp-rev-top .rev-av{flex:0 0 38px;width:38px;height:38px}
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v177 test: УБРАЛ Википедию из аннотаций (она по названию-омониму отдавала статью про слово, напр. «бойфренд» → про англицизм). Теперь только Google Books (база книг) + проверка совпадения названия; если не нашлось — чистая заглушка, без мусора. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v178 test: карусель цитат — убрал подсказку «листай»; на телефоне свайп как у книг, на компьютере стрелки ‹ › (min-width 761px). Убрал scroll-snap (мешал стрелкам), прокрутка стрелок мгновенным scrollLeft. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2309,9 +2309,12 @@ main,footer{position:relative;z-index:1}
     list.forEach(rv=>{ let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } (arr||[]).forEach(q=>push(q, rv.name||"")); });
     if(qBox){
       if(!quotes.length){ qBox.style.display="none"; qBox.innerHTML=""; }
-      else { qBox.style.display=""; qBox.innerHTML = `<div class="ir-label">Цитаты читателей</div>`+
-        `<div class="bpq-carousel">`+ quotes.slice(0,60).map(({q,who})=>`<div class="bpq-card"><span class="bpq-q">«${esc(q)}»</span>${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join("") +`</div>`+
-        (quotes.length>1?`<div class="bpq-hint">← листай →</div>`:``); }
+      else { qBox.style.display=""; const many=quotes.length>1; qBox.innerHTML = `<div class="ir-label">Цитаты читателей</div>`+
+        `<div class="cat-scroll bpq-scroll">`+
+          (many?`<button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>`:``)+
+          `<div class="bpq-carousel">`+ quotes.slice(0,60).map(({q,who})=>`<div class="bpq-card"><span class="bpq-q">«${esc(q)}»</span>${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join("") +`</div>`+
+          (many?`<button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button>`:``)+
+        `</div>`; }
     }
   }
   let myReviews={}; try{ myReviews=JSON.parse(localStorage.getItem("polka_myreviews")||"{}"); }catch(e){ myReviews={}; }
@@ -2491,6 +2494,8 @@ main,footer{position:relative;z-index:1}
   { const _bpr=$("#bpReviews"); if(_bpr) _bpr.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
   // «читать дальше» — раскрыть свёрнутую аннотацию/рецензию
   { const _bp=$("#bookPage"); if(_bp) _bp.addEventListener("click", e=>{ const m=e.target.closest(".bp-more"); if(!m) return; const cl=m.parentElement.querySelector(".clamped"); if(cl){ cl.classList.remove("clamped"); m.remove(); } }); }
+  // стрелки карусели цитат (на компьютере; на телефоне просто листаем пальцем).
+  { const _q=$("#bpQuotes"); if(_q) _q.addEventListener("click", e=>{ const ar=e.target.closest(".cat-arrow"); if(!ar) return; const row=ar.parentElement.querySelector(".bpq-carousel"); if(!row) return; row.scrollLeft += (+ar.dataset.dir)*Math.round(row.clientWidth*0.85); }); }
   { const _rf=$("#reviewsFeed"); if(_rf) _rf.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
   // состояние кнопки «в хотелки» на странице книги: на полке → нет кнопки; в хотелках → «в хотелках»; иначе → можно добавить
   function setBpWishState(){
