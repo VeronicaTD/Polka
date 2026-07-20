@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="181" />
+<meta name="app-version" content="182" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v181 test: аннотации — «умная Википедия» (точная статья по названию, но берём ТОЛЬКО если это точно книга: фильтр BOOK_WORDS с «роман(?![тс])» против «романтический», защита от статей о словах/годах/людях), затем Google Books как запас. «бойфренд»→англицизм больше не всплывает. + дедуп подборки по названию, обложки в карусели. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v182 test: скорость страницы книги — цитаты/рецензии теперь МГНОВЕННО (замер: 4мс). loadReadersData прогревается на старте (setTimeout 500) + кэшируется в localStorage (polka_readers_cache, фото рецензий выкинуты). loadBookExtras рисует сразу из кэша, потом тихо обновляет свежими рецензиями (перерисовка только если что-то новое). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2164,6 +2164,7 @@ main,footer{position:relative;z-index:1}
   }
   // ОБЩИЙ ИНДЕКС: собираем все книги и все цитаты со ВСЕХ полок в облаке (кэшируем на сессию)
   let readersData = null, readersDataPromise = null;
+  try{ const c=JSON.parse(localStorage.getItem("polka_readers_cache")||"null"); if(c && Array.isArray(c.books)) readersData=c; }catch(e){}   // мгновенно из кэша, потом обновим в фоне
   async function loadReadersData(force){
     if(readersData && !force) return readersData;
     if(readersDataPromise && !force) return readersDataPromise;
@@ -2193,6 +2194,11 @@ main,footer{position:relative;z-index:1}
       reviews.forEach(rv=>{ if(!rv || !rv.title) return; let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } addBook(rv.title, rv.author||"", rv.name||"", arr); const rk=looseKey(rv.title, rv.author||""); (rmap[rk]||(rmap[rk]=[])).push(rv); });
       const books=[...bmap.values()].sort((x,y)=> y.count-x.count || String(x.t).localeCompare(String(y.t)));
       readersData={ books, quotes:qmap, reviews:rmap };
+      try{   // кэшируем (фото рецензий выкидываем, чтобы не раздувать localStorage)
+        const slimR={}; Object.keys(rmap).forEach(k=>slimR[k]=rmap[k].map(rv=>Object.assign({},rv,{photo:""})));
+        localStorage.setItem("polka_readers_cache", JSON.stringify({books, quotes:qmap, reviews:slimR}));
+      }catch(e){}
+      readersDataPromise=null;
       return readersData;
     })();
     return readersDataPromise;
@@ -2325,40 +2331,47 @@ main,footer{position:relative;z-index:1}
   // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
   async function loadBookExtras(t,a,seedQuotes){
     const revBox=$("#bpReviews"), qBox=$("#bpQuotes"), bk=bookKey(t,a), lk=looseKey(t,a);
-    let list=[], rdata={books:[],quotes:{},reviews:{}};
-    try{ if(CLOUD()){ const [rv,rd] = await Promise.all([ sbFetchReviews(bk).catch(()=>[]), loadReadersData().catch(()=>({books:[],quotes:{},reviews:{}})) ]); rdata=rd||{books:[],quotes:{},reviews:{}};
-      // свежие рецензии по точному ключу + рецензии всех вариантов написания книги — без дублей по id
-      const byId=new Map();
-      [...(rv||[]), ...((rdata.reviews&&rdata.reviews[lk])||[])].forEach(r=>{ if(r) byId.set(r.id!=null?("id"+r.id):((r.name||"")+"|"+(r.text||"")), r); });
-      list=[...byId.values()];
-    } }catch(e){}
+    let rdata={books:[],quotes:{},reviews:{}};
+    try{ if(CLOUD()) rdata = (await loadReadersData()) || rdata; }catch(e){}   // из прогретого кэша — мгновенно
     if(!stillOn(t,a)) return;
-    // --- рецензии (списком ниже) ---
-    if(revBox){
-      if(!list.length){ revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div><p class="mp">Пока никто не написал рецензию на эту книгу ✍️</p>`; }
-      else revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div>` + list.map(rv=>{
-        const nm = rv.name||"Читатель", ph=rv.photo||"";
-        const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
-        const link = rv.code ? ` data-code="${esc(rv.code)}" data-name="${esc(nm)}"` : "";
-        const txt = rv.text||""; const long = txt.length>260;   // длинную рецензию сворачиваем
-        return `<div class="bp-rev"><div class="bp-rev-top"><div class="rev-av${rv.code?" rev-link":""}"${link}>${av}</div><div class="rev-name${rv.code?" rev-link":""}"${link}>${esc(nm)}${rv.code?" →":""}</div></div><div class="bp-revtext${long?" bp-clamp clamped":""}">${esc(txt)}</div>${long?`<button type="button" class="bp-more">читать дальше</button>`:``}</div>`;
-      }).join("");
-    }
-    // --- цитаты: ВСЕ, что люди выделяли к этой книге (со всех полок) + прикреплённые к рецензиям + текущая книга ---
-    const seen=new Set(), quotes=[];
-    const push=(q,who)=>{ q=String(q||"").trim(); if(!q) return; const k=q.toLowerCase(); if(seen.has(k)) return; seen.add(k); quotes.push({q,who}); };
-    (Array.isArray(seedQuotes)?seedQuotes:[]).forEach(q=>push(q,""));
-    ((rdata.quotes&&rdata.quotes[lk])||[]).forEach(o=>push(o.q, o.who));
-    list.forEach(rv=>{ let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } (arr||[]).forEach(q=>push(q, rv.name||"")); });
-    if(qBox){
-      if(!quotes.length){ qBox.style.display="none"; qBox.innerHTML=""; }
-      else { qBox.style.display=""; const many=quotes.length>1; qBox.innerHTML = `<div class="ir-label">Цитаты читателей</div>`+
-        `<div class="cat-scroll bpq-scroll">`+
-          (many?`<button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>`:``)+
-          `<div class="bpq-carousel">`+ quotes.slice(0,60).map(({q,who})=>`<div class="bpq-card"><span class="bpq-q">«${esc(q)}»</span>${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join("") +`</div>`+
-          (many?`<button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button>`:``)+
-        `</div>`; }
-    }
+    const renderExtras=(list)=>{
+      if(!stillOn(t,a)) return;
+      // --- рецензии ---
+      if(revBox){
+        if(!list.length){ revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div><p class="mp">Пока никто не написал рецензию на эту книгу ✍️</p>`; }
+        else revBox.innerHTML = `<div class="ir-label">Рецензии читателей</div>` + list.map(rv=>{
+          const nm = rv.name||"Читатель", ph=rv.photo||"";
+          const av = ph ? `<img src="${esc(ph)}" alt="">` : esc((nm[0]||"Ч").toUpperCase());
+          const link = rv.code ? ` data-code="${esc(rv.code)}" data-name="${esc(nm)}"` : "";
+          const txt = rv.text||""; const long = txt.length>260;
+          return `<div class="bp-rev"><div class="bp-rev-top"><div class="rev-av${rv.code?" rev-link":""}"${link}>${av}</div><div class="rev-name${rv.code?" rev-link":""}"${link}>${esc(nm)}${rv.code?" →":""}</div></div><div class="bp-revtext${long?" bp-clamp clamped":""}">${esc(txt)}</div>${long?`<button type="button" class="bp-more">читать дальше</button>`:``}</div>`;
+        }).join("");
+      }
+      // --- цитаты: со всех полок + из рецензий + текущей книги ---
+      const seen=new Set(), quotes=[];
+      const push=(q,who)=>{ q=String(q||"").trim(); if(!q) return; const k=q.toLowerCase(); if(seen.has(k)) return; seen.add(k); quotes.push({q,who}); };
+      (Array.isArray(seedQuotes)?seedQuotes:[]).forEach(q=>push(q,""));
+      ((rdata.quotes&&rdata.quotes[lk])||[]).forEach(o=>push(o.q, o.who));
+      list.forEach(rv=>{ let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } (arr||[]).forEach(q=>push(q, rv.name||"")); });
+      if(qBox){
+        if(!quotes.length){ qBox.style.display="none"; qBox.innerHTML=""; }
+        else { qBox.style.display=""; const many=quotes.length>1; qBox.innerHTML = `<div class="ir-label">Цитаты читателей</div>`+
+          `<div class="cat-scroll bpq-scroll">`+
+            (many?`<button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>`:``)+
+            `<div class="bpq-carousel">`+ quotes.slice(0,60).map(({q,who})=>`<div class="bpq-card"><span class="bpq-q">«${esc(q)}»</span>${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join("") +`</div>`+
+            (many?`<button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button>`:``)+
+          `</div>`; }
+      }
+    };
+    // 1) сразу рисуем из кэша (рецензии всех вариантов написания)
+    let list = ((rdata.reviews&&rdata.reviews[lk])||[]).slice();
+    renderExtras(list);
+    // 2) тихо обновляем свежими рецензиями (вдруг кто-то только что написал), перерисовываем только если что-то новое
+    try{ if(CLOUD()){ const fresh=await sbFetchReviews(bk); if(!stillOn(t,a)) return;
+      const byId=new Map(); [...list, ...(fresh||[])].forEach(r=>{ if(r) byId.set(r.id!=null?("id"+r.id):((r.name||"")+"|"+(r.text||"")), r); });
+      const merged=[...byId.values()];
+      if(merged.length!==list.length) renderExtras(merged);
+    } }catch(e){}
   }
   let myReviews={}; try{ myReviews=JSON.parse(localStorage.getItem("polka_myreviews")||"{}"); }catch(e){ myReviews={}; }
   const saveMyReviews=()=>{ try{ localStorage.setItem("polka_myreviews", JSON.stringify(myReviews)); }catch(e){} };
@@ -3143,6 +3156,7 @@ main,footer{position:relative;z-index:1}
   /* ресайз */
   let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(renderCase,150); });
   if(CLOUD()) setTimeout(prewarmPoems, 300);
+  if(CLOUD()) setTimeout(()=>loadReadersData(true), 500);   // прогрев цитат/рецензий читателей — чтобы страница книги открывалась мгновенно
   // одноразовая чистка старых комментариев (опции больше нет)
   (function(){ if(!Array.isArray(myBooks)) return; let ch=false; myBooks.forEach(b=>{ if(b && b.note!=null){ delete b.note; ch=true; } }); if(ch){ try{ saveMine(); }catch(e){} } })();
   // дозалить в облако рецензии, написанные раньше (локально есть, в облаке нет)
