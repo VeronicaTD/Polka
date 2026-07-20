@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="179" />
+<meta name="app-version" content="180" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v179 test: подключил ключ Google Books (ограничен доменом veronicatd.github.io) — аннотации/обложки грузятся стабильно, без лимитов 429. Ключ проверен: HTTP 200 с реферером сайта, чужие рефереры блокируются. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v180 test: «Выбор читателей» без дублей (дедуп по названию — одинаковые книги с разным написанием автора сливаются, цитаты/рецензии всех объединяются по этому же ключу). Обложки Google Books теперь и в карусели подборки (ensureCover→fetchBookInfo). Аннотации: 2 прохода запроса (точный+общий), сканируем 10 результатов на описание. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1094,7 +1094,7 @@ main,footer{position:relative;z-index:1}
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
   async function sbFetchAllReviews(){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?select=*&order=created_at.desc&limit=100",{headers:SB_H()});
+    const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?select=*&order=created_at.desc&limit=1000",{headers:SB_H()});
     if(!r.ok) return [];
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
@@ -2126,12 +2126,18 @@ main,footer{position:relative;z-index:1}
     }, {rootMargin:"250px"});
     (root||document).querySelectorAll(".cat-cover[data-ct]").forEach(el=>coverObs.observe(el));
   }
-  function ensureCover(el,t,a){
-    if(!el || el.querySelector(".cc-img")) return;
-    const url=coverUrl(t,a); if(!url) return;                 // нет ID — остаётся фирменная заглушка
+  function putCover(el, src){
+    if(!el || !src || el.querySelector(".cc-img")) return;
     const img=new Image(); img.className="cc-img"; img.alt="";
     img.onload=()=>img.classList.add("loaded"); img.onerror=()=>img.remove();
-    img.src=url; el.appendChild(img);
+    img.src=String(src).replace(/^http:/,"https:"); el.appendChild(img);
+  }
+  function ensureCover(el,t,a){
+    if(!el || el.querySelector(".cc-img")) return;
+    const url=coverUrl(t,a);
+    if(url){ putCover(el, url); return; }                      // свой ID (книги каталога)
+    // нет своего ID (книга читателей) — тянем обложку из Google Books (кэшируется), показываем и в карусели
+    fetchBookInfo(t,a).then(info=>{ if(info && info.img) putCover(el, info.img); });
   }
   function renderCatalog(){
     $("#catalogList").innerHTML = Object.entries(CATALOG).map(([genre,books])=>{
@@ -2164,11 +2170,16 @@ main,footer{position:relative;z-index:1}
     readersDataPromise = (async()=>{
       let shelves=[], reviews=[];
       try{ if(CLOUD()){ [shelves, reviews] = await Promise.all([ sbFetchAllShelves().catch(()=>[]), sbFetchAllReviews().catch(()=>[]) ]); } }catch(e){}
-      const bmap=new Map(), qmap={};
+      const bmap=new Map(), qmap={}, rmap={};
+      // одна и та же книга у разных людей пишется по-разному (автор «Достоевский» / «Ф. М. Достоевский») —
+      // объединяем по «мягкому» ключу: название + фамилия автора. Тогда книга в подборке одна, а цитаты/рецензии всех суммируются.
       const addBook=(t,a,who,qs)=>{
         if(!t) return;
-        const k=bookKey(t, a||"");
-        const e=bmap.get(k)||{t, a:a||"", count:0}; e.count++; bmap.set(k,e);
+        const k=looseKey(t, a||"");
+        const e=bmap.get(k)||{t, a:a||"", count:0};
+        e.count++;
+        if((a||"").length > (e.a||"").length) e.a=a||"";   // держим самое полное написание автора
+        bmap.set(k,e);
         (qs||[]).forEach(q=>{ (qmap[k]||(qmap[k]=[])).push({q, who}); });
       };
       // книги + цитаты со всех полок
@@ -2178,10 +2189,10 @@ main,footer{position:relative;z-index:1}
         const who=(p&&p.n)||row.name||"";
         ((p&&p.b)||[]).forEach(b=>{ if(b && b.t) addBook(b.t, b.a, who, quotesOf(b)); });
       });
-      // книги + цитаты из рецензий (на случай, если книги уже нет на полке)
-      reviews.forEach(rv=>{ if(!rv || !rv.title) return; let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } addBook(rv.title, rv.author||"", rv.name||"", arr); });
+      // книги + цитаты + рецензии из таблицы рецензий (на случай, если книги уже нет на полке)
+      reviews.forEach(rv=>{ if(!rv || !rv.title) return; let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } addBook(rv.title, rv.author||"", rv.name||"", arr); const rk=looseKey(rv.title, rv.author||""); (rmap[rk]||(rmap[rk]=[])).push(rv); });
       const books=[...bmap.values()].sort((x,y)=> y.count-x.count || String(x.t).localeCompare(String(y.t)));
-      readersData={ books, quotes:qmap };
+      readersData={ books, quotes:qmap, reviews:rmap };
       return readersData;
     })();
     return readersDataPromise;
@@ -2263,33 +2274,42 @@ main,footer{position:relative;z-index:1}
   let bookInfoCache={}; try{ bookInfoCache=JSON.parse(localStorage.getItem("polka_bookinfo")||"{}"); }catch(e){ bookInfoCache={}; }
   const GBOOKS_KEY = "AIzaSyAI8ETBvBRmjsgbSG_6Q5hPG1aNCp3nMRM";   // ключ Google Books (ограничен доменом veronicatd.github.io — работает только с сайта Polka)
   const normTitle = s => String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9 ]/gi," ").replace(/\s+/g," ").trim();
+  // «мягкий» ключ книги — по нормализованному НАЗВАНИЮ (автор у разных людей пишется по-разному:
+  // «Ф.М.Достоевский» без пробелов, «Остен»/«Остин» — разная транслитерация; поэтому автора в ключ не берём).
+  const looseKey = (t,a) => normTitle(t);
   async function fetchBookInfo(t,a){
     const key=t+"|"+(a||"");
     if(bookInfoCache[key]) return bookInfoCache[key];
     const info={desc:"", img:""};
     const ot=normTitle(t);
-    try{
-      const q=encodeURIComponent(`intitle:${t}`+(a?` inauthor:${a}`:""));
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
-      if(r.ok){ const d=await r.json(); const items=d.items||[];
-        for(const it of items){ const v=it.volumeInfo; if(!v) continue;
-          const rt=normTitle(v.title);
-          if(!(rt && ot && (rt===ot || rt.includes(ot) || ot.includes(rt)))) continue;   // берём только если НАЗВАНИЕ реально совпадает
-          if(v.description) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
-          if(v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"";
-          if(info.desc||info.img) break;
-        }
-      }
-    }catch(e){}
-    if(info.desc || info.img) bookInfoCache[key]=info;   // пустое не кэшируем (вдруг был лимит — попробуем позже)
+    // среди результатов берём только те, где НАЗВАНИЕ реально совпадает; описание и обложку собираем даже из разных изданий
+    const scan=(items)=>{ for(const it of (items||[])){ const v=it.volumeInfo; if(!v) continue;
+      const rt=normTitle(v.title);
+      if(!(rt && ot && (rt===ot || rt.includes(ot) || ot.includes(rt)))) continue;
+      if(!info.desc && v.description) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+      if(!info.img && v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"";
+      if(info.desc && info.img) return true;
+    } return false; };
+    const query=async(q)=>{ try{
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
+      if(r.ok){ const d=await r.json(); return scan(d.items); }
+    }catch(e){} return false; };
+    await query(`intitle:${t}`+(a?` inauthor:${a}`:""));   // 1) точный поиск по названию+автору
+    if(!info.desc) await query(`${t} ${a||""}`.trim());     // 2) общий поиск, если описание ещё не нашли (intitle цепляет только первое слово)
+    if(info.desc || info.img) bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
     try{ localStorage.setItem("polka_bookinfo", JSON.stringify(bookInfoCache)); }catch(e){}
     return info;
   }
   // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
   async function loadBookExtras(t,a,seedQuotes){
-    const revBox=$("#bpReviews"), qBox=$("#bpQuotes"), bk=bookKey(t,a);
-    let list=[], rdata={books:[],quotes:{}};
-    try{ if(CLOUD()){ const [rv,rd] = await Promise.all([ sbFetchReviews(bk).catch(()=>[]), loadReadersData().catch(()=>({books:[],quotes:{}})) ]); list=rv||[]; rdata=rd||{books:[],quotes:{}}; } }catch(e){}
+    const revBox=$("#bpReviews"), qBox=$("#bpQuotes"), bk=bookKey(t,a), lk=looseKey(t,a);
+    let list=[], rdata={books:[],quotes:{},reviews:{}};
+    try{ if(CLOUD()){ const [rv,rd] = await Promise.all([ sbFetchReviews(bk).catch(()=>[]), loadReadersData().catch(()=>({books:[],quotes:{},reviews:{}})) ]); rdata=rd||{books:[],quotes:{},reviews:{}};
+      // свежие рецензии по точному ключу + рецензии всех вариантов написания книги — без дублей по id
+      const byId=new Map();
+      [...(rv||[]), ...((rdata.reviews&&rdata.reviews[lk])||[])].forEach(r=>{ if(r) byId.set(r.id!=null?("id"+r.id):((r.name||"")+"|"+(r.text||"")), r); });
+      list=[...byId.values()];
+    } }catch(e){}
     if(!stillOn(t,a)) return;
     // --- рецензии (списком ниже) ---
     if(revBox){
@@ -2306,7 +2326,7 @@ main,footer{position:relative;z-index:1}
     const seen=new Set(), quotes=[];
     const push=(q,who)=>{ q=String(q||"").trim(); if(!q) return; const k=q.toLowerCase(); if(seen.has(k)) return; seen.add(k); quotes.push({q,who}); };
     (Array.isArray(seedQuotes)?seedQuotes:[]).forEach(q=>push(q,""));
-    ((rdata.quotes&&rdata.quotes[bk])||[]).forEach(o=>push(o.q, o.who));
+    ((rdata.quotes&&rdata.quotes[lk])||[]).forEach(o=>push(o.q, o.who));
     list.forEach(rv=>{ let arr=[]; try{ arr = rv.quotes ? (Array.isArray(rv.quotes)?rv.quotes:JSON.parse(rv.quotes)) : []; }catch(e){ arr=[]; } (arr||[]).forEach(q=>push(q, rv.name||"")); });
     if(qBox){
       if(!quotes.length){ qBox.style.display="none"; qBox.innerHTML=""; }
