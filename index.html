@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="180" />
+<meta name="app-version" content="181" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v180 test: «Выбор читателей» без дублей (дедуп по названию — одинаковые книги с разным написанием автора сливаются, цитаты/рецензии всех объединяются по этому же ключу). Обложки Google Books теперь и в карусели подборки (ensureCover→fetchBookInfo). Аннотации: 2 прохода запроса (точный+общий), сканируем 10 результатов на описание. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v181 test: аннотации — «умная Википедия» (точная статья по названию, но берём ТОЛЬКО если это точно книга: фильтр BOOK_WORDS с «роман(?![тс])» против «романтический», защита от статей о словах/годах/людях), затем Google Books как запас. «бойфренд»→англицизм больше не всплывает. + дедуп подборки по названию, обложки в карусели. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2277,6 +2277,15 @@ main,footer{position:relative;z-index:1}
   // «мягкий» ключ книги — по нормализованному НАЗВАНИЮ (автор у разных людей пишется по-разному:
   // «Ф.М.Достоевский» без пробелов, «Остен»/«Остин» — разная транслитерация; поэтому автора в ключ не берём).
   const looseKey = (t,a) => normTitle(t);
+  // статья Википедии — про КНИГУ? (защита от статей про слово/год/человека, напр. «бойфренд» → англицизм)
+  // «роман(?![тс])» — чтобы не ловить «романтический/романс/романтика»; остальные основы однозначны
+  const BOOK_WORDS = /(роман(?![тс])|повест|книг|рассказ|поэм|сборник|новелл|пьес|эпопе|автобиограф|мемуар|трилог|дилог|антиутопи)/i;
+  function isBookArticle(desc, extract, title){
+    if(BOOK_WORDS.test(desc||"")) return true;                         // короткое описание прямо про книгу («роман …»)
+    const ex=String(extract||"");
+    const startsWithTitle = normTitle(ex.slice(0, (title||"").length+10)).includes(normTitle(title));
+    return startsWithTitle && BOOK_WORDS.test(ex.slice(0,220));         // иначе — статья начинается с названия и в начале есть книжное слово
+  }
   async function fetchBookInfo(t,a){
     const key=t+"|"+(a||"");
     if(bookInfoCache[key]) return bookInfoCache[key];
@@ -2294,8 +2303,21 @@ main,footer{position:relative;z-index:1}
       const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
       if(r.ok){ const d=await r.json(); return scan(d.items); }
     }catch(e){} return false; };
-    await query(`intitle:${t}`+(a?` inauthor:${a}`:""));   // 1) точный поиск по названию+автору
-    if(!info.desc) await query(`${t} ${a||""}`.trim());     // 2) общий поиск, если описание ещё не нашли (intitle цепляет только первое слово)
+    // 1) Википедия — точная статья по названию, но ТОЛЬКО если это точно книга (иначе не берём — фильтр против слов/людей/годов)
+    try{
+      const r=await fetch('https://ru.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(t));
+      if(r.ok){ const d=await r.json();
+        if(d && d.type==="standard" && d.extract && isBookArticle(d.description, d.extract, t)){
+          info.desc=String(d.extract).replace(/\s+/g," ").trim();
+          if(d.thumbnail && d.thumbnail.source) info.img=d.thumbnail.source;
+        }
+      }
+    }catch(e){}
+    // 2) Google Books — дополняем недостающее (описание/обложку)
+    if(!info.desc || !info.img){
+      await query(`intitle:${t}`+(a?` inauthor:${a}`:""));   // точный поиск по названию+автору
+      if(!info.desc) await query(`${t} ${a||""}`.trim());     // общий поиск, если описания всё ещё нет
+    }
     if(info.desc || info.img) bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
     try{ localStorage.setItem("polka_bookinfo", JSON.stringify(bookInfoCache)); }catch(e){}
     return info;
