@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="182" />
+<meta name="app-version" content="183" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v182 test: скорость страницы книги — цитаты/рецензии теперь МГНОВЕННО (замер: 4мс). loadReadersData прогревается на старте (setTimeout 500) + кэшируется в localStorage (polka_readers_cache, фото рецензий выкинуты). loadBookExtras рисует сразу из кэша, потом тихо обновляет свежими рецензиями (перерисовка только если что-то новое). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v183 test: описания ТОЛЬКО на русском. Google Books давал украинское издание («бойфренд» → укр. текст) — теперь &langRestrict=ru + фильтр isRu (кириллица без букв іїєґ), английское тоже отсекается. Нет русского описания → чистая заглушка. Кэш описаний переименован polka_bookinfo→polka_bookinfo2 (сброс старых укр./англ.). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2277,7 +2277,8 @@ main,footer{position:relative;z-index:1}
   }
   // описание и обложка книги из Google Books (кэшируем в localStorage, чтобы не дёргать каждый раз)
   // ВАЖНО: Википедию НЕ используем — она по названию-омониму отдаёт статью про слово/термин («бойфренд» → про англицизм). Google Books ищет только по книгам.
-  let bookInfoCache={}; try{ bookInfoCache=JSON.parse(localStorage.getItem("polka_bookinfo")||"{}"); }catch(e){ bookInfoCache={}; }
+  let bookInfoCache={}; try{ bookInfoCache=JSON.parse(localStorage.getItem("polka_bookinfo2")||"{}"); }catch(e){ bookInfoCache={}; }
+  try{ localStorage.removeItem("polka_bookinfo"); }catch(e){}   // сброс старого кэша (там были украинские/английские описания)
   const GBOOKS_KEY = "AIzaSyAI8ETBvBRmjsgbSG_6Q5hPG1aNCp3nMRM";   // ключ Google Books (ограничен доменом veronicatd.github.io — работает только с сайта Polka)
   const normTitle = s => String(s||"").toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9 ]/gi," ").replace(/\s+/g," ").trim();
   // «мягкий» ключ книги — по нормализованному НАЗВАНИЮ (автор у разных людей пишется по-разному:
@@ -2297,16 +2298,17 @@ main,footer{position:relative;z-index:1}
     if(bookInfoCache[key]) return bookInfoCache[key];
     const info={desc:"", img:""};
     const ot=normTitle(t);
-    // среди результатов берём только те, где НАЗВАНИЕ реально совпадает; описание и обложку собираем даже из разных изданий
+    const isRu = s => /[а-яё]/i.test(s) && !/[іїєґ]/i.test(s);   // описание русское: есть кириллица и НЕТ украинских букв (іїєґ); английское отсеется (нет кириллицы)
+    // среди результатов берём только те, где НАЗВАНИЕ совпадает; описание — ТОЛЬКО русское; обложку — из любого издания
     const scan=(items)=>{ for(const it of (items||[])){ const v=it.volumeInfo; if(!v) continue;
       const rt=normTitle(v.title);
       if(!(rt && ot && (rt===ot || rt.includes(ot) || ot.includes(rt)))) continue;
-      if(!info.desc && v.description) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+      if(!info.desc && v.description && isRu(v.description)) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
       if(!info.img && v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"";
       if(info.desc && info.img) return true;
     } return false; };
     const query=async(q)=>{ try{
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU&langRestrict=ru`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
       if(r.ok){ const d=await r.json(); return scan(d.items); }
     }catch(e){} return false; };
     // 1) Википедия — точная статья по названию, но ТОЛЬКО если это точно книга (иначе не берём — фильтр против слов/людей/годов)
@@ -2325,7 +2327,7 @@ main,footer{position:relative;z-index:1}
       if(!info.desc) await query(`${t} ${a||""}`.trim());     // общий поиск, если описания всё ещё нет
     }
     if(info.desc || info.img) bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
-    try{ localStorage.setItem("polka_bookinfo", JSON.stringify(bookInfoCache)); }catch(e){}
+    try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){}
     return info;
   }
   // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
