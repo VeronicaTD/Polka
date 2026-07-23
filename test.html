@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="185" />
+<meta name="app-version" content="186" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v185 test: аннотации = сюжет книги. (1) Google Books (издательская аннотация=сюжет) вперёд, Википедия только запас. (2) +16 своих аннотаций (классика: Карамазовы, Отцы и дети, Гранатовый браслет, Тихий Дон, Отверженные, Мартин Иден, Маленький принц и др.). (3) Поиск аннотаций по нормализованному названию (annoFor) — работает при любом написании автора; normTitle теперь ё,э→е (Гэтсби/Гетсби). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v186 test: кнопка «Получить доступ в Telegram» ведёт теперь на канал @AppPolka (было в личку @veronica_182) — оттуда пишут за кодом. BUY_URL один на обе кнопки (#buyBtn, #welBuyBtn). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1138,7 +1138,7 @@ main,footer{position:relative;z-index:1}
 
   /* ====== ДОСТУП (разовая оплата навсегда) ======
      Вставь ссылку на своего Telegram-бота: */
-  const BUY_URL = "https://t.me/veronica_182";   // твой Telegram
+  const BUY_URL = "https://t.me/AppPolka";   // канал Polka — оттуда пишут «Написать» за кодом
   /* ============================================== */
   const isPaid = () => localStorage.getItem("polka_paid")==="1";
   // у тебя уже есть своя полка (вошёл/создал) → редактировать можно без повторной оплаты
