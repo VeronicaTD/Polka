@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="183" />
+<meta name="app-version" content="184" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -717,7 +717,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v183 test: описания ТОЛЬКО на русском. Google Books давал украинское издание («бойфренд» → укр. текст) — теперь &langRestrict=ru + фильтр isRu (кириллица без букв іїєґ), английское тоже отсекается. Нет русского описания → чистая заглушка. Кэш описаний переименован polka_bookinfo→polka_bookinfo2 (сброс старых укр./англ.). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v184 test: фикс дубликата стихов при редактировании. sbInsertPoem не возвращал id (return=minimal) → у нового стиха пустой dbId → правка шла в ветку «вставить» вместо «обновить». Теперь return=representation отдаёт id; + защита: в режиме правки никогда не вставляем новый. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1130,8 +1130,9 @@ main,footer{position:relative;z-index:1}
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
   async function sbInsertPoem(row){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/poems",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
+    const r = await fetch(SUPABASE_URL+"/rest/v1/poems",{method:"POST",headers:{...SB_H(),Prefer:"return=representation"},body:JSON.stringify(row)});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,140)); }
+    const a=await r.json().catch(()=>null); return (Array.isArray(a)&&a[0]&&a[0].id)?a[0].id:null;   // вернуть id нового стиха — иначе его нельзя корректно отредактировать (получался дубликат)
   }
   function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 
@@ -2516,7 +2517,8 @@ main,footer{position:relative;z-index:1}
     const btn=$("#poemSave"); btn.disabled=true; $("#poemMsg").textContent=editingPoem?"Сохраняю…":"Публикую…";
     try{
       const title=$("#poemT").value.trim(), author=$("#poemA").value.trim();
-      if(editingPoem&&editingPoem.id){
+      if(editingPoem){
+        if(!editingPoem.id){ $("#poemMsg").textContent="Не удалось определить стих — обнови страницу и попробуй снова 🙏"; btn.disabled=false; return; }   // не вставляем новый в режиме правки — иначе дубликат
         await sbUpdatePoem(editingPoem.id, { title, author, text:x });
         (poemsCache||[]).forEach(p=>{ if(String(p.dbId)===String(editingPoem.id)){ p.t=title; p.a=author; p.x=x; } });
         savePoemsCache(); poems=(poemsCache||[]).concat(SEED_POEMS);
