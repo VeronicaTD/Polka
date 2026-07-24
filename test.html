@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="191" />
+<meta name="app-version" content="192" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -350,6 +350,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .ir-quote-who{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:normal}
 .q-openbook{cursor:pointer;border-radius:8px;transition:transform .12s}
 .q-openbook:active{transform:scale(.95)}
+.q-fav{background:none;border:none;font-size:19px;line-height:1;cursor:pointer;padding:2px 2px 0;flex:0 0 auto;align-self:flex-start}
+.q-fav:active{transform:scale(1.25)}
+#quotesFav.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .bp-actions{margin-top:20px;flex-wrap:wrap;gap:8px}
 /* вкладки книги */
 .bp-tabs{display:flex;gap:4px;margin:18px 0 4px;border-bottom:1px solid var(--line)}
@@ -660,12 +663,13 @@ main,footer{position:relative;z-index:1}
 <div id="menuBack" class="menu-back"></div>
 <nav id="sideMenu" class="side-menu" aria-label="Меню">
   <div class="menu-h">Polka 📚</div>
-  <button class="menu-item" id="mHome">🏛 Моя полка</button>
+  <button class="menu-item" id="mHome">📚 Моя полка</button>
   <div class="menu-sep"></div>
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
   <button class="menu-item" id="mPoems">✒️ Поэзия</button>
+  <button class="menu-item" id="mMyPoems">✍️ Мои стихи</button>
   <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
@@ -719,6 +723,7 @@ main,footer{position:relative;z-index:1}
     <div class="case-actions" id="friendActions" style="display:none">
       <button class="dice-btn" id="quotesBtn">💬 цитаты друга</button>
       <button class="dice-btn" id="wishBtn">📌 хотелки друга</button>
+      <button class="dice-btn" id="poemsFriendBtn">✒️ стихи друга</button>
       <button class="dice-btn" id="yearBtn" style="display:none">✨ книжный год друга</button>
     </div>
     <div style="display:none"><button id="catalogBtn"></button></div>
@@ -727,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v191 test: (1) после «Поставить на полку» открывается полное окно книги (openInfo) — там кнопка «Написать рецензию» (раньше в форме добавления рецензии не было). (2) в разделах убрал «назад», оставил только «☰ разделы» (открывает меню поверх раздела). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v192 test: (1) «Моя полка» → эмодзи 📚. (2) любимые цитаты: сердечко ❤ на каждой цитате + кнопка-фильтр «любимые» (показывает только отмеченные); синхрон через qf (11-й элемент блоба). (3) «Мои стихи» в меню и «стихи друга» в профиле друга — фильтр стихов по коду автора (poemAuthorFilter). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -862,7 +867,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- мои цитаты (полный экран) -->
 <div class="fullpage" id="quotesPage" aria-label="Цитаты">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="quotesTitle">Мои цитаты 💬</h3><button id="quotesFav" class="fp-back" type="button" style="margin-left:auto">❤ любимые</button></div>
   <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
 </div>
 
@@ -912,7 +917,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- стихи -->
 <div class="fullpage" id="poemsPage" aria-label="Поэзия">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3>Поэзия ✒️</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="poemsTitle">Поэзия ✒️</h3></div>
   <div class="fp-body">
     <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-tools">
@@ -1291,13 +1296,13 @@ main,footer{position:relative;z-index:1}
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk)]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[], p.pd?1:0, p.wl||[], p.pm||[]]));   // pm = закладки стихов (синхронизация между устройствами)
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[]]));   // pm=закладки стихов, qf=любимые цитаты (синхронизация)
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[],
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[] }; }) };
@@ -1311,7 +1316,7 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM]});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav]});
   }
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
@@ -1320,7 +1325,7 @@ main,footer{position:relative;z-index:1}
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
-    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM]});
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav]});
     try{ await sbUpsert({code:myCode, name:myName, data}); lastCloudData = data; return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
@@ -1724,20 +1729,40 @@ main,footer{position:relative;z-index:1}
   const FP_STARS = `<svg class="d-star s1" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s2" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s3" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s4" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s5" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s6" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s7" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-spark k1" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k2" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k3" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k4" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k5" viewBox="0 0 100 100"><use href="#spark"/></svg>`;
   function openPage(id){ const el=$("#"+id); if(el && !el.querySelector(".fp-decor")){ const d=document.createElement("div"); d.className="fp-decor"; d.setAttribute("aria-hidden","true"); d.innerHTML=FP_STARS; el.insertBefore(d, el.firstChild); } el.classList.add("open"); }
   let qpBooks = [];   // книги текущего раздела цитат — чтобы по тапу открыть страницу книги с её цитатами
+  // любимые цитаты (синхронизируются между устройствами)
+  let quoteFav; try{ quoteFav=new Set(JSON.parse(localStorage.getItem("polka_quotefav")||"[]")); }catch(e){ quoteFav=new Set(); }
+  const saveQuoteFav=()=>{ try{ localStorage.setItem("polka_quotefav", JSON.stringify([...quoteFav])); }catch(e){} };
+  function loadQuoteFavFrom(cp){ try{ if(cp && Array.isArray(cp.qf) && cp.qf.length){ quoteFav=new Set(cp.qf); saveQuoteFav(); } else if(quoteFav.size){ if(typeof syncUp==="function") syncUp(); } }catch(e){} }
+  const quoteId=(b,q)=> bookKey(b.t, b.a)+""+String(q).trim();
+  let quotesForMe=true, quotesShowFav=false;
+  function renderQuotesList(){
+    const books=qpBooks;
+    let items=[];
+    books.forEach(b=> quotesOf(b).forEach(q=> items.push({q, b})));
+    if(quotesForMe && quotesShowFav) items=items.filter(({q,b})=> quoteFav.has(quoteId(b,q)));
+    const fb=$("#quotesFav");
+    if(fb){ fb.style.display=quotesForMe?"":"none"; fb.classList.toggle("on", quotesShowFav); fb.textContent=quotesShowFav?"💬 все":"❤ любимые"; }
+    $("#quotesList").innerHTML = items.length
+      ? items.map(({q,b})=>{ const fid=quoteId(b,q); const on=quoteFav.has(fid);
+          const heart = quotesForMe ? `<button type="button" class="q-fav${on?" on":""}" data-fid="${esc(fid)}" aria-label="в любимые">${on?"❤":"🤍"}</button>` : "";
+          return `<div class="q-row">${heart}<span class="q-text">«${esc(q)}»</span><div class="q-side q-openbook" data-t="${esc(b.t)}" data-a="${esc(b.a||"")}" title="открыть страницу книги"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`; }).join("")
+      : `<p class="mp">${quotesForMe ? (quotesShowFav ? "Пока нет любимых цитат — нажми ❤ на цитате, чтобы сохранить." : "Пока нет цитат. Откройте книгу и впишите любимую цитату из неё.") : "У друга пока нет сохранённых цитат."}</p>`;
+  }
   function openQuotesPage(forMe){
-    const books = forMe ? myBooks : ((friend()&&friend().books)||[]);
-    qpBooks = books;
+    quotesForMe=forMe; if(!forMe) quotesShowFav=false;
+    qpBooks = forMe ? myBooks : ((friend()&&friend().books)||[]);
     const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
     $("#quotesTitle").textContent = forMe ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
-    $("#quotesSub").textContent = forMe ? "Цитаты, которые вы сохранили из своих книг. Нажми на книгу справа — откроется её страница." : `Любимые цитаты из книг — ${fn}. Нажми на книгу справа — откроется её страница.`;
-    const items = [];
-    books.forEach(b=> quotesOf(b).forEach(q=> items.push({q, b})));
-    $("#quotesList").innerHTML = items.length
-      ? items.map(({q,b})=>`<div class="q-row"><span class="q-text">«${esc(q)}»</span><div class="q-side q-openbook" data-t="${esc(b.t)}" data-a="${esc(b.a||"")}" title="открыть страницу книги"><div class="q-spine" style="background:${spineBg(b)}"></div><div class="q-bk"><b>${esc(b.t)}</b>${esc(b.a||"")}</div></div></div>`).join("")
-      : `<p class="mp">${forMe ? "Пока нет цитат. Откройте книгу и впишите любимую цитату из неё." : "У друга пока нет сохранённых цитат."}</p>`;
+    $("#quotesSub").textContent = forMe ? "Цитаты, которые вы сохранили из своих книг. Сердечком ❤ отмечай любимые. Нажми на книгу справа — откроется её страница." : `Любимые цитаты из книг — ${fn}. Нажми на книгу справа — откроется её страница.`;
+    renderQuotesList();
     openPage("quotesPage");
   }
-  { const _ql=$("#quotesList"); if(_ql) _ql.addEventListener("click", e=>{ const el=e.target.closest(".q-openbook"); if(!el) return; const t=el.dataset.t, a=el.dataset.a; const b=(qpBooks||[]).find(x=>bookKey(x.t,x.a)===bookKey(t,a)); openBookPage(t, a, b?quotesOf(b):[]); }); }
+  $("#quotesFav").addEventListener("click", ()=>{ quotesShowFav=!quotesShowFav; renderQuotesList(); });
+  { const _ql=$("#quotesList"); if(_ql) _ql.addEventListener("click", e=>{
+      const fav=e.target.closest(".q-fav");
+      if(fav){ const fid=fav.dataset.fid; if(quoteFav.has(fid)) quoteFav.delete(fid); else quoteFav.add(fid); saveQuoteFav(); syncUp(); renderQuotesList(); return; }
+      const el=e.target.closest(".q-openbook"); if(!el) return; const t=el.dataset.t, a=el.dataset.a; const b=(qpBooks||[]).find(x=>bookKey(x.t,x.a)===bookKey(t,a)); openBookPage(t, a, b?quotesOf(b):[]);
+    }); }
   $("#quotesBtn").addEventListener("click", ()=> openQuotesPage(false));   // нижняя кнопка — цитаты друга
 
   /* книжные хотелки — стоят как книги на полке */
@@ -1774,6 +1799,7 @@ main,footer{position:relative;z-index:1}
     $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish();
   }
   $("#wishBtn").addEventListener("click", ()=> openWishPage(false));   // нижняя кнопка — хотелки друга
+  $("#poemsFriendBtn").addEventListener("click", ()=>{ const f=friend(); if(f&&f.code) openPoems(f.code); else toast("У друга пока нет стихов"); });   // стихи друга
   // «книжный год» доступен только в новогоднюю неделю: 31 дек — 6 янв
   function wrappedSeason(){ const d=new Date(), m=d.getMonth(), day=d.getDate(); return (m===11 && day>=31) || (m===0 && day<=6); }
   function readWord(n){ const a=n%100,b=n%10; if(a>=11&&a<=14) return "книг прочитано"; if(b===1) return "книга прочитана"; if(b>=2&&b<=4) return "книги прочитано"; return "книг прочитано"; }
@@ -2454,7 +2480,7 @@ main,footer{position:relative;z-index:1}
     {id:"s2", t:"", a:"Александр Пушкин", x:"Я вас любил: любовь ещё, быть может,\nВ душе моей угасла не совсем;\nНо пусть она вас больше не тревожит;\nЯ не хочу печалить вас ничем.\nЯ вас любил безмолвно, безнадежно,\nТо робостью, то ревностью томим;\nЯ вас любил так искренно, так нежно,\nКак дай вам Бог любимой быть другим."},
     {id:"s3", t:"Лиличка!", a:"Владимир Маяковский", x:"Дым табачный воздух выел.\nКомната —\nглава в крученыховском аде.\nВспомни —\nза этим окном\nвпервые\nруки твои, исступленный, гладил.\nСегодня сидишь вот,\nсердце в железе.\nДень еще —\nвыгонишь,\nможет быть, изругав.\nВ мутной передней долго не влезет\nсломанная дрожью рука в рукав.\nВыбегу,\nтело в улицу брошу я.\nДикий,\nобезумлюсь,\nотчаяньем иссечась.\nНе надо этого,\nдорогая,\nхорошая,\nдай простимся сейчас.\nВсе равно\nлюбовь моя —\nтяжкая гиря ведь —\nвисит на тебе,\nкуда ни бежала б.\nДай в последнем крике выреветь\nгоречь обиженных жалоб.\nЕсли быка трудом уморят —\nон уйдет,\nразляжется в холодных водах.\nКроме любви твоей,\nмне\nнету моря,\nа у любви твоей и плачем не вымолишь отдых.\nЗахочет покоя уставший слон —\nцарственный ляжет в опожаренном песке.\nКроме любви твоей,\nмне\nнету солнца,\nа я и не знаю, где ты и с кем.\nЕсли б так поэта измучила,\nон\nлюбимую на деньги б и славу выменял,\nа мне\nни один не радостен звон,\nкроме звона твоего любимого имени.\nИ в пролет не брошусь,\nи не выпью яда,\nи курок не смогу над виском нажать.\nНадо мною,\nкроме твоего взгляда,\nне властно лезвие ни одного ножа.\nЗавтра забудешь,\nчто тебя короновал,\nчто душу цветущую любовью выжег,\nи суетных дней взметенный карнавал\nрастреплет страницы моих книжек...\nСлов моих сухие листья ли\nзаставят остановиться,\nжадно дыша?\nДай хоть\nпоследней нежностью выстелить\nтвой уходящий шаг."}
   ];
-  let poems=[], poemIdx=0, poemFilterBm=false, poemQuery="";
+  let poems=[], poemIdx=0, poemFilterBm=false, poemQuery="", poemAuthorFilter=null;   // poemAuthorFilter — код автора: «мои стихи» / «стихи друга»
   let poemsCache=null; try{ poemsCache=JSON.parse(localStorage.getItem("polka_poems_cache")||"null"); }catch(e){ poemsCache=null; }
   function mapPoems(community){ return community.map(p=>({id:"c"+p.id, dbId:p.id, t:p.title||"", a:p.author||"", x:p.text||"", by:p.name||"", byPhoto:p.photo||"", byCode:p.code||""})); }
   const savePoemsCache=()=>{ try{ localStorage.setItem("polka_poems_cache", JSON.stringify(poemsCache||[])); }catch(e){ try{ localStorage.setItem("polka_poems_cache", JSON.stringify((poemsCache||[]).map(p=>Object.assign({},p,{byPhoto:""})))); }catch(e2){} } };
@@ -2462,7 +2488,7 @@ main,footer{position:relative;z-index:1}
   const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
   // синхронизация закладок стихов между устройствами: облако авторитетно, если в нём что-то есть; иначе заливаем локальные (первая миграция)
   function loadPoemBmFrom(cp){ try{ if(cp && Array.isArray(cp.pm) && cp.pm.length){ poemBM=new Set(cp.pm); savePoemBM(); if(typeof renderPoem==="function") renderPoem(); } else if(poemBM.size){ if(typeof syncUp==="function") syncUp(); } }catch(e){} }
-  const poemList=()=>{ let l = poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems; const q=(poemQuery||"").trim().toLowerCase(); if(q) l = l.filter(p=>((p.t||"")+" "+(p.a||"")+" "+(p.x||"")).toLowerCase().includes(q)); return l; };
+  const poemList=()=>{ let l = poems; if(poemAuthorFilter) l = l.filter(p=>p.byCode && p.byCode===poemAuthorFilter); if(poemFilterBm) l = l.filter(p=>poemBM.has(p.id)); const q=(poemQuery||"").trim().toLowerCase(); if(q) l = l.filter(p=>((p.t||"")+" "+(p.a||"")+" "+(p.x||"")).toLowerCase().includes(q)); return l; };
   const POEM_PHRASES = ["Полистай, вдруг эти строчки про тебя?"];
   function poemByHTML(p){
     const av = p.byPhoto ? `<span class="poem-by-av"><img src="${esc(p.byPhoto)}" alt=""></span>` : `<span class="poem-by-av">${esc((p.by[0]||"Ч").toUpperCase())}</span>`;
@@ -2487,7 +2513,12 @@ main,footer{position:relative;z-index:1}
     poemsCache = mapPoems(community); savePoemsCache();
     if($("#poemsPage") && $("#poemsPage").classList.contains("open") && !poemFilterBm && !poemQuery){ const atStart=(poemIdx===0); poems = poemsCache.concat(SEED_POEMS); if(atStart||poemIdx>=poems.length){ poemIdx=0; renderPoem(); } }
   }
-  async function openPoems(){
+  async function openPoems(authorCode){
+    poemAuthorFilter = authorCode || null;
+    const mine = !!(poemAuthorFilter && myCode && poemAuthorFilter===myCode);
+    const friendPoems = !!(poemAuthorFilter && !mine);
+    if($("#poemsTitle")) $("#poemsTitle").textContent = mine ? "Мои стихи ✒️" : (friendPoems ? `Стихи · ${(friend()&&friend().name)||"друга"} ✒️` : "Поэзия ✒️");
+    if($("#poemAdd")) $("#poemAdd").style.display = friendPoems ? "none" : "";   // у чужих нельзя добавлять
     poemFilterBm=false; poemQuery=""; if($("#poemSearch")){ $("#poemSearch").value=""; $("#poemSearch").style.display="none"; } $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки";
     $("#poemQuote").textContent = POEM_PHRASES[Math.floor(Math.random()*POEM_PHRASES.length)];
     openPage("poemsPage");
@@ -2504,7 +2535,8 @@ main,footer{position:relative;z-index:1}
     $("#poemCount").textContent = `${poemIdx+1} / ${list.length}`; updatePoemBm(p); fitPoem(); requestAnimationFrame(fitPoem);
   }
   function poemGo(d){ const list=poemList(); if(!list.length) return; poemIdx=(poemIdx+d+list.length)%list.length; renderPoem(); if(reduce) return; const pg=$("#poemPage"); pg.classList.remove("anim"); void pg.offsetWidth; pg.classList.add("anim"); }
-  $("#mPoems").addEventListener("click", ()=>{ closeMenu(); openPoems(); });
+  $("#mPoems").addEventListener("click", ()=>{ if(typeof menuGo==="function") menuGo(()=>openPoems()); else { closeMenu(); openPoems(); } });
+  $("#mMyPoems").addEventListener("click", ()=>{ if(typeof menuGo==="function") menuGo(()=>openPoems(myCode)); else { closeMenu(); openPoems(myCode); } });   // только мои стихи
   let editingPoem=null;
   async function deletePoem(id){
     if(!id) return;
@@ -3096,6 +3128,7 @@ main,footer{position:relative;z-index:1}
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
     myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=(p&&p.rd)||""; myWishlist=(p&&Array.isArray(p.wl))?p.wl:[];
     loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
+    loadQuoteFavFrom(p);   // любимые цитаты
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading);
       localStorage.setItem("polka_wishlist",JSON.stringify(myWishlist));
@@ -3129,6 +3162,7 @@ main,footer{position:relative;z-index:1}
         if(Array.isArray(cp.fr)) cloudFr = cp.fr;
         if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
         loadPoemBmFrom(cp);   // закладки стихов из облака
+        loadQuoteFavFrom(cp);   // любимые цитаты из облака
         // подтягиваем последнюю версию полки из облака (книги, цитаты, имя и т.д.)
         if(Array.isArray(cp.b)){ myBooks = cp.b; try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} }
         if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
