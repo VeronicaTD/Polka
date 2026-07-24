@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="186" />
+<meta name="app-version" content="187" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -490,7 +490,8 @@ main,footer{position:relative;z-index:1}
 .fp-decor{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .fp-decor svg{position:absolute;display:block;transform:rotate(var(--r,0deg));animation:bob 8s ease-in-out infinite}
 .fp-decor svg:nth-of-type(2){animation-delay:-2s}.fp-decor svg:nth-of-type(3){animation-delay:-4s}.fp-decor svg:nth-of-type(4){animation-delay:-1s}.fp-decor svg:nth-of-type(5){animation-delay:-3s}.fp-decor svg:nth-of-type(6){animation-delay:-5s}.fp-decor svg:nth-of-type(7){animation-delay:-1.5s}.fp-decor svg:nth-of-type(8){animation-delay:-3.5s}.fp-decor svg:nth-of-type(9){animation-delay:-2.2s}.fp-decor svg:nth-of-type(10){animation-delay:-4.4s}.fp-decor svg:nth-of-type(11){animation-delay:-.8s}.fp-decor svg:nth-of-type(12){animation-delay:-2.8s}
-.fullpage>.fp-head,.fullpage>.fp-body{position:relative;z-index:1}
+.fullpage>.fp-head{position:sticky;top:0;z-index:3}   /* «назад» всегда виден при прокрутке — не нужно листать наверх, чтобы выйти */
+.fullpage>.fp-body{position:relative;z-index:1}
 
 /* модалки */
 .overlay{position:fixed;inset:0;background:rgba(40,30,18,.5);opacity:0;pointer-events:none;transition:.25s;z-index:80}
@@ -717,7 +718,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v186 test: кнопка «Получить доступ в Telegram» ведёт теперь на канал @AppPolka (было в личку @veronica_182) — оттуда пишут за кодом. BUY_URL один на обе кнопки (#buyBtn, #welBuyBtn). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v187 test: (1) кнопка «назад» в разделах теперь липкая при скролле (fp-head sticky, строка 493 больше не сбрасывает на relative). (2) удаление книги обновляет «Выбор читателей» (сброс кэша readersData после syncUp). (3) закладки стихов синхронизируются между устройствами — pm 10-й элемент в блобе полки (encode/decode/syncUp/bootCloud/doLogin), toggle делает syncUp. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1281,13 +1282,13 @@ main,footer{position:relative;z-index:1}
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk)]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[], p.pd?1:0, p.wl||[]]));
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[], p.pd?1:0, p.wl||[], p.pm||[]]));   // pm = закладки стихов (синхронизация между устройствами)
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[], pd:a[7]||0, wl:a[8]||[],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[],
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[] }; }) };
@@ -1301,7 +1302,7 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM]});
   }
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
@@ -1310,7 +1311,7 @@ main,footer{position:relative;z-index:1}
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
-    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist});
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM]});
     try{ await sbUpsert({code:myCode, name:myName, data}); lastCloudData = data; return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
@@ -2443,6 +2444,8 @@ main,footer{position:relative;z-index:1}
   const savePoemsCache=()=>{ try{ localStorage.setItem("polka_poems_cache", JSON.stringify(poemsCache||[])); }catch(e){ try{ localStorage.setItem("polka_poems_cache", JSON.stringify((poemsCache||[]).map(p=>Object.assign({},p,{byPhoto:""})))); }catch(e2){} } };
   let poemBM; try{ poemBM=new Set(JSON.parse(localStorage.getItem("polka_poembm")||"[]")); }catch(e){ poemBM=new Set(); }
   const savePoemBM=()=>{ try{ localStorage.setItem("polka_poembm", JSON.stringify([...poemBM])); }catch(e){} };
+  // синхронизация закладок стихов между устройствами: облако авторитетно, если в нём что-то есть; иначе заливаем локальные (первая миграция)
+  function loadPoemBmFrom(cp){ try{ if(cp && Array.isArray(cp.pm) && cp.pm.length){ poemBM=new Set(cp.pm); savePoemBM(); if(typeof renderPoem==="function") renderPoem(); } else if(poemBM.size){ if(typeof syncUp==="function") syncUp(); } }catch(e){} }
   const poemList=()=>{ let l = poemFilterBm ? poems.filter(p=>poemBM.has(p.id)) : poems; const q=(poemQuery||"").trim().toLowerCase(); if(q) l = l.filter(p=>((p.t||"")+" "+(p.a||"")+" "+(p.x||"")).toLowerCase().includes(q)); return l; };
   const POEM_PHRASES = ["Полистай, вдруг эти строчки про тебя?"];
   function poemByHTML(p){
@@ -2527,7 +2530,7 @@ main,footer{position:relative;z-index:1}
     if(!cached || view==="guest") showGuest(g);
   }
   $("#poemPage").addEventListener("click", e=>{ const dl=e.target.closest("[data-delpoem]"); if(dl){ deletePoem(dl.dataset.delpoem); return; } const ed=e.target.closest("[data-editpoem]"); if(ed){ editPoem(ed.dataset.editpoem); return; } const el=e.target.closest("[data-code]"); if(el){ const p=poemList()[poemIdx]||{}; viewPoemAuthor(el.dataset.code, p.by, p.byPhoto); } });
-  $("#poemBm").addEventListener("click", ()=>{ const p=poemList()[poemIdx]; if(!p) return; if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id); savePoemBM(); updatePoemBm(p); toast(poemBM.has(p.id)?"В закладках ♥":"Убрано из закладок"); });
+  $("#poemBm").addEventListener("click", ()=>{ const p=poemList()[poemIdx]; if(!p) return; if(poemBM.has(p.id)) poemBM.delete(p.id); else poemBM.add(p.id); savePoemBM(); syncUp(); updatePoemBm(p); toast(poemBM.has(p.id)?"В закладках ♥":"Убрано из закладок"); });
   $("#poemFilter").addEventListener("click", ()=>{ poemFilterBm=!poemFilterBm; poemIdx=0; $("#poemFilter").classList.toggle("on", poemFilterBm); $("#poemFilter").textContent = poemFilterBm?"📖 все стихи":"❤ закладки"; const s=$("#poemSearch"); if(s){ s.style.display=poemFilterBm?"block":"none"; if(!poemFilterBm){ poemQuery=""; s.value=""; } } renderPoem(); });
   $("#poemSearch").addEventListener("input", ()=>{ poemQuery=$("#poemSearch").value; poemIdx=0; renderPoem(); });
   $("#poemAdd").addEventListener("click", ()=>{ editingPoem=null; $("#poemT").value=""; $("#poemA").value=""; $("#poemText").value=""; $("#poemMsg").textContent=""; if($("#poemSave"))$("#poemSave").textContent="Поделиться"; if($("#poemAddTitle"))$("#poemAddTitle").textContent="Поделиться стихотворением ✒️"; openPage("poemAddPage"); });
@@ -2722,7 +2725,9 @@ main,footer{position:relative;z-index:1}
   $("#delBook").addEventListener("click", async ()=>{
     if(infoBook && isMe()){
       if(!(await askConfirm("Удалить книгу «"+infoBook.t+"» с полки? Рецензию и цитаты тоже потеряешь."))) return;
-      const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine(); syncUp(); } closeModals(); renderAll();
+      const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine();
+        syncUp().then(()=>{ readersData=null; try{localStorage.removeItem("polka_readers_cache");}catch(e){} loadReadersData(true); });   // обновить «Выбор читателей», чтобы удалённая книга исчезла из подборки
+      } closeModals(); renderAll();
     }
   });
   $("#iReview").addEventListener("input", ()=>{ $("#iPreviewReview").style.display = $("#iReview").value.trim() ? "" : "none"; if(infoBook && isMe()){ const bk=bookKey(infoBook.t,infoBook.a); reviewDrafts[bk]=$("#iReview").value; saveReviewDrafts(); } });
@@ -3019,6 +3024,7 @@ main,footer{position:relative;z-index:1}
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
     myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=(p&&p.rd)||""; myWishlist=(p&&Array.isArray(p.wl))?p.wl:[];
+    loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading);
       localStorage.setItem("polka_wishlist",JSON.stringify(myWishlist));
@@ -3051,6 +3057,7 @@ main,footer{position:relative;z-index:1}
         if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
         if(Array.isArray(cp.fr)) cloudFr = cp.fr;
         if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
+        loadPoemBmFrom(cp);   // закладки стихов из облака
         // подтягиваем последнюю версию полки из облака (книги, цитаты, имя и т.д.)
         if(Array.isArray(cp.b)){ myBooks = cp.b; try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} }
         if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
