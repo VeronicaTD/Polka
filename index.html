@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="188" />
+<meta name="app-version" content="189" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -146,9 +146,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .menu-btn:hover{background:var(--paper);border-color:var(--accent)}
 .menu-sep{height:1px;background:var(--line);margin:8px 4px}
 /* боковое меню */
-.menu-back{display:none;position:fixed;inset:0;z-index:60;background:rgba(20,10,5,.4)}
+.menu-back{display:none;position:fixed;inset:0;z-index:199;background:rgba(20,10,5,.4)}
 .menu-back.open{display:block}
-.side-menu{position:fixed;top:0;left:0;bottom:0;width:min(280px,80vw);z-index:61;background:var(--paper);
+.side-menu{position:fixed;top:0;left:0;bottom:0;width:min(280px,80vw);z-index:200;background:var(--paper);
   box-shadow:8px 0 30px -10px rgba(40,25,10,.5);transform:translateX(-100%);transition:transform .28s cubic-bezier(.16,1,.3,1);
   padding:22px 16px;display:flex;flex-direction:column;gap:8px}
 .side-menu.open{transform:none}
@@ -660,6 +660,8 @@ main,footer{position:relative;z-index:1}
 <div id="menuBack" class="menu-back"></div>
 <nav id="sideMenu" class="side-menu" aria-label="Меню">
   <div class="menu-h">Polka 📚</div>
+  <button class="menu-item" id="mHome">🏛 Моя полка</button>
+  <div class="menu-sep"></div>
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
@@ -725,7 +727,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v188 test: автоподсказка книги при добавлении — вписываешь название → выпадают книги из Google Books (langRestrict=ru, фильтр мусора «краткое изложение/саммари», дедуп), выбираешь → название/автор/жанр подставляются сами (genreFromBook маппит категории Google на 6 жанров). Debounce 350мс, sequence-guard. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v189 test: навигация внутри разделов. Добавил ☰ в заголовки разделов (открывает боковое меню поверх раздела; z-index меню 61→200, фон 60→199). В меню сверху «🏛 Моя полка» (домой). Переход из меню в другой раздел закрывает текущий (menuGo). Кнопка рецензии в окне книги — на месте (проверено), у жалобы был старый кэш. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -860,13 +862,13 @@ main,footer{position:relative;z-index:1}
 
 <!-- мои цитаты (полный экран) -->
 <div class="fullpage" id="quotesPage" aria-label="Цитаты">
-  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
   <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
 </div>
 
 <!-- книжные хотелки (полный экран) -->
 <div class="fullpage" id="wishPage" aria-label="Хотелки">
-  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
   <div class="fp-body">
     <p class="mp" id="wishSub">То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку.</p>
     <div class="wish-stack" id="wishStack"></div>
@@ -892,7 +894,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- подборки книг (полный экран) -->
 <div class="fullpage" id="catalogPage" aria-label="Подборки">
-  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Подборки книг 📚</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3>Подборки книг 📚</h3></div>
   <div class="fp-body">
     <p class="mp">Жанровые подборки и самое популярное. Нажми на книгу — там аннотация 📖</p>
     <div id="catalogList"></div>
@@ -901,7 +903,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- лента рецензий читателей -->
 <div class="fullpage" id="reviewsPage" aria-label="Рецензии читателей">
-  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Рецензии читателей 💬</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3>Рецензии читателей 💬</h3></div>
   <div class="fp-body">
     <p class="mp">Живая лента: что читатели пишут о книгах — в том числе о тех, которых нет в подборках. Своё мнение можно оставить в любой своей книге → «Опубликовать рецензию».</p>
     <div id="reviewsFeed"></div>
@@ -910,7 +912,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- стихи -->
 <div class="fullpage" id="poemsPage" aria-label="Поэзия">
-  <div class="fp-head"><button class="fp-back" data-close>← назад</button><h3>Поэзия ✒️</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3>Поэзия ✒️</h3></div>
   <div class="fp-body">
     <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-tools">
@@ -2613,15 +2615,21 @@ main,footer{position:relative;z-index:1}
   /* ---- боковое меню ---- */
   function openMenu(){ $("#menuBack").classList.add("open"); $("#sideMenu").classList.add("open"); }
   function closeMenu(){ $("#menuBack").classList.remove("open"); $("#sideMenu").classList.remove("open"); }
+  // переход из меню в раздел: закрываем меню и любой открытый раздел, потом открываем нужный (чтобы разделы не «стопкой»)
+  function menuGo(fn){ closeMenu(); document.querySelectorAll(".fullpage.open").forEach(m=>m.classList.remove("open")); if(fn) fn(); }
   $("#menuBtn").addEventListener("click", openMenu);
   $("#menuBack").addEventListener("click", closeMenu);
+  // кнопка ☰ внутри разделов — открывает это же меню (чтобы переходить между разделами, не возвращаясь на полку)
+  document.addEventListener("click", e=>{ if(e.target.closest(".fp-menu")) openMenu(); });
+  // «Моя полка» — вернуться на свою полку
+  $("#mHome").addEventListener("click", ()=>{ closeMenu(); closeModals(); view="me"; casePage=0; renderAll(); });
   // пункты меню — ВСЕГДА про меня (мои цитаты/хотелки), даже когда я в гостях
-  $("#mQuotes").addEventListener("click", ()=>{ closeMenu(); openQuotesPage(true); });
-  $("#mWish").addEventListener("click", ()=>{ closeMenu(); openWishPage(true); });
-  $("#mCatalog").addEventListener("click", ()=>{ closeMenu(); $("#catalogBtn").click(); });
-  $("#mReviews").addEventListener("click", ()=>{ closeMenu(); openReviewsFeed(); });
-  $("#mYear").addEventListener("click", ()=>{ closeMenu(); $("#yearBtn").click(); });
-  $("#mTheme").addEventListener("click", ()=>{ closeMenu(); openThemes(); });
+  $("#mQuotes").addEventListener("click", ()=>{ menuGo(()=>openQuotesPage(true)); });
+  $("#mWish").addEventListener("click", ()=>{ menuGo(()=>openWishPage(true)); });
+  $("#mCatalog").addEventListener("click", ()=>{ menuGo(()=>$("#catalogBtn").click()); });
+  $("#mReviews").addEventListener("click", ()=>{ menuGo(()=>openReviewsFeed()); });
+  $("#mYear").addEventListener("click", ()=>{ menuGo(()=>$("#yearBtn").click()); });
+  $("#mTheme").addEventListener("click", ()=>{ menuGo(()=>openThemes()); });
 
   /* свайп */
   let sx=null;
