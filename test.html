@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="187" />
+<meta name="app-version" content="188" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -327,6 +327,13 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 #bpAnno{margin-top:18px}
 .bp-section{margin-top:22px}
 .read-link.done{opacity:.85;background:var(--accent);color:#fff;border-color:var(--accent);cursor:default}
+.bk-search{position:relative}
+.bk-suggest{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:20;max-height:240px;overflow-y:auto}
+.bk-opt{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--line);padding:9px 13px;cursor:pointer;font-family:inherit}
+.bk-opt:last-child{border-bottom:none}
+.bk-opt:hover,.bk-opt:active{background:var(--paper-2)}
+.bk-opt-t{font-size:14px;font-weight:600;color:var(--ink);line-height:1.25}
+.bk-opt-a{font-size:12px;color:var(--ink-soft)}
 .bpq-carousel{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .bpq-carousel::-webkit-scrollbar{height:0;display:none}
 .bpq-card{flex:0 0 82%;max-width:340px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
@@ -718,7 +725,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v187 test: (1) кнопка «назад» в разделах теперь липкая при скролле (fp-head sticky, строка 493 больше не сбрасывает на relative). (2) удаление книги обновляет «Выбор читателей» (сброс кэша readersData после syncUp). (3) закладки стихов синхронизируются между устройствами — pm 10-й элемент в блобе полки (encode/decode/syncUp/bootCloud/doLogin), toggle делает syncUp. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v188 test: автоподсказка книги при добавлении — вписываешь название → выпадают книги из Google Books (langRestrict=ru, фильтр мусора «краткое изложение/саммари», дедуп), выбираешь → название/автор/жанр подставляются сами (genreFromBook маппит категории Google на 6 жанров). Debounce 350мс, sequence-guard. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -731,8 +738,8 @@ main,footer{position:relative;z-index:1}
     <div class="big-spine" id="prevSpine" style="width:46px;height:120px;border-radius:2px 4px 4px 2px"></div>
     <div class="pl">Так будет выглядеть корешок.<br>Выберите цвет ниже.</div>
   </div>
-  <div class="field"><label>Название</label><input id="fTitle" placeholder="например, Над пропастью во ржи" /></div>
-  <div class="field"><label>Автор</label><input id="fAuthor" placeholder="например, Дж. Сэлинджер" /></div>
+  <div class="field bk-search"><label>Название</label><input id="fTitle" placeholder="начни вводить — подскажем книгу" autocomplete="off" /><div id="fSuggest" class="bk-suggest" hidden></div></div>
+  <div class="field"><label>Автор</label><input id="fAuthor" placeholder="подставится сам или впиши" /></div>
   <div class="field"><label>Жанр</label>
     <select id="fGenre"><option>Проза</option><option>Фантастика</option><option>Нон-фикшн</option><option>Поэзия</option><option>Детектив</option><option>Классика</option></select>
   </div>
@@ -2649,6 +2656,7 @@ main,footer{position:relative;z-index:1}
   function openAdd(pre){
     if(!requirePaid()) return;
     $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
+    { const _s=$("#fSuggest"); if(_s){ _s.hidden=true; _s.innerHTML=""; } }
     selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
@@ -2660,6 +2668,52 @@ main,footer{position:relative;z-index:1}
     saveMine(); syncUp();
     casePage=9999; slideDir=0; closeModals(); renderAll();
   });
+
+  /* ---- автоподсказка книги из Google Books: вписываешь название → подставляет автора/жанр ---- */
+  let bkSeq=0, bkTimer=null;
+  function genreFromBook(v){
+    const s=(((v.categories||[]).join(" "))+" "+(v.title||"")).toLowerCase();
+    if(/поэзия|poetry|стих|стихотвор/.test(s)) return "Поэзия";
+    if(/детектив|триллер|thriller|crime|mystery|detective|preступ/.test(s)) return "Детектив";
+    if(/фантаст|фэнтези|fantasy|science fiction|sci-?fi/.test(s)) return "Фантастика";
+    if(/non-?fiction|нон-?фикшн|биограф|biograph|self-?help|психолог|psychology|история|history|science|наука|бизнес|business|мемуар/.test(s)) return "Нон-фикшн";
+    return "Проза";
+  }
+  const BK_JUNK=/(краткое изложение|саммари|summary|рабочая тетрадь|дневник читателя|анализ книги|обзор книги|ключевые идеи|конспект)/i;
+  function bkRender(items){
+    const box=$("#fSuggest"); if(!box) return;
+    const seen=new Set();
+    const list=(items||[]).filter(v=>{ if(!v||!v.title||BK_JUNK.test(v.title)) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,6);
+    if(!list.length){ box.hidden=true; box.innerHTML=""; box._items=null; return; }
+    box._items=list;
+    box.innerHTML=list.map((v,i)=>{ const au=(v.authors&&v.authors[0])||"";
+      return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
+    box.hidden=false;
+  }
+  async function bkSearch(q){
+    const seq=++bkSeq;
+    try{
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8&country=RU&langRestrict=ru&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
+      if(!r.ok || seq!==bkSeq) return;
+      const d=await r.json(); if(seq!==bkSeq) return;
+      bkRender((d.items||[]).map(it=>it.volumeInfo));
+    }catch(e){}
+  }
+  $("#fTitle").addEventListener("input", ()=>{
+    const q=$("#fTitle").value.trim();
+    if(bkTimer) clearTimeout(bkTimer);
+    if(q.length<3){ const b=$("#fSuggest"); if(b){ b.hidden=true; } return; }
+    bkTimer=setTimeout(()=>bkSearch(q), 350);   // ждём паузу в наборе
+  });
+  $("#fSuggest").addEventListener("click", e=>{
+    const opt=e.target.closest(".bk-opt"); if(!opt) return;
+    const box=$("#fSuggest"); const v=(box._items||[])[+opt.dataset.i]; if(!v) return;
+    $("#fTitle").value=v.title;
+    $("#fAuthor").value=(v.authors&&v.authors[0])||$("#fAuthor").value;
+    $("#fGenre").value=genreFromBook(v);
+    box.hidden=true; bkSeq++;   // отменяем «висящие» запросы
+  });
+  $("#fTitle").addEventListener("blur", ()=>{ setTimeout(()=>{ const b=$("#fSuggest"); if(b) b.hidden=true; }, 200); });
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
   const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], infoReviewData=null;
