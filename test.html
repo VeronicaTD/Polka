@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="193" />
+<meta name="app-version" content="194" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -731,7 +731,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v193 test: убрал пункт «Мои стихи» из меню (по просьбе) — оставил только «стихи друга» в профиле друга (poemsFriendBtn). Логика openPoems(authorCode) сохранена для кнопки друга. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v194 test: в разделах ДРУГА (цитаты/хотелки/стихи друга) появляется «← назад» (data-close) — возвращает на профиль друга, а не на свою полку. У своих разделов назад скрыт (только ☰ разделы). Показ через fp-friendback по !forMe/friendPoems. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -866,13 +866,13 @@ main,footer{position:relative;z-index:1}
 
 <!-- мои цитаты (полный экран) -->
 <div class="fullpage" id="quotesPage" aria-label="Цитаты">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="quotesTitle">Мои цитаты 💬</h3><button id="quotesFav" class="fp-back" type="button" style="margin-left:auto">❤ любимые</button></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3><button id="quotesFav" class="fp-back" type="button" style="margin-left:auto">❤ любимые</button></div>
   <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
 </div>
 
 <!-- книжные хотелки (полный экран) -->
 <div class="fullpage" id="wishPage" aria-label="Хотелки">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
   <div class="fp-body">
     <p class="mp" id="wishSub">То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку.</p>
     <div class="wish-stack" id="wishStack"></div>
@@ -916,7 +916,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- стихи -->
 <div class="fullpage" id="poemsPage" aria-label="Поэзия">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="poemsTitle">Поэзия ✒️</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="poemsTitle">Поэзия ✒️</h3></div>
   <div class="fp-body">
     <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-tools">
@@ -1749,6 +1749,7 @@ main,footer{position:relative;z-index:1}
   }
   function openQuotesPage(forMe){
     quotesForMe=forMe; if(!forMe) quotesShowFav=false;
+    { const b=$("#quotesPage .fp-friendback"); if(b) b.style.display=forMe?"none":""; }   // «назад» на профиль друга — только в гостях
     qpBooks = forMe ? myBooks : ((friend()&&friend().books)||[]);
     const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
     $("#quotesTitle").textContent = forMe ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
@@ -1791,6 +1792,7 @@ main,footer{position:relative;z-index:1}
   }
   function openWishPage(forMe){
     wishForMe = forMe;
+    { const b=$("#wishPage .fp-friendback"); if(b) b.style.display=forMe?"none":""; }   // «назад» на профиль друга — только в гостях
     const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
     $("#wishTitleH").textContent = forMe ? "Мои хотелки 📌" : `Хотелки · ${fn} 📌`;
     $("#wishSub").textContent = forMe ? "То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
@@ -2518,6 +2520,7 @@ main,footer{position:relative;z-index:1}
     const friendPoems = !!(poemAuthorFilter && !mine);
     if($("#poemsTitle")) $("#poemsTitle").textContent = mine ? "Мои стихи ✒️" : (friendPoems ? `Стихи · ${(friend()&&friend().name)||"друга"} ✒️` : "Поэзия ✒️");
     if($("#poemAdd")) $("#poemAdd").style.display = friendPoems ? "none" : "";   // у чужих нельзя добавлять
+    { const b=$("#poemsPage .fp-friendback"); if(b) b.style.display=friendPoems?"":"none"; }   // «назад» на профиль друга — только для стихов друга
     poemFilterBm=false; poemQuery=""; if($("#poemSearch")){ $("#poemSearch").value=""; $("#poemSearch").style.display="none"; } $("#poemFilter").classList.remove("on"); $("#poemFilter").textContent="❤ закладки";
     $("#poemQuote").textContent = POEM_PHRASES[Math.floor(Math.random()*POEM_PHRASES.length)];
     openPage("poemsPage");
