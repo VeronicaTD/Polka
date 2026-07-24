@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="190" />
+<meta name="app-version" content="191" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -727,7 +727,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v190 test: +7 аннотаций для книг с полок читателей (Книжный вор, В поисках Аляски, Незнакомка из Уайлдфелл-Холла, Дары волхвов, Летят мои кони, Мэри Вентура, Бойфренд). «бойфренд» теперь с русским описанием вместо украинского. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v191 test: (1) после «Поставить на полку» открывается полное окно книги (openInfo) — там кнопка «Написать рецензию» (раньше в форме добавления рецензии не было). (2) в разделах убрал «назад», оставил только «☰ разделы» (открывает меню поверх раздела). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -862,13 +862,13 @@ main,footer{position:relative;z-index:1}
 
 <!-- мои цитаты (полный экран) -->
 <div class="fullpage" id="quotesPage" aria-label="Цитаты">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
   <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
 </div>
 
 <!-- книжные хотелки (полный экран) -->
 <div class="fullpage" id="wishPage" aria-label="Хотелки">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
   <div class="fp-body">
     <p class="mp" id="wishSub">То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку.</p>
     <div class="wish-stack" id="wishStack"></div>
@@ -894,7 +894,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- подборки книг (полный экран) -->
 <div class="fullpage" id="catalogPage" aria-label="Подборки">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3>Подборки книг 📚</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3>Подборки книг 📚</h3></div>
   <div class="fp-body">
     <p class="mp">Жанровые подборки и самое популярное. Нажми на книгу — там аннотация 📖</p>
     <div id="catalogList"></div>
@@ -903,7 +903,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- лента рецензий читателей -->
 <div class="fullpage" id="reviewsPage" aria-label="Рецензии читателей">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3>Рецензии читателей 💬</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3>Рецензии читателей 💬</h3></div>
   <div class="fp-body">
     <p class="mp">Живая лента: что читатели пишут о книгах — в том числе о тех, которых нет в подборках. Своё мнение можно оставить в любой своей книге → «Опубликовать рецензию».</p>
     <div id="reviewsFeed"></div>
@@ -912,7 +912,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- стихи -->
 <div class="fullpage" id="poemsPage" aria-label="Поэзия">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back" data-close>← назад</button><h3>Поэзия ✒️</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3>Поэзия ✒️</h3></div>
   <div class="fp-body">
     <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-tools">
@@ -2677,11 +2677,13 @@ main,footer{position:relative;z-index:1}
   }
   $("#saveBook").addEventListener("click", ()=>{
     const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
-    myBooks.push({ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
-      c:selColor, fav:favNew, r:rateNew, note:"", qt:collectQuotes("fQuotes") });
+    const nb={ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
+      c:selColor, fav:favNew, r:rateNew, note:"", qt:collectQuotes("fQuotes") };
+    myBooks.push(nb);
     if(pendingWish!=null){ myWishlist.splice(pendingWish,1); pendingWish=null; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     saveMine(); syncUp();
-    casePage=9999; slideDir=0; closeModals(); renderAll();
+    casePage=9999; slideDir=0; closeModals(); view="me"; renderAll();
+    openInfo(myBooks.indexOf(nb));   // открываем полное окно книги — там можно сразу написать рецензию
   });
 
   /* ---- автоподсказка книги из Google Books: вписываешь название → подставляет автора/жанр ---- */
