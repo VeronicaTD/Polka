@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="192" />
+<meta name="app-version" content="193" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -669,7 +669,6 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
   <button class="menu-item" id="mPoems">✒️ Поэзия</button>
-  <button class="menu-item" id="mMyPoems">✍️ Мои стихи</button>
   <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
@@ -732,7 +731,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v192 test: (1) «Моя полка» → эмодзи 📚. (2) любимые цитаты: сердечко ❤ на каждой цитате + кнопка-фильтр «любимые» (показывает только отмеченные); синхрон через qf (11-й элемент блоба). (3) «Мои стихи» в меню и «стихи друга» в профиле друга — фильтр стихов по коду автора (poemAuthorFilter). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v193 test: убрал пункт «Мои стихи» из меню (по просьбе) — оставил только «стихи друга» в профиле друга (poemsFriendBtn). Логика openPoems(authorCode) сохранена для кнопки друга. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2536,7 +2535,6 @@ main,footer{position:relative;z-index:1}
   }
   function poemGo(d){ const list=poemList(); if(!list.length) return; poemIdx=(poemIdx+d+list.length)%list.length; renderPoem(); if(reduce) return; const pg=$("#poemPage"); pg.classList.remove("anim"); void pg.offsetWidth; pg.classList.add("anim"); }
   $("#mPoems").addEventListener("click", ()=>{ if(typeof menuGo==="function") menuGo(()=>openPoems()); else { closeMenu(); openPoems(); } });
-  $("#mMyPoems").addEventListener("click", ()=>{ if(typeof menuGo==="function") menuGo(()=>openPoems(myCode)); else { closeMenu(); openPoems(myCode); } });   // только мои стихи
   let editingPoem=null;
   async function deletePoem(id){
     if(!id) return;
