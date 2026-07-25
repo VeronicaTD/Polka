@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="196" />
+<meta name="app-version" content="197" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -398,7 +398,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .fullpage.open{display:block}
 .fp-head{position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);
   display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);z-index:2}
-.fp-head h3{margin:0;font-size:22px}
+.fp-head{flex-wrap:nowrap}
+.fp-head h3{margin:0;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 .fp-back{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 16px;font-weight:600;color:var(--ink)}
 .fp-back:hover{border-color:var(--ink)}
 .fp-body{max-width:760px;margin:0 auto;padding:20px}
@@ -731,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v196 test: ускорение активации кода — прогрев (все полки/стихи в фоне) теперь только для зарегистрированных и с задержкой (1200/1800мс), чтобы у нового пользователя фоновая загрузка не забивала медленную сеть во время «проверка кода». --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v197 test: (1) кнопка разделов только ☰ (без слова). Заголовки разделов не переносятся (h3 nowrap+ellipsis, fp-head nowrap). Фильтр «любимые» в цитатах перенесён под заголовок. (2) автоподсказка книги теперь и в форме хотелок (bkAutocomplete переиспользуемая). (3) хотелки друга показываются (было ок, кэш). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -866,19 +867,19 @@ main,footer{position:relative;z-index:1}
 
 <!-- мои цитаты (полный экран) -->
 <div class="fullpage" id="quotesPage" aria-label="Цитаты">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3><button id="quotesFav" class="fp-back" type="button" style="margin-left:auto">❤ любимые</button></div>
-  <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><div id="quotesList"></div></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
+  <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><button id="quotesFav" class="poem-mini" type="button" style="margin-bottom:12px">❤ любимые</button><div id="quotesList"></div></div>
 </div>
 
 <!-- книжные хотелки (полный экран) -->
 <div class="fullpage" id="wishPage" aria-label="Хотелки">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
   <div class="fp-body">
     <p class="mp" id="wishSub">То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку.</p>
     <div class="wish-stack" id="wishStack"></div>
     <div class="field" id="wishAddForm" style="margin-top:20px;max-width:440px"><label>Добавить в хотелки</label>
-      <input id="wishTitle" placeholder="название" />
-      <input id="wishAuthor" placeholder="автор" style="margin-top:8px" />
+      <div class="bk-search"><input id="wishTitle" placeholder="начни вводить — подскажем книгу" autocomplete="off" style="width:100%;box-sizing:border-box" /><div id="wishSuggest" class="bk-suggest" hidden></div></div>
+      <input id="wishAuthor" placeholder="подставится сам или впиши" style="margin-top:8px" />
       <button class="btn" id="wishAddBtn" style="margin-top:10px">Добавить</button>
     </div>
   </div>
@@ -898,7 +899,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- подборки книг (полный экран) -->
 <div class="fullpage" id="catalogPage" aria-label="Подборки">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3>Подборки книг 📚</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><h3>Подборки книг 📚</h3></div>
   <div class="fp-body">
     <p class="mp">Жанровые подборки и самое популярное. Нажми на книгу — там аннотация 📖</p>
     <div id="catalogList"></div>
@@ -907,7 +908,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- лента рецензий читателей -->
 <div class="fullpage" id="reviewsPage" aria-label="Рецензии читателей">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><h3>Рецензии читателей 💬</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><h3>Рецензии читателей 💬</h3></div>
   <div class="fp-body">
     <p class="mp">Живая лента: что читатели пишут о книгах — в том числе о тех, которых нет в подборках. Своё мнение можно оставить в любой своей книге → «Опубликовать рецензию».</p>
     <div id="reviewsFeed"></div>
@@ -916,7 +917,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- стихи -->
 <div class="fullpage" id="poemsPage" aria-label="Поэзия">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰ разделы</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="poemsTitle">Поэзия ✒️</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="poemsTitle">Поэзия ✒️</h3></div>
   <div class="fp-body">
     <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-tools">
@@ -1806,7 +1807,7 @@ main,footer{position:relative;z-index:1}
     $("#wishTitleH").textContent = forMe ? "Мои хотелки 📌" : `Хотелки · ${fn} 📌`;
     $("#wishSub").textContent = forMe ? "То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку." : `Книги, которые ${fn} хочет прочитать.`;
     $("#wishAddForm").style.display = forMe ? "" : "none";
-    $("#wishTitle").value=""; $("#wishAuthor").value=""; openPage("wishPage"); renderWish();
+    $("#wishTitle").value=""; $("#wishAuthor").value=""; { const s=$("#wishSuggest"); if(s){ s.hidden=true; s.innerHTML=""; } } openPage("wishPage"); renderWish();
   }
   $("#wishBtn").addEventListener("click", ()=> openWishPage(false));   // нижняя кнопка — хотелки друга
   $("#poemsFriendBtn").addEventListener("click", ()=>{ const f=friend(); if(f&&f.code) openPoems(f.code); else toast("У друга пока нет стихов"); });   // стихи друга
@@ -2728,8 +2729,7 @@ main,footer{position:relative;z-index:1}
     openInfo(myBooks.indexOf(nb));   // открываем полное окно книги — там можно сразу написать рецензию
   });
 
-  /* ---- автоподсказка книги из Google Books: вписываешь название → подставляет автора/жанр ---- */
-  let bkSeq=0, bkTimer=null;
+  /* ---- автоподсказка книги из Google Books (переиспользуемая: и «добавить книгу», и «хотелки») ---- */
   function genreFromBook(v){
     const s=(((v.categories||[]).join(" "))+" "+(v.title||"")).toLowerCase();
     if(/поэзия|poetry|стих|стихотвор/.test(s)) return "Поэзия";
@@ -2739,40 +2739,35 @@ main,footer{position:relative;z-index:1}
     return "Проза";
   }
   const BK_JUNK=/(краткое изложение|саммари|summary|рабочая тетрадь|дневник читателя|анализ книги|обзор книги|ключевые идеи|конспект)/i;
-  function bkRender(items){
-    const box=$("#fSuggest"); if(!box) return;
-    const seen=new Set();
-    const list=(items||[]).filter(v=>{ if(!v||!v.title||BK_JUNK.test(v.title)) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,6);
-    if(!list.length){ box.hidden=true; box.innerHTML=""; box._items=null; return; }
-    box._items=list;
-    box.innerHTML=list.map((v,i)=>{ const au=(v.authors&&v.authors[0])||"";
-      return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
-    box.hidden=false;
-  }
-  async function bkSearch(q){
-    const seq=++bkSeq;
-    try{
+  function bkAutocomplete(input, box, onPick){
+    if(!input || !box) return;
+    let seq=0, timer=null;
+    const render=(items)=>{
+      const seen=new Set();
+      const list=(items||[]).filter(v=>{ if(!v||!v.title||BK_JUNK.test(v.title)) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,6);
+      if(!list.length){ box.hidden=true; box.innerHTML=""; box._items=null; return; }
+      box._items=list;
+      box.innerHTML=list.map((v,i)=>{ const au=(v.authors&&v.authors[0])||"";
+        return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
+      box.hidden=false;
+    };
+    const search=async(q)=>{ const s=++seq; try{
       const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8&country=RU&langRestrict=ru&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
-      if(!r.ok || seq!==bkSeq) return;
-      const d=await r.json(); if(seq!==bkSeq) return;
-      bkRender((d.items||[]).map(it=>it.volumeInfo));
-    }catch(e){}
+      if(!r.ok || s!==seq) return; const d=await r.json(); if(s!==seq) return; render((d.items||[]).map(it=>it.volumeInfo));
+    }catch(e){} };
+    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<3){ box.hidden=true; return; } timer=setTimeout(()=>search(q), 350); });
+    box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; seq++; });
+    input.addEventListener("blur", ()=>{ setTimeout(()=>{ box.hidden=true; }, 200); });
   }
-  $("#fTitle").addEventListener("input", ()=>{
-    const q=$("#fTitle").value.trim();
-    if(bkTimer) clearTimeout(bkTimer);
-    if(q.length<3){ const b=$("#fSuggest"); if(b){ b.hidden=true; } return; }
-    bkTimer=setTimeout(()=>bkSearch(q), 350);   // ждём паузу в наборе
-  });
-  $("#fSuggest").addEventListener("click", e=>{
-    const opt=e.target.closest(".bk-opt"); if(!opt) return;
-    const box=$("#fSuggest"); const v=(box._items||[])[+opt.dataset.i]; if(!v) return;
+  bkAutocomplete($("#fTitle"), $("#fSuggest"), v=>{
     $("#fTitle").value=v.title;
     $("#fAuthor").value=(v.authors&&v.authors[0])||$("#fAuthor").value;
     $("#fGenre").value=genreFromBook(v);
-    box.hidden=true; bkSeq++;   // отменяем «висящие» запросы
   });
-  $("#fTitle").addEventListener("blur", ()=>{ setTimeout(()=>{ const b=$("#fSuggest"); if(b) b.hidden=true; }, 200); });
+  bkAutocomplete($("#wishTitle"), $("#wishSuggest"), v=>{
+    $("#wishTitle").value=v.title;
+    $("#wishAuthor").value=(v.authors&&v.authors[0])||$("#wishAuthor").value;
+  });
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
   const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], infoReviewData=null;
