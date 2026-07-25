@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="199" />
+<meta name="app-version" content="200" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -732,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v199 test: кнопка «назад» в разделах друга теперь компактная (только «←», как ☰) вместо «← назад». --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v200 test: колокольчик (запросы в друзья) открывается мгновенно из уже загруженного pendingReqs, обновление из облака в фоне (раньше await refreshReqBadge блокировал открытие окна на медленной сети). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -3288,7 +3288,10 @@ main,footer{position:relative;z-index:1}
       </div>`).join("");
     overlay.classList.add("open"); reqModal.classList.add("open");
   }
-  $("#reqBtn").addEventListener("click", async ()=>{ await refreshReqBadge(); showRequests(); });
+  $("#reqBtn").addEventListener("click", ()=>{
+    showRequests();   // мгновенно из уже загруженного списка — не ждём сеть
+    refreshReqBadge().then(()=>{ if(reqModal.classList.contains("open")) showRequests(); });   // тихо обновляем открытое окно свежими запросами
+  });
   $("#reqList").addEventListener("click", async (e)=>{
     const item = e.target.closest(".req-item"); if(!item) return;
     const accept = e.target.closest(".req-accept"), dismiss = e.target.closest(".req-dismiss");
