@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="198" />
+<meta name="app-version" content="199" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -732,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v198 test: ФИКС хотелок друга. addFriendByCode создавал объект друга БЕЗ wishlist → у добавленных по коду друзей хотелки были пусты. Добавил wishlist:p.wl. (гостевой путь через автора стиха их включал, поэтому баг не всегда виден). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v199 test: кнопка «назад» в разделах друга теперь компактная (только «←», как ☰) вместо «← назад». --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -867,13 +867,13 @@ main,footer{position:relative;z-index:1}
 
 <!-- мои цитаты (полный экран) -->
 <div class="fullpage" id="quotesPage" aria-label="Цитаты">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" title="Назад" aria-label="Назад" style="display:none">←</button><h3 id="quotesTitle">Мои цитаты 💬</h3></div>
   <div class="fp-body"><p class="mp" id="quotesSub">Цитаты, которые вы сохранили из своих книг.</p><button id="quotesFav" class="poem-mini" type="button" style="margin-bottom:12px">❤ любимые</button><div id="quotesList"></div></div>
 </div>
 
 <!-- книжные хотелки (полный экран) -->
 <div class="fullpage" id="wishPage" aria-label="Хотелки">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" title="Назад" aria-label="Назад" style="display:none">←</button><h3 id="wishTitleH">Книжные хотелки 📌</h3></div>
   <div class="fp-body">
     <p class="mp" id="wishSub">То, что хочется прочитать. Нажмите на книгу — можно почитать её или поставить на полку.</p>
     <div class="wish-stack" id="wishStack"></div>
@@ -917,7 +917,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- стихи -->
 <div class="fullpage" id="poemsPage" aria-label="Поэзия">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" style="display:none">← назад</button><h3 id="poemsTitle">Поэзия ✒️</h3></div>
+  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" title="Назад" aria-label="Назад" style="display:none">←</button><h3 id="poemsTitle">Поэзия ✒️</h3></div>
   <div class="fp-body">
     <div class="poem-quote" id="poemQuote"></div>
     <div class="poem-tools">
