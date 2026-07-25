@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="197" />
+<meta name="app-version" content="198" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -732,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v197 test: (1) кнопка разделов только ☰ (без слова). Заголовки разделов не переносятся (h3 nowrap+ellipsis, fp-head nowrap). Фильтр «любимые» в цитатах перенесён под заголовок. (2) автоподсказка книги теперь и в форме хотелок (bkAutocomplete переиспользуемая). (3) хотелки друга показываются (было ок, кэш). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v198 test: ФИКС хотелок друга. addFriendByCode создавал объект друга БЕЗ wishlist → у добавленных по коду друзей хотелки были пусты. Добавил wishlist:p.wl. (гостевой путь через автора стиха их включал, поэтому баг не всегда виден). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -3030,7 +3030,7 @@ main,footer{position:relative;z-index:1}
     if(used && savedFriends.some(f=>f.code===used)){ const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:(p && p.rd)||""};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:(p && p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj; delete DEMO_FRIENDS.guest; syncUp();
