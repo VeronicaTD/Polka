@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="195" />
+<meta name="app-version" content="196" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -731,7 +731,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v195 test: промо-доступ для блогеров. Ссылка с ?free (или ?promo) → FREE_MODE. При создании полки бесплатный код из пула (префикс FREE-) подставляется сам (sbFetchFreeCode), кнопка покупки скрыта. Обычная ссылка — платный поток без изменений. Если free-коды кончились — фолбэк на покупку. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v196 test: ускорение активации кода — прогрев (все полки/стихи в фоне) теперь только для зарегистрированных и с задержкой (1200/1800мс), чтобы у нового пользователя фоновая загрузка не забивала медленную сеть во время «проверка кода». --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -3316,8 +3316,9 @@ main,footer{position:relative;z-index:1}
 
   /* ресайз */
   let rt; addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(renderCase,150); });
-  if(CLOUD()) setTimeout(prewarmPoems, 300);
-  if(CLOUD()) setTimeout(()=>loadReadersData(true), 500);   // прогрев цитат/рецензий читателей — чтобы страница книги открывалась мгновенно
+  // прогрев — только для уже зарегистрированных (у нового пользователя фоновая загрузка всех полок мешала бы активации кода на медленной сети)
+  if(CLOUD() && localStorage.getItem("polka_registered")) setTimeout(prewarmPoems, 1200);
+  if(CLOUD() && localStorage.getItem("polka_registered")) setTimeout(()=>loadReadersData(true), 1800);   // прогрев цитат/рецензий читателей — чтобы страница книги открывалась мгновенно
   // одноразовая чистка старых комментариев (опции больше нет)
   (function(){ if(!Array.isArray(myBooks)) return; let ch=false; myBooks.forEach(b=>{ if(b && b.note!=null){ delete b.note; ch=true; } }); if(ch){ try{ saveMine(); }catch(e){} } })();
   // дозалить в облако рецензии, написанные раньше (локально есть, в облаке нет)
