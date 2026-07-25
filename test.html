@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="194" />
+<meta name="app-version" content="195" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -731,7 +731,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v194 test: в разделах ДРУГА (цитаты/хотелки/стихи друга) появляется «← назад» (data-close) — возвращает на профиль друга, а не на свою полку. У своих разделов назад скрыт (только ☰ разделы). Показ через fp-friendback по !forMe/friendPoems. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v195 test: промо-доступ для блогеров. Ссылка с ?free (или ?promo) → FREE_MODE. При создании полки бесплатный код из пула (префикс FREE-) подставляется сам (sbFetchFreeCode), кнопка покупки скрыта. Обычная ссылка — платный поток без изменений. Если free-коды кончились — фолбэк на покупку. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1033,7 +1033,7 @@ main,footer{position:relative;z-index:1}
     <div class="modal-foot"><button class="btn ghost" id="welBack2" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welLoginGo" style="justify-content:center;display:flex">Войти</button></div>
   </div>
   <div id="welAccess" style="display:none">
-    <p class="mp">Чтобы создать свою полку, нужен доступ — разово, навсегда. Получите код у автора в Telegram и введите ниже.</p>
+    <p class="mp" id="welAccessMsg">Чтобы создать свою полку, нужен доступ — разово, навсегда. Получите код у автора в Telegram и введите ниже.</p>
     <a class="btn" id="welBuyBtn" href="#" target="_blank" rel="noopener" style="width:100%;display:flex;justify-content:center;text-decoration:none">Получить доступ в Telegram</a>
     <div class="field" style="margin-top:14px"><input id="welAccessCode" placeholder="код доступа" /></div>
     <div class="modal-foot"><button class="btn ghost" id="welAccessBack" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welAccessGo" style="justify-content:center;display:flex">Активировать</button></div>
@@ -1170,6 +1170,15 @@ main,footer{position:relative;z-index:1}
       if(!r.ok) return false;
       const a = await r.json(); return Array.isArray(a) && a.length>0;
     }catch(e){ return false; }
+  }
+  /* ПРОМО-ДОСТУП для блогеров: ссылка с ?free (или ?promo) → бесплатный код из отдельного пула (коды с префиксом FREE-) подставляется сам */
+  const FREE_MODE = /[?&](free|promo)(=|&|$)/i.test(location.href);
+  async function sbFetchFreeCode(){
+    if(!CLOUD()) return "";
+    try{
+      const r = await fetch(SUPABASE_URL+"/rest/v1/access_codes?select=code&used=eq.false&code=ilike.FREE*&limit=1",{headers:SB_H()});
+      if(!r.ok) return ""; const a = await r.json(); return (Array.isArray(a)&&a[0]&&a[0].code)?a[0].code:"";
+    }catch(e){ return ""; }
   }
 
 
@@ -3096,9 +3105,22 @@ main,footer{position:relative;z-index:1}
     setUrlLogin();
     welShow("welStep2"); renderAll();
   }
-  $("#welGo").addEventListener("click", ()=>{
+  $("#welGo").addEventListener("click", async ()=>{
     const name = $("#welName").value.trim() || "Моя полка";
-    if(!isPaid()){ pendingName = name; $("#welBuyBtn").href = BUY_URL || "#"; welShow("welAccess"); return; }
+    if(!isPaid()){
+      pendingName = name;
+      if(FREE_MODE){   // промо-доступ для подписчиков блогера
+        welShow("welAccess");
+        if($("#welBuyBtn")) $("#welBuyBtn").style.display="none";
+        if($("#welAccessMsg")) $("#welAccessMsg").textContent="🎁 Тебе открыт бесплатный доступ! Код уже подставлен — просто нажми «Активировать».";
+        const fc = await withBtn($("#welAccessGo"), "Готовлю доступ…", sbFetchFreeCode);
+        if(fc){ $("#welAccessCode").value=fc; }
+        else { if($("#welAccessMsg")) $("#welAccessMsg").textContent="Ой, бесплатные места закончились 😔 Напиши автору за доступом."; if($("#welBuyBtn")){ $("#welBuyBtn").style.display=""; $("#welBuyBtn").href=BUY_URL||"#"; } }
+        return;
+      }
+      if($("#welBuyBtn")){ $("#welBuyBtn").style.display=""; $("#welBuyBtn").href = BUY_URL || "#"; }
+      welShow("welAccess"); return;
+    }
     createShelf(name);
   });
   $("#welAccessBack").addEventListener("click", ()=>welShow("welStep1"));
