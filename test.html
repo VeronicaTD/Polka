@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="201" />
+<meta name="app-version" content="202" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -732,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v201: БЕЗОПАСНОСТЬ — чтение полок и активация кодов переведены на серверные функции (get_shelf/readers_content/redeem_code/claim_free_code). Витрина «Выбор читателей» больше не отдаёт коды полок. Прямой доступ к таблицам закрывается через RLS. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v202: БЕЗОПАСНОСТЬ — запись полки тоже через серверную функцию save_shelf (upsert не проходит под RLS напрямую). Теперь и чтение, и запись, и коды идут через RPC; прямой доступ к shelves/access_codes закрыт RLS. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1089,8 +1089,8 @@ main,footer{position:relative;z-index:1}
     return r.json();
   }
   async function sbUpsert(row){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/shelves",{method:"POST",headers:{...SB_H(),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(row)});
-    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
+    // запись полки через серверную функцию (upsert в обход RLS; знать код всё равно нужно)
+    await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data});
   }
   async function sbFetch(code){
     const a = await sbRpc("get_shelf", {p_code:code});   // одна полка по точному коду (не «все полки»)
