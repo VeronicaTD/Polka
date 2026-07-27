@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="200" />
+<meta name="app-version" content="201" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -732,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v200 test: колокольчик (запросы в друзья) открывается мгновенно из уже загруженного pendingReqs, обновление из облака в фоне (раньше await refreshReqBadge блокировал открытие окна на медленной сети). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v201: БЕЗОПАСНОСТЬ — чтение полок и активация кодов переведены на серверные функции (get_shelf/readers_content/redeem_code/claim_free_code). Витрина «Выбор читателей» больше не отдаёт коды полок. Прямой доступ к таблицам закрывается через RLS. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1082,14 +1082,19 @@ main,footer{position:relative;z-index:1}
   /* ========================================================= */
   const CLOUD = () => !!(SUPABASE_URL && SUPABASE_KEY);
   const SB_H = () => ({ apikey:SUPABASE_KEY, Authorization:"Bearer "+SUPABASE_KEY, "Content-Type":"application/json" });
+  // вызов серверной функции (RPC) — безопасный доступ к данным без прямого чтения таблиц
+  async function sbRpc(name, params){
+    const r = await fetch(SUPABASE_URL+"/rest/v1/rpc/"+name,{method:"POST",headers:SB_H(),body:JSON.stringify(params||{})});
+    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
+    return r.json();
+  }
   async function sbUpsert(row){
     const r = await fetch(SUPABASE_URL+"/rest/v1/shelves",{method:"POST",headers:{...SB_H(),Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(row)});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
   }
   async function sbFetch(code){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/shelves?select=*&code=eq."+encodeURIComponent(code),{headers:SB_H()});
-    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
-    const a = await r.json(); return Array.isArray(a)?a[0]:null;
+    const a = await sbRpc("get_shelf", {p_code:code});   // одна полка по точному коду (не «все полки»)
+    return Array.isArray(a)?a[0]:null;
   }
   async function sbInsertRequest(row){
     const r = await fetch(SUPABASE_URL+"/rest/v1/requests",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
@@ -1114,9 +1119,7 @@ main,footer{position:relative;z-index:1}
     const a = await r.json(); return Array.isArray(a)?a:[];
   }
   async function sbFetchAllShelves(){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/shelves?select=code,name,data&limit=500",{headers:SB_H()});
-    if(!r.ok) return [];
-    const a = await r.json(); return Array.isArray(a)?a:[];
+    try{ const a = await sbRpc("readers_content", {}); return Array.isArray(a)?a:[]; }catch(e){ return []; }   // контент всех полок без кода
   }
   async function sbInsertReview(row){
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews",{method:"POST",headers:{...SB_H(),Prefer:"return=representation"},body:JSON.stringify(row)});
@@ -1166,10 +1169,8 @@ main,footer{position:relative;z-index:1}
   async function sbRedeem(code){
     if(!CLOUD()) return false;
     try{
-      const r = await fetch(SUPABASE_URL+"/rest/v1/access_codes?code=eq."+encodeURIComponent(code)+"&used=eq.false",
-        {method:"PATCH", headers:{...SB_H(), Prefer:"return=representation"}, body:JSON.stringify({used:true})});
-      if(!r.ok) return false;
-      const a = await r.json(); return Array.isArray(a) && a.length>0;
+      const v = await sbRpc("redeem_code", {p_code:code});   // сервер сам проверяет и гасит код
+      return v===true;
     }catch(e){ return false; }
   }
   /* ПРОМО-ДОСТУП для блогеров: ссылка с ?free (или ?promo) → бесплатный код из отдельного пула (коды с префиксом FREE-) подставляется сам */
@@ -1177,8 +1178,8 @@ main,footer{position:relative;z-index:1}
   async function sbFetchFreeCode(){
     if(!CLOUD()) return "";
     try{
-      const r = await fetch(SUPABASE_URL+"/rest/v1/access_codes?select=code&used=eq.false&code=ilike.FREE*&limit=1",{headers:SB_H()});
-      if(!r.ok) return ""; const a = await r.json(); return (Array.isArray(a)&&a[0]&&a[0].code)?a[0].code:"";
+      const v = await sbRpc("claim_free_code", {});   // свободный бесплатный код через сервер
+      return (typeof v==="string")?v:"";
     }catch(e){ return ""; }
   }
 
