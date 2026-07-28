@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="212" />
+<meta name="app-version" content="219" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -195,7 +195,23 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .reading{margin-top:7px;font-size:14px;color:var(--ink-soft)}
 .reading b{color:var(--ink);font-weight:600}
 .reading.editable{cursor:pointer}
-.stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap;align-items:center}
+/* мини-полка «читаю» в ряду счётчиков: до 3 корешков на планке цветом полки */
+#readingStat{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:44px;min-height:44px;justify-content:flex-end}
+.mini-shelf{display:flex;align-items:flex-end;gap:2px;min-height:58px;padding:0 2px;border-bottom:3px solid var(--accent)}
+.ms-spine{width:17px;border-radius:1px 2px 0 0;box-shadow:1px 0 2px -1px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:5px 1px;box-sizing:border-box;overflow:hidden}
+.mini-shelf .ms-t{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;font-size:8.5px;line-height:1.15;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;color:inherit}
+.ms-empty{width:34px;min-height:54px;border:1.5px dashed var(--line);border-radius:2px 3px 0 0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:18px;box-sizing:border-box}
+/* редактор «сейчас читаю» в профиле */
+.rd-edit-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.rd-edit-cover{position:relative;width:22px;height:44px;border-radius:2px 3px 3px 2px;flex:0 0 auto;box-shadow:1px 1px 3px -1px rgba(0,0,0,.5);overflow:hidden}
+.rd-edit-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.2),transparent 30%,transparent 75%,rgba(0,0,0,.22))}
+.rd-edit-meta{flex:1;min-width:0}
+.rd-edit-t{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rd-edit-a{font-size:12px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rd-edit-btn{background:none;border:1px solid var(--line);border-radius:14px;padding:5px 10px;font-size:12px;font-family:inherit;cursor:pointer;color:var(--ink);white-space:nowrap}
+.rd-edit-btn.done{border-color:var(--accent);color:var(--accent)}
+.rd-edit-x{background:none;border:none;font-size:20px;line-height:1;cursor:pointer;color:var(--ink-soft);padding:0 4px}
+.stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap;align-items:flex-end}
 .stats div b{font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;display:block;line-height:1}
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
 
@@ -690,13 +706,12 @@ main,footer{position:relative;z-index:1}
         <button class="fav-pill vibe-pill" id="addFriendVibe" style="display:none">🤍 хочу следить за полкой</button>
       </div>
       <div class="sub" id="pSub"></div>
-      <div class="reading" id="pReading"></div>
     </div>
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
       <div id="stMatchWrap" style="display:none"><b id="stMatch">0</b><span>мэтч 💞</span></div>
-      <button class="dice-btn" id="diceBtn">🎲 что почитать</button>
+      <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span>читаю</span></div>
     </div>
   </section>
 
@@ -734,7 +749,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v212: оплата перенесена из браузера на сервер (shelves.paid). redeem_code(код, код_полки) сам ставит paid нужной полке; get_shelf отдаёт paid; клиент читает его в кэш (localStorage — только офлайн-кэш, перезаписывается сервером при каждой загрузке). Подделка галочки в консоли не переживает перезагрузку. Миграция: всем pd=1 в blob проставлен paid=true (покупатели сохранили доступ). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v219 (ТЕСТ): в окошке «читаю» тап по книге → её мини-редактор: сменить цвет (палитра COLORS), «📚 Поставить на полку» (перенос в myBooks с цветом), «📖 страница книги» (openBookPage), «← назад». Плюс v218: добавление/удаление прямо в окошке. Прод v212. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -806,7 +821,14 @@ main,footer{position:relative;z-index:1}
   </div>
   <div class="field"><label>Имя</label><input id="pNameInput" placeholder="как вас зовут" maxlength="40" /></div>
   <div class="field"><label>Любимая цитата</label><textarea id="pQuoteInput" placeholder="строчка, которая про вас" maxlength="400"></textarea></div>
-  <div class="field bk-search"><label>Сейчас читаю</label><input id="pReadingInput" placeholder="что читаете прямо сейчас" autocomplete="off" maxlength="80" /><div id="pReadingSuggest" class="bk-suggest" hidden></div></div>
+  <div class="field"><label>📖 Сейчас читаю <span style="font-weight:400;color:var(--ink-soft)">— до 3 книг</span></label>
+    <div id="pReadingList"></div>
+    <div class="bk-search" id="pReadingAddWrap" style="margin-top:8px">
+      <div style="display:flex;gap:8px"><input id="pReadingInput" placeholder="выбери из подсказок или впиши и нажми ＋" autocomplete="off" style="flex:1;min-width:0;box-sizing:border-box" /><button type="button" id="pReadingAdd" class="btn" style="flex:0 0 auto;padding:0 16px;justify-content:center">＋</button></div>
+      <div id="pReadingSuggest" class="bk-suggest" hidden></div>
+    </div>
+    <div id="pReadingFull" class="mp" style="display:none;font-size:12px;margin-top:6px">Читаешь уже 3 книги — заверши «✓ прочитал» или убери одну, чтобы добавить новую.</div>
+  </div>
   <div class="field"><label>✉️ Привязать почту</label><input id="pEmailInput" type="email" placeholder="you@example.com" autocomplete="off" inputmode="email" maxlength="120" /><div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Если потеряешь код полки — по почте автор поможет вернуть доступ. Входа по почте нет.</div></div>
   <div class="field"><label>Код вашей полки</label>
     <textarea class="codebox" id="myCode" readonly></textarea>
@@ -894,7 +916,8 @@ main,footer{position:relative;z-index:1}
   <button class="close" id="waClose">×</button>
   <h3 id="waTitle" style="margin-bottom:2px"></h3>
   <p class="mp" id="waAuthor" style="margin-top:0"></p>
-  <button class="btn" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Поставить на полку</button>
+  <button class="btn" id="waReading" style="width:100%;justify-content:center;display:flex;margin-top:6px">📖 Читаю сейчас</button>
+  <button class="btn ghost" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Поставить на полку</button>
   <button class="btn" id="waAddWish" style="width:100%;justify-content:center;display:none;margin-top:6px">📌 Добавить в свои хотелки</button>
   <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
   <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
@@ -905,6 +928,7 @@ main,footer{position:relative;z-index:1}
   <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><h3>Подборки книг 📚</h3></div>
   <div class="fp-body">
     <p class="mp">Жанровые подборки и самое популярное. Нажми на книгу — там аннотация 📖</p>
+    <button class="dice-btn" id="diceBtn" style="margin-bottom:14px">🎲 что почитать</button>
     <div id="catalogList"></div>
   </div>
 </div>
@@ -1308,7 +1332,19 @@ main,footer{position:relative;z-index:1}
   let myName  = localStorage.getItem("polka_name")  || "Моя полка";
   let myQuote = localStorage.getItem("polka_quote") || "";
   let myPhoto = localStorage.getItem("polka_photo") || "";
-  let myReading = localStorage.getItem("polka_reading") || "";
+  // «Сейчас читаю» — массив до 3 книг с обложками (раньше была одна строка). Миграция: старая строка → [одна книга].
+  const READING_MAX = 3;
+  function asReadingArr(rd){
+    if(Array.isArray(rd)) return rd.filter(x=>x && x.t).slice(0,READING_MAX)
+      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||""}));
+    const s=String(rd||"").trim(); if(!s) return [];
+    const parts=s.split(" — ");   // старый формат мог быть «Название — Автор»
+    return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:""}];
+  }
+  function readReadingLS(){ const raw=localStorage.getItem("polka_reading"); if(raw==null) return [];
+    try{ return asReadingArr(JSON.parse(raw)); }catch(e){ return asReadingArr(raw); } }
+  function saveReadingLS(){ try{ localStorage.setItem("polka_reading", JSON.stringify(myReading)); }catch(e){} }
+  let myReading = readReadingLS();
   let myEmail = localStorage.getItem("polka_email") || "";   // почта для восстановления доступа (пишется в колонку shelves.email, обратно не читается — приватность)
   let myWishlist = []; try{ myWishlist = JSON.parse(localStorage.getItem("polka_wishlist") || "[]"); }catch(e){ myWishlist = []; }
   const saveWish = () => { try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
@@ -1333,13 +1369,13 @@ main,footer{position:relative;z-index:1}
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk)]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", p.rd||"", p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[]]));   // pm=закладки стихов, qf=любимые цитаты (синхронизация)
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[]]));   // rd=«сейчас читаю» (массив до 3 книг); pm=закладки стихов, qf=любимые цитаты
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:a[5]||"", fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[],
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[] }; }) };
@@ -1465,12 +1501,16 @@ main,footer{position:relative;z-index:1}
       const m = friend().books.filter(b=>mine.has(norm(b.t))).length;
       $("#stMatch").textContent = m; $("#stMatchWrap").style.display="";
     }
-    const pr = $("#pReading");
-    if(isMe()){ pr.classList.add("editable"); pr.innerHTML = myReading ? `📖 сейчас читаю: <b>${esc(myReading)}</b>` : `📖 <span style="opacity:.7">что читаете сейчас?</span>`; }
-    else { pr.classList.remove("editable"); const rd=friend().reading; pr.innerHTML = rd ? `📖 сейчас читает: <b>${esc(rd)}</b>` : ""; }
+    // мини-полка «читаю» в ряду счётчиков (я → мои книги, в гостях → книги друга)
+    { const rd = isMe() ? myReading : asReadingArr(friend().reading);
+      const stat=$("#readingStat"), ms=$("#miniShelf");
+      if(stat && ms){
+        if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; }
+        else if(isMe()){ ms.innerHTML=`<span class="ms-empty">＋</span>`; stat.style.display=""; }   // пустая полка с плюсом — добавить первую книгу прямо тут
+        else { ms.innerHTML=""; stat.style.display="none"; }
+      } }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     const meV = isMe();
-    $("#diceBtn").style.display = meV ? "" : "none";
     // нижний ряд кнопок — только когда я в гостях (цитаты/хотелки друга)
     $("#friendActions").style.display = meV ? "none" : "flex";
     $("#yearBtn").style.display = (!meV && wrappedSeason()) ? "" : "none";
@@ -1718,9 +1758,9 @@ main,footer{position:relative;z-index:1}
       ty+=66; ctx.fillStyle=inkSoft; ctx.font="italic 400 42px Fraunces, Georgia, serif";
       const q=(myQuote||"").trim().replace(/^[«»"'`\s]+|[«»"'`\s]+$/g,"");
       if(q){ ty=wrapText(ctx,"«"+q+"»",90,ty,W-180,54)+18; }
-      // сейчас читаю
-      if((myReading||"").trim()){ ctx.fillStyle=ink; ctx.font="500 38px Fredoka, sans-serif";
-        ty=wrapText(ctx,"📖 сейчас читаю: "+myReading.trim(),90,ty+10,W-180,50)+10; }
+      // сейчас читаю (до 3 книг — перечисляем названия)
+      if(myReading.length){ ctx.fillStyle=ink; ctx.font="500 38px Fredoka, sans-serif";
+        ty=wrapText(ctx,"📖 сейчас читаю: "+myReading.map(b=>b.t).join(", "),90,ty+10,W-180,50)+10; }
       // полка с 3 любимыми книгами
       const favs=myBooks.filter(isFav); const pick=(favs.length?favs:myBooks).slice(0,3);
       const shelfX=90, shelfW=W-180, boxTop=H-420, boxBottom=H-150;
@@ -1936,6 +1976,7 @@ main,footer{position:relative;z-index:1}
     $("#waLitres").href = "https://www.litres.ru/search/?q=" + bq;
     $("#waBookmate").href = "https://books.yandex.ru/search?query=" + bq;
     // мои хотелки → «поставить на полку»; хотелки друга → «добавить в свои хотелки»
+    $("#waReading").style.display = wishForMe ? "flex" : "none";
     $("#waShelf").style.display   = wishForMe ? "flex" : "none";
     $("#waAddWish").style.display = wishForMe ? "none" : "flex";
     $("#waBack").classList.add("open"); $("#wishActModal").classList.add("open");
@@ -1943,6 +1984,36 @@ main,footer{position:relative;z-index:1}
   function closeWishAct(){ $("#waBack").classList.remove("open"); $("#wishActModal").classList.remove("open"); }
   $("#waClose").addEventListener("click", closeWishAct);
   $("#waBack").addEventListener("click", closeWishAct);
+  // выбор, какую из 3 читаемых книг перенести на полку (чтобы освободить слот). Возвращает индекс или null.
+  function chooseReadingToShelf(){
+    return new Promise(res=>{
+      const back=document.createElement("div"); back.className="confirm-back";
+      const box=document.createElement("div"); box.className="confirm-box";
+      box.innerHTML=`<p>Ты уже читаешь 3 книги. Какую перенести на полку («прочитал»), чтобы освободить место?</p>`
+        + `<div style="display:flex;flex-direction:column;gap:8px;margin:10px 0">`
+        + myReading.map((b,i)=>`<button type="button" class="btn ghost" data-c="${i}" style="justify-content:center;display:flex">📚 ${esc(b.t)}</button>`).join("")
+        + `</div><div class="confirm-btns"><button class="confirm-no" type="button">Отмена</button></div>`;
+      back.appendChild(box); document.body.appendChild(back);
+      const done=v=>{ try{ back.remove(); }catch(e){} res(v); };
+      box.querySelectorAll("[data-c]").forEach(b=>b.addEventListener("click", ()=>done(+b.dataset.c)));
+      box.querySelector(".confirm-no").addEventListener("click", ()=>done(null));
+      back.addEventListener("click", e=>{ if(e.target===back) done(null); });
+    });
+  }
+  // «📖 Читаю сейчас» — книга уходит из хотелок в «сейчас читаю» (до 3; если полно — освобождаем слот)
+  $("#waReading").addEventListener("click", async ()=>{
+    const w=waBook; if(!w) return;
+    if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a))){ toast("Уже читаешь эту книгу 📖"); closeWishAct(); return; }
+    if(myReading.length>=READING_MAX){
+      const choice = await chooseReadingToShelf();
+      if(choice==null) return;   // отменили — ничего не делаем
+      const rb=myReading[choice];
+      if(rb){ if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[]}); saveMine(); } myReading.splice(choice,1); }
+    }
+    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||""});
+    const wi=myWishlist.findIndex(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a)); if(wi>-1) myWishlist.splice(wi,1);
+    saveReadingLS(); saveWish(); syncUp(); closeWishAct(); renderAll(); toast("Читаешь сейчас 📖");
+  });
   $("#waShelf").addEventListener("click", ()=>{
     if(!requireBookSlot()) return;
     const w=waBook; closeWishAct(); closeModals();
@@ -2038,6 +2109,12 @@ main,footer{position:relative;z-index:1}
     return `<div class="cat-cover" data-open data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}" style="background:${bg};color:${pickFg(bg)}">
       <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
       <div class="cc-title">${esc(b.t)}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
+  }
+  // мини-полка «читаю»: до 3 вертикальных корешков без текста (тап → тултип с названием)
+  function miniShelfHTML(arr){
+    return (arr||[]).slice(0,3).map((b,i)=>{ const bg=spineBg(b); const h=54+(i%3)*2;   // разброс высоты 54/56/58
+      return `<span class="ms-spine" title="${esc(b.t)}" style="background:${bg};color:${pickFg(bg)};height:${h}px"><span class="ms-t">${esc(b.t)}</span></span>`;
+    }).join("");
   }
   /* ---- настоящие обложки: ID тома Google Books → картинка с CDN (без лимитов) ---- */
   const GBID = {
@@ -2612,7 +2689,7 @@ main,footer{position:relative;z-index:1}
     if(cached && row.data===cached.raw) return;
     let p; try{ p=decodeCode(row.data); }catch(e){ if(!cached) toast("Профиль повреждён"); return; }
     const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ if(!cached) toast("Это не профиль"); return; }
-    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:(p&&p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code};
+    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code};
     profileCache[code]={g, raw:row.data};
     if(!cached || view==="guest") showGuest(g);
   }
@@ -2810,14 +2887,48 @@ main,footer{position:relative;z-index:1}
     $("#fAuthor").value=(v.authors&&v.authors[0])||$("#fAuthor").value;
     $("#fGenre").value=genreFromBook(v);
   });
+  // Enter в поле названия — добавить книгу как есть (не обязательно ждать/выбирать подсказку Google)
+  { const _ft=$("#fTitle"); if(_ft) _ft.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); const s=$("#fSuggest"); if(s) s.hidden=true; $("#saveBook").click(); } }); }
   bkAutocomplete($("#wishTitle"), $("#wishSuggest"), v=>{
     $("#wishTitle").value=v.title;
     $("#wishAuthor").value=(v.authors&&v.authors[0])||$("#wishAuthor").value;
   });
-  bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // подсказки и в поле «Сейчас читаю»
-    const au=(v.authors&&v.authors[0])||"";
-    $("#pReadingInput").value = v.title + (au?(" — "+au):"");
+  function addReadingBook(t, a, g){
+    t=String(t||"").trim(); if(!t) return false;
+    if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return false; }
+    if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a||""))){ toast("Эту книгу уже читаешь"); return false; }
+    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:""});
+    saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return true;
+  }
+  bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // выбор из подсказки
+    if(addReadingBook(v.title, (v.authors&&v.authors[0])||"", genreFromBook(v))) $("#pReadingInput").value="";
   });
+  // Enter / кнопка «＋» — добавить вписанное как есть (автор пустой, жанр «Проза»)
+  function pReadingManualAdd(){ const i=$("#pReadingInput"); if(!i) return; if(addReadingBook(i.value,"","Проза")) i.value=""; const s=$("#pReadingSuggest"); if(s){ s.hidden=true; s.innerHTML=""; } }
+  { const _i=$("#pReadingInput"); if(_i) _i.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); pReadingManualAdd(); } }); }
+  { const _b=$("#pReadingAdd"); if(_b) _b.addEventListener("click", pReadingManualAdd); }
+  // рендер редактора списка «сейчас читаю» в профиле
+  function renderReadingEditor(){
+    const list=$("#pReadingList"); if(!list) return;
+    list.innerHTML = myReading.map((b,i)=>{ const bg=spineBg(b);
+      return `<div class="rd-edit-item">
+        <div class="rd-edit-cover" style="background:${bg}"></div>
+        <div class="rd-edit-meta"><div class="rd-edit-t">${esc(b.t)}</div><div class="rd-edit-a">${esc(b.a||"")}</div></div>
+        <button type="button" class="rd-edit-btn done" data-done="${i}">✓ прочитал</button>
+        <button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>
+      </div>`; }).join("");
+    const full = myReading.length>=READING_MAX;
+    { const w=$("#pReadingAddWrap"); if(w) w.style.display = full?"none":""; }
+    { const n=$("#pReadingFull"); if(n) n.style.display = full?"":"none"; }
+  }
+  { const _rl=$("#pReadingList"); if(_rl) _rl.addEventListener("click", e=>{
+    const rm=e.target.closest("[data-rm]"), dn=e.target.closest("[data-done]");
+    if(rm){ const i=+rm.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return; }
+    if(dn){ const i=+dn.dataset.done; const b=myReading[i]; if(!b) return;
+      if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a))){
+        myBooks.push({t:b.t, a:b.a||"неизвестный автор", g:b.g||"Проза", c:b.c||COLORS[myBooks.length%COLORS.length], cover:b.cover||"", fav:false, r:0, note:"", qt:[]}); saveMine(); }
+      myReading.splice(i,1); saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); toast("Перенёс на полку 📚"); return; }
+  }); }
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
   const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], infoReviewData=null;
@@ -2966,7 +3077,9 @@ main,footer{position:relative;z-index:1}
   const profileModal = $("#profileModal"); let tempPhoto="";
   function paintPhoto(){ const p=$("#photoPrev"); if(tempPhoto){ p.style.backgroundImage=`url(${tempPhoto})`; p.textContent=""; } else { p.style.backgroundImage="none"; p.textContent=(myName[0]||"М"); } }
   function openProfile(){
-    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pReadingInput").value=myReading; $("#pEmailInput").value=myEmail; tempPhoto=myPhoto; paintPhoto(); growAll("#profileModal textarea");
+    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pEmailInput").value=myEmail; tempPhoto=myPhoto; paintPhoto(); growAll("#profileModal textarea");
+    { const _i=$("#pReadingInput"); if(_i){ _i.value=""; const _s=$("#pReadingSuggest"); if(_s){ _s.hidden=true; _s.innerHTML=""; } } }
+    renderReadingEditor();   // список «сейчас читаю» — управляется вживую (добавление/убрать/прочитал сохраняются сразу)
     $("#myCode").value = myShareCode();
     $("#myLink").value = loginLink();
     overlay.classList.add("open"); profileModal.classList.add("open");
@@ -2977,7 +3090,72 @@ main,footer{position:relative;z-index:1}
     ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
-  $("#pReading").addEventListener("click", ()=>{ if(isMe()) openProfile(); });
+  // тап по всему блоку «читаю» → окошко: список (+ добавить/убрать), тап по книге → её мини-страница (цвет / на полку / страница книги)
+  function showReadingList(mine){
+    const back=document.createElement("div"); back.className="confirm-back";
+    const box=document.createElement("div"); box.className="confirm-box"; box.style.maxWidth="360px";
+    const done=()=>{ try{ back.remove(); }catch(e){} };
+    let editIdx=null;
+    const closeBtn=()=>`<div class="confirm-btns"><button class="confirm-no" type="button">Закрыть</button></div>`;
+    const renderList=()=>{
+      const arr = mine ? myReading : asReadingArr(friend().reading);
+      let h = `<p style="margin:0 0 12px;font-weight:700">📖 Сейчас читаю${mine?` <span style="font-weight:400;color:var(--ink-soft);font-size:13px">— до 3</span>`:""}</p>`
+        + `<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:12px">`;
+      h += arr.length ? arr.map((b,i)=>`<div class="rdl-row" ${mine?`data-open="${i}"`:""} style="display:flex;align-items:center;gap:9px;padding:6px 0;text-align:left;${mine?"cursor:pointer":""}">
+            <span style="width:13px;height:20px;border-radius:2px 3px 3px 2px;background:${spineBg(b)};flex:0 0 auto"></span>
+            <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span>
+            ${mine?`<button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>`:""}
+          </div>`).join("")
+        : `<p class="mp" style="margin:0">${mine?"Пока пусто — добавь книгу ниже 👇":"Пока ничего не читает"}</p>`;
+      h += `</div>`;
+      if(mine){
+        h += (arr.length<READING_MAX)
+          ? `<div class="bk-search" style="margin-bottom:12px"><div style="display:flex;gap:8px"><input id="rdlInput" placeholder="выбери из подсказок или впиши и нажми ＋" autocomplete="off" style="flex:1;min-width:0;box-sizing:border-box"/><button type="button" id="rdlAdd" class="btn" style="flex:0 0 auto;padding:0 15px;justify-content:center">＋</button></div><div id="rdlSuggest" class="bk-suggest" hidden></div></div>`
+          : `<p class="mp" style="font-size:12px;margin:0 0 12px">Читаешь уже 3 — убери одну, чтобы добавить новую.</p>`;
+      }
+      h += closeBtn();
+      box.innerHTML=h;
+      box.querySelector(".confirm-no").addEventListener("click", done);
+      box.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",(e)=>{ e.stopPropagation(); const i=+b.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); render(); }));
+      box.querySelectorAll("[data-open]").forEach(r=>r.addEventListener("click",()=>{ editIdx=+r.dataset.open; render(); }));
+      if(mine && arr.length<READING_MAX){
+        const inp=box.querySelector("#rdlInput"), sug=box.querySelector("#rdlSuggest"), addBtn=box.querySelector("#rdlAdd");
+        if(inp && sug){ bkAutocomplete(inp, sug, v=>{ if(addReadingBook(v.title,(v.authors&&v.authors[0])||"",genreFromBook(v))) render(); });
+          inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); if(addReadingBook(inp.value,"","Проза")) render(); } }); }
+        if(addBtn) addBtn.addEventListener("click", ()=>{ const i=box.querySelector("#rdlInput"); if(addReadingBook(i?i.value:"","","Проза")) render(); });
+      }
+    };
+    const renderEditor=(b,i)=>{
+      box.innerHTML = `<button class="linklike" id="rdlBack" type="button" style="margin-bottom:8px">← назад</button>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="width:40px;height:56px;border-radius:2px 4px 4px 2px;background:${spineBg(b)};flex:0 0 auto;box-shadow:2px 2px 6px -2px rgba(0,0,0,.5)"></div>
+          <div style="min-width:0"><div style="font-weight:700">${esc(b.t)}</div>${b.a?`<div class="mp" style="margin:2px 0 0">${esc(b.a)}</div>`:""}</div>
+        </div>
+        <p class="mp" style="font-size:13px;margin:0 0 6px">Цвет книги</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">${COLORS.map(c=>`<button type="button" data-c="${esc(c)}" style="width:30px;height:30px;border-radius:50%;border:2px solid ${c===b.c?'var(--ink)':'rgba(0,0,0,.12)'};background:${c};cursor:pointer;padding:0"></button>`).join("")}</div>
+        <button class="btn" id="rdlToShelf" type="button" style="width:100%;justify-content:center;display:flex">📚 Поставить на полку</button>
+        <button class="btn ghost" id="rdlBookPage" type="button" style="width:100%;justify-content:center;display:flex;margin-top:8px">📖 страница книги</button>
+        ${closeBtn()}`;
+      box.querySelector(".confirm-no").addEventListener("click", done);
+      box.querySelector("#rdlBack").addEventListener("click", ()=>{ editIdx=null; render(); });
+      box.querySelectorAll("[data-c]").forEach(sw=>sw.addEventListener("click", ()=>{ if(myReading[i]){ myReading[i].c=sw.dataset.c; saveReadingLS(); syncUp(); renderAll(); render(); } }));
+      box.querySelector("#rdlToShelf").addEventListener("click", ()=>{
+        const rb=myReading[i]; if(!rb) return;
+        if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[]}); saveMine(); }
+        myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); toast("На полке 📚"); editIdx=null; render();
+      });
+      box.querySelector("#rdlBookPage").addEventListener("click", ()=>{ done(); openBookPage(b.t, b.a); });
+    };
+    const render=()=>{
+      const arr = mine ? myReading : asReadingArr(friend().reading);
+      if(mine && editIdx!=null && arr[editIdx]) renderEditor(arr[editIdx], editIdx);
+      else { editIdx=null; renderList(); }
+    };
+    back.appendChild(box); document.body.appendChild(back);
+    back.addEventListener("click", e=>{ if(e.target===back) done(); });
+    render();
+  }
+  { const _rs=$("#readingStat"); if(_rs) _rs.addEventListener("click", ()=> showReadingList(isMe()) ); }
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 160, url=>{ tempPhoto=url; paintPhoto(); }, true);
@@ -2994,8 +3172,8 @@ main,footer{position:relative;z-index:1}
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#myLink").select()); else $("#myLink").select();
   });
   $("#saveProfile").addEventListener("click", ()=>{
-    myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myReading=$("#pReadingInput").value.trim(); myEmail=$("#pEmailInput").value.trim().toLowerCase(); myPhoto=tempPhoto;
-    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading); localStorage.setItem("polka_email",myEmail);
+    myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myEmail=$("#pEmailInput").value.trim().toLowerCase(); myPhoto=tempPhoto;   // «сейчас читаю» уже сохранён вживую (renderReadingEditor)
+    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_email",myEmail);
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo"); }
     catch(e){ toast("Фото слишком большое для памяти браузера"); }
     syncUp(); closeModals(); renderAll();
@@ -3091,7 +3269,7 @@ main,footer{position:relative;z-index:1}
     if(used && savedFriends.some(f=>f.code===used)){ const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:(p && p.rd)||"", wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj; delete DEMO_FRIENDS.guest; syncUp();
@@ -3154,7 +3332,7 @@ main,footer{position:relative;z-index:1}
   let pendingName = "";
   function createShelf(name){
     myName = name || "Моя полка";
-    myBooks = []; myQuote = ""; myStickers = []; myReading = ""; myWishlist = []; myPhoto = ""; myEmail = "";   // новая полка — полностью пустая
+    myBooks = []; myQuote = ""; myStickers = []; myReading = []; myWishlist = []; myPhoto = ""; myEmail = "";   // новая полка — полностью пустая
     try{ localStorage.removeItem("polka_email"); }catch(e){}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
@@ -3164,7 +3342,7 @@ main,footer{position:relative;z-index:1}
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote","");
       localStorage.setItem("polka_books","[]"); localStorage.setItem("polka_stickers","[]");
-      localStorage.setItem("polka_reading",""); localStorage.setItem("polka_wishlist","[]"); localStorage.removeItem("polka_photo");
+      localStorage.setItem("polka_reading","[]"); localStorage.setItem("polka_wishlist","[]"); localStorage.removeItem("polka_photo");
       localStorage.setItem("polka_friends","[]"); localStorage.setItem("polka_favfriends","[]");
       localStorage.setItem("polka_registered","1");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
@@ -3220,12 +3398,12 @@ main,footer{position:relative;z-index:1}
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=(p&&p.rd)||""; myWishlist=(p&&Array.isArray(p.wl))?p.wl:[];
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[];
     myEmail="";   // почта не хранится в blob и не читается обратно (приватность) — на новом устройстве вводится заново; сбрасываем, чтобы не утекла из прежнего аккаунта
     loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
     loadQuoteFavFrom(p);   // любимые цитаты
     try{
-      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading); localStorage.removeItem("polka_email");
+      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); saveReadingLS(); localStorage.removeItem("polka_email");
       localStorage.setItem("polka_wishlist",JSON.stringify(myWishlist));
       localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
       localStorage.setItem("polka_registered","1");
@@ -3263,7 +3441,7 @@ main,footer{position:relative;z-index:1}
         if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
         myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
         if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-        myReading = cp.rd || ""; try{ localStorage.setItem("polka_reading", myReading); }catch(e){}
+        myReading = asReadingArr(cp.rd); saveReadingLS();
         setPaidCache(!!row.paid);   // оплата — из колонки на сервере (авторитетно): если сервер говорит «не оплачено», кэш сбрасывается (подделка в консоли не переживёт перезагрузку)
         bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
         renderAll();
@@ -3285,7 +3463,7 @@ main,footer{position:relative;z-index:1}
     try{ history.replaceState(null,"",location.pathname); }catch(e){}   // убираем ?restore из адреса, чтобы не всплывало снова
     setTimeout(async ()=>{ try{ hideSplash(); }catch(e){}
       const cnt=Array.isArray(myBooks)?myBooks.length:0;
-      const okc=await askConfirm("Восстановление полки.\nЗаписать данные С ЭТОГО устройства в облако?\n\nИмя: "+myName+"\nЦитата: "+(myQuote||"—")+"\nСейчас читаю: "+(myReading||"—")+"\nКниг: "+cnt+"\nКод полки: "+myCode+"\n\n(Перезапишет облачную полку данными отсюда.)", "Да, записать в облако");
+      const okc=await askConfirm("Восстановление полки.\nЗаписать данные С ЭТОГО устройства в облако?\n\nИмя: "+myName+"\nЦитата: "+(myQuote||"—")+"\nСейчас читаю: "+(myReading.map(b=>b.t).join(", ")||"—")+"\nКниг: "+cnt+"\nКод полки: "+myCode+"\n\n(Перезапишет облачную полку данными отсюда.)", "Да, записать в облако");
       if(okc){ const r=await syncUp(); toast(r?"✅ Полка записана в облако!":"Не удалось записать 😔"); }
       else { toast("Отменено"); }
     }, 700);
@@ -3316,7 +3494,7 @@ main,footer{position:relative;z-index:1}
     if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
     myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
     if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-    myReading = cp.rd || ""; try{ localStorage.setItem("polka_reading", myReading); }catch(e){}
+    myReading = asReadingArr(cp.rd); saveReadingLS();
     if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
     setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
@@ -3332,7 +3510,7 @@ main,footer{position:relative;z-index:1}
     const list = Array.from(new Set((codes||[]).filter(c=>c && c!==myCode)));
     const built = await Promise.all(list.map(async fc=>{
       try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null;
-        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:(fp&&fp.rd)||"", wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[]}; }catch(e){ return null; }
+        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[]}; }catch(e){ return null; }
     }));
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
     savedFriends = [];
