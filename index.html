@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="210" />
+<meta name="app-version" content="211" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -734,7 +734,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v210: экран приветствия — две мелкие ссылки объединены в одну «Хочу полный доступ» → экран welAccess (кнопка на BUY_URL сверху, поле кода снизу). welAccessGo уводит на создание полки, затем код применяется сам (pendingAccessCode). welAccessBack → welChoose. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v211: почта для восстановления доступа — колонка shelves.email + пункт профиля «✉️ Привязать почту». Пишется через save_shelf (p_email), нижний регистр + trim, пустая не затирает сохранённую (coalesce). Обратно НЕ читается и НЕ отдаётся друзьям (get_shelf/readers_content без email) — приватность; поиск только вручную в панели. Авто-входа по почте нет (без подтверждения письмом — дыра). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -807,6 +807,7 @@ main,footer{position:relative;z-index:1}
   <div class="field"><label>Имя</label><input id="pNameInput" placeholder="как вас зовут" maxlength="40" /></div>
   <div class="field"><label>Любимая цитата</label><textarea id="pQuoteInput" placeholder="строчка, которая про вас" maxlength="400"></textarea></div>
   <div class="field bk-search"><label>Сейчас читаю</label><input id="pReadingInput" placeholder="что читаете прямо сейчас" autocomplete="off" maxlength="80" /><div id="pReadingSuggest" class="bk-suggest" hidden></div></div>
+  <div class="field"><label>✉️ Привязать почту</label><input id="pEmailInput" type="email" placeholder="you@example.com" autocomplete="off" inputmode="email" maxlength="120" /><div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Если потеряешь код полки — по почте автор поможет вернуть доступ. Входа по почте нет.</div></div>
   <div class="field"><label>Код вашей полки</label>
     <textarea class="codebox" id="myCode" readonly></textarea>
     <button class="linklike" id="copyCode" type="button">📋 Скопировать код полки</button>
@@ -1096,7 +1097,7 @@ main,footer{position:relative;z-index:1}
   }
   async function sbUpsert(row){
     // запись полки через серверную функцию (upsert в обход RLS; знать код всё равно нужно)
-    await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data});
+    await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||"")});
   }
   async function sbFetch(code){
     const a = await sbRpc("get_shelf", {p_code:code});   // одна полка по точному коду (не «все полки»)
@@ -1303,6 +1304,7 @@ main,footer{position:relative;z-index:1}
   let myQuote = localStorage.getItem("polka_quote") || "";
   let myPhoto = localStorage.getItem("polka_photo") || "";
   let myReading = localStorage.getItem("polka_reading") || "";
+  let myEmail = localStorage.getItem("polka_email") || "";   // почта для восстановления доступа (пишется в колонку shelves.email, обратно не читается — приватность)
   let myWishlist = []; try{ myWishlist = JSON.parse(localStorage.getItem("polka_wishlist") || "[]"); }catch(e){ myWishlist = []; }
   const saveWish = () => { try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
   let myStickers = [];
@@ -1356,7 +1358,7 @@ main,footer{position:relative;z-index:1}
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
     const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav]});
-    try{ await sbUpsert({code:myCode, name:myName, data}); lastCloudData = data; return true; }
+    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
@@ -2959,7 +2961,7 @@ main,footer{position:relative;z-index:1}
   const profileModal = $("#profileModal"); let tempPhoto="";
   function paintPhoto(){ const p=$("#photoPrev"); if(tempPhoto){ p.style.backgroundImage=`url(${tempPhoto})`; p.textContent=""; } else { p.style.backgroundImage="none"; p.textContent=(myName[0]||"М"); } }
   function openProfile(){
-    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pReadingInput").value=myReading; tempPhoto=myPhoto; paintPhoto(); growAll("#profileModal textarea");
+    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pReadingInput").value=myReading; $("#pEmailInput").value=myEmail; tempPhoto=myPhoto; paintPhoto(); growAll("#profileModal textarea");
     $("#myCode").value = myShareCode();
     $("#myLink").value = loginLink();
     overlay.classList.add("open"); profileModal.classList.add("open");
@@ -2967,7 +2969,7 @@ main,footer{position:relative;z-index:1}
   $("#editProfile").addEventListener("click", openProfile);
   $("#logoutBtn").addEventListener("click", ()=>{
     if(!confirm("Выйти из профиля? Ваша полка останется в облаке — вернётесь по своему коду.")) return;
-    ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
   $("#pReading").addEventListener("click", ()=>{ if(isMe()) openProfile(); });
@@ -2987,8 +2989,8 @@ main,footer{position:relative;z-index:1}
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#myLink").select()); else $("#myLink").select();
   });
   $("#saveProfile").addEventListener("click", ()=>{
-    myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myReading=$("#pReadingInput").value.trim(); myPhoto=tempPhoto;
-    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading);
+    myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myReading=$("#pReadingInput").value.trim(); myEmail=$("#pEmailInput").value.trim().toLowerCase(); myPhoto=tempPhoto;
+    try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading); localStorage.setItem("polka_email",myEmail);
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo"); }
     catch(e){ toast("Фото слишком большое для памяти браузера"); }
     syncUp(); closeModals(); renderAll();
@@ -3147,7 +3149,8 @@ main,footer{position:relative;z-index:1}
   let pendingName = "";
   function createShelf(name){
     myName = name || "Моя полка";
-    myBooks = []; myQuote = ""; myStickers = []; myReading = ""; myWishlist = []; myPhoto = "";   // новая полка — полностью пустая
+    myBooks = []; myQuote = ""; myStickers = []; myReading = ""; myWishlist = []; myPhoto = ""; myEmail = "";   // новая полка — полностью пустая
+    try{ localStorage.removeItem("polka_email"); }catch(e){}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
     view = "me";
@@ -3211,10 +3214,11 @@ main,footer{position:relative;z-index:1}
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
     myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=(p&&p.rd)||""; myWishlist=(p&&Array.isArray(p.wl))?p.wl:[];
+    myEmail="";   // почта не хранится в blob и не читается обратно (приватность) — на новом устройстве вводится заново; сбрасываем, чтобы не утекла из прежнего аккаунта
     loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
     loadQuoteFavFrom(p);   // любимые цитаты
     try{
-      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading);
+      localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_reading",myReading); localStorage.removeItem("polka_email");
       localStorage.setItem("polka_wishlist",JSON.stringify(myWishlist));
       localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
       localStorage.setItem("polka_registered","1");
@@ -3236,7 +3240,7 @@ main,footer{position:relative;z-index:1}
       try{ row = await sbFetch(myCode); }catch(e){ fetched=false; }   // сеть недоступна — не трогаем
       if(fetched && !row){
         // полку удалили в облаке → стираем профиль на устройстве
-        ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+        ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
         toast("Эта полка была удалена");
         setTimeout(()=>location.reload(), 1300);
         return;
