@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="205" />
+<meta name="app-version" content="206" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -334,6 +334,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .bk-opt:hover,.bk-opt:active{background:var(--paper-2)}
 .bk-opt-t{font-size:14px;font-weight:600;color:var(--ink);line-height:1.25}
 .bk-opt-a{font-size:12px;color:var(--ink-soft)}
+.bk-msg{padding:11px 13px;font-size:13px;color:var(--ink-soft);text-align:center;line-height:1.4}
 .bpq-carousel{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .bpq-carousel::-webkit-scrollbar{height:0;display:none}
 .bpq-card{flex:0 0 82%;max-width:340px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
@@ -733,7 +734,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v205: пункт меню «🔓 Подключить полный доступ» — виден только на бесплатном тарифе (isPaid=false), открывает окно доступа. Чтобы человек мог купить в любой момент, а не только упёршись в 6-ю книгу. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v206: автоподсказка книг — правки Вани: убран langRestrict=ru (терял книги) из bkAutocomplete и fetchBookInfo, запрос обёрнут в intitle:, порог 3→2 символа, задержка 350→500мс, состояния «Ищу…» и «Ничего не нашли — впиши название сам». Подсказки теперь и в поле «Сейчас читаю» (было только в «добавить книгу» и «хотелки»). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -805,7 +806,7 @@ main,footer{position:relative;z-index:1}
   </div>
   <div class="field"><label>Имя</label><input id="pNameInput" placeholder="как вас зовут" maxlength="40" /></div>
   <div class="field"><label>Любимая цитата</label><textarea id="pQuoteInput" placeholder="строчка, которая про вас" maxlength="400"></textarea></div>
-  <div class="field"><label>Сейчас читаю</label><input id="pReadingInput" placeholder="что читаете прямо сейчас" maxlength="80" /></div>
+  <div class="field bk-search"><label>Сейчас читаю</label><input id="pReadingInput" placeholder="что читаете прямо сейчас" autocomplete="off" maxlength="80" /><div id="pReadingSuggest" class="bk-suggest" hidden></div></div>
   <div class="field"><label>Код вашей полки</label>
     <textarea class="codebox" id="myCode" readonly></textarea>
     <button class="linklike" id="copyCode" type="button">📋 Скопировать код полки</button>
@@ -2406,7 +2407,7 @@ main,footer{position:relative;z-index:1}
       if(info.desc && info.img) return true;
     } return false; };
     const query=async(q)=>{ try{
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU&langRestrict=ru`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));   // без langRestrict=ru — не терять книги; русское описание всё равно гарантирует фильтр isRu
       if(r.ok){ const d=await r.json(); return scan(d.items); }
     }catch(e){} return false; };
     // 1) Google Books — издательская аннотация = СЮЖЕТ книги без спойлеров (то, что нужно), а не «об авторе и годе»
@@ -2765,21 +2766,28 @@ main,footer{position:relative;z-index:1}
   function bkAutocomplete(input, box, onPick){
     if(!input || !box) return;
     let seq=0, timer=null;
+    const msg=(txt)=>{ box.innerHTML=`<div class="bk-msg">${esc(txt)}</div>`; box._items=null; box.hidden=false; };
     const render=(items)=>{
       const seen=new Set();
       const list=(items||[]).filter(v=>{ if(!v||!v.title||BK_JUNK.test(v.title)) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,6);
-      if(!list.length){ box.hidden=true; box.innerHTML=""; box._items=null; return; }
+      if(!list.length){ msg("Ничего не нашли — впиши название сам ✍️"); return; }
       box._items=list;
       box.innerHTML=list.map((v,i)=>{ const au=(v.authors&&v.authors[0])||"";
         return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
       box.hidden=false;
     };
-    const search=async(q)=>{ const s=++seq; try{
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8&country=RU&langRestrict=ru&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
-      if(!r.ok || s!==seq) return; const d=await r.json(); if(s!==seq) return; render((d.items||[]).map(it=>it.volumeInfo));
-    }catch(e){} };
-    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<3){ box.hidden=true; return; } timer=setTimeout(()=>search(q), 350); });
-    box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; seq++; });
+    const search=async(q)=>{ const s=++seq; msg("Ищу…");
+      try{
+        // intitle: — ищем по названию; БЕЗ langRestrict=ru (он выбрасывал корректные книги из-за кривых языковых меток Google)
+        const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent("intitle:"+q)}&maxResults=12&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
+        if(s!==seq) return;
+        if(!r.ok){ msg("Ничего не нашли — впиши название сам ✍️"); return; }
+        const d=await r.json(); if(s!==seq) return;
+        render((d.items||[]).map(it=>it.volumeInfo));
+      }catch(e){ if(s===seq) msg("Ничего не нашли — впиши название сам ✍️"); }
+    };
+    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 500); });
+    box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; seq++; });
     input.addEventListener("blur", ()=>{ setTimeout(()=>{ box.hidden=true; }, 200); });
   }
   bkAutocomplete($("#fTitle"), $("#fSuggest"), v=>{
@@ -2790,6 +2798,10 @@ main,footer{position:relative;z-index:1}
   bkAutocomplete($("#wishTitle"), $("#wishSuggest"), v=>{
     $("#wishTitle").value=v.title;
     $("#wishAuthor").value=(v.authors&&v.authors[0])||$("#wishAuthor").value;
+  });
+  bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // подсказки и в поле «Сейчас читаю»
+    const au=(v.authors&&v.authors[0])||"";
+    $("#pReadingInput").value = v.title + (au?(" — "+au):"");
   });
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
