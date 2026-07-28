@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="215" />
+<meta name="app-version" content="216" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -195,18 +195,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .reading{margin-top:7px;font-size:14px;color:var(--ink-soft)}
 .reading b{color:var(--ink);font-weight:600}
 .reading.editable{cursor:pointer}
-/* фото + «сейчас читаю» в один ряд, стопка выровнена по низу фото */
-.photo-reading{display:flex;align-items:flex-end;gap:16px;flex:0 0 auto}
-.photo-reading .reading{margin-top:0}
-.reading-lbl{font-size:12px;color:var(--ink-soft);margin-bottom:5px}
-/* стопка книг — горизонтальные полоски со сдвигом и тенью */
-.reading-covers{display:flex;flex-direction:column;width:min(220px,44vw)}
-.rc-mini{position:relative;height:25px;border-radius:4px;box-shadow:0 2px 5px -2px rgba(0,0,0,.45);display:flex;align-items:center;padding:0 10px;box-sizing:border-box;overflow:hidden;margin-bottom:3px}
-.rc-mini:nth-child(2){margin-left:3px}
-.rc-mini:nth-child(3){margin-left:6px}
-.rc-mini::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent 45%,rgba(0,0,0,.15));pointer-events:none}
-.rc-mini-t{position:relative;font-family:"Fraunces",serif;font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
-@media(max-width:380px){ .photo-reading{flex-direction:column;align-items:stretch;gap:10px;width:100%} .photo-reading .polaroid{align-self:flex-start} .reading-covers{width:100%} }
+/* мини-полка «читаю» в ряду счётчиков: до 3 корешков на планке цветом полки */
+#readingStat{display:flex;flex-direction:column;align-items:center;gap:5px}
+.mini-shelf{display:flex;align-items:flex-end;gap:2px;height:38px;padding:0 2px;border-bottom:3px solid var(--accent)}
+.ms-spine{width:10px;border-radius:1px 2px 0 0;box-shadow:1px 0 2px -1px rgba(0,0,0,.5);cursor:pointer;display:block}
 /* редактор «сейчас читаю» в профиле */
 .rd-edit-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .rd-edit-cover{position:relative;width:22px;height:44px;border-radius:2px 3px 3px 2px;flex:0 0 auto;box-shadow:1px 1px 3px -1px rgba(0,0,0,.5);overflow:hidden}
@@ -703,10 +695,7 @@ main,footer{position:relative;z-index:1}
 <main class="wrap">
 
   <section class="profile">
-    <div class="photo-reading">
-      <div class="polaroid"><div class="ava" id="ava">М</div><div class="my-stickers" id="myStickers"></div></div>
-      <div class="reading" id="pReading"></div>
-    </div>
+    <div class="polaroid"><div class="ava" id="ava">М</div><div class="my-stickers" id="myStickers"></div></div>
     <div class="pmeta">
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
@@ -720,7 +709,7 @@ main,footer{position:relative;z-index:1}
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
       <div id="stMatchWrap" style="display:none"><b id="stMatch">0</b><span>мэтч 💞</span></div>
-      <button class="dice-btn" id="diceBtn">🎲 что почитать</button>
+      <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span>читаю</span></div>
     </div>
   </section>
 
@@ -758,7 +747,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v215 (ТЕСТ): «Сейчас читаю» — фото и стопка книг в один ряд (.photo-reading, выравнивание по низу фото). Книга = горизонтальная полоска 25px, цвет книги, название горизонтально с обрезкой ellipsis, сдвиг 3/6px + тень (эффект стопки), подпись мелко сверху. На экранах <380px стопка уходит под фото на всю ширину. Плюс v214: Enter/＋ ручное добавление, миграция строки→массив. Прод v212. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v216 (ТЕСТ): «сейчас читаю» — мини-полка в ряду счётчиков (до 3 вертикальных корешков 34–38×10px цветом книги, без текста, на планке 3px цветом полки, подпись «читаю»; тап по корешку → тултип с названием). Стопку из профиля убрали, фото/имя как было. Кнопку «что почитать» перенесли на страницу подборок. Прод v212. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -937,6 +926,7 @@ main,footer{position:relative;z-index:1}
   <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><h3>Подборки книг 📚</h3></div>
   <div class="fp-body">
     <p class="mp">Жанровые подборки и самое популярное. Нажми на книгу — там аннотация 📖</p>
+    <button class="dice-btn" id="diceBtn" style="margin-bottom:14px">🎲 что почитать</button>
     <div id="catalogList"></div>
   </div>
 </div>
@@ -1509,14 +1499,12 @@ main,footer{position:relative;z-index:1}
       const m = friend().books.filter(b=>mine.has(norm(b.t))).length;
       $("#stMatch").textContent = m; $("#stMatchWrap").style.display="";
     }
-    const pr = $("#pReading");
-    if(isMe()){ pr.classList.add("editable");
-      pr.innerHTML = myReading.length ? `<div class="reading-lbl">📖 сейчас читаю</div>${readingRowHTML(myReading)}` : `📖 <span style="opacity:.7">что читаете сейчас?</span>`; }
-    else { pr.classList.remove("editable"); const rd=asReadingArr(friend().reading);
-      pr.innerHTML = rd.length ? `<div class="reading-lbl">📖 сейчас читает</div>${readingRowHTML(rd)}` : ""; }
+    // мини-полка «читаю» в ряду счётчиков (я → мои книги, в гостях → книги друга)
+    { const rd = isMe() ? myReading : asReadingArr(friend().reading);
+      const stat=$("#readingStat"), ms=$("#miniShelf");
+      if(stat && ms){ if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; } else { ms.innerHTML=""; stat.style.display="none"; } } }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     const meV = isMe();
-    $("#diceBtn").style.display = meV ? "" : "none";
     // нижний ряд кнопок — только когда я в гостях (цитаты/хотелки друга)
     $("#friendActions").style.display = meV ? "none" : "flex";
     $("#yearBtn").style.display = (!meV && wrappedSeason()) ? "" : "none";
@@ -2116,12 +2104,12 @@ main,footer{position:relative;z-index:1}
       <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
       <div class="cc-title">${esc(b.t)}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
   }
-  // ряд мини-обложек «сейчас читаю» (до 3 книг)
-  function readingRowHTML(arr){
-    if(!arr || !arr.length) return "";
-    return `<div class="reading-covers">` + arr.map(b=>{ const bg = spineBg(b);
-      return `<div class="rc-mini" title="${esc(b.t)}${b.a?(" — "+esc(b.a)):""}" style="background:${bg};color:${pickFg(bg)}"><span class="rc-mini-t">${esc(b.t)}</span></div>`;
-    }).join("") + `</div>`;
+  // мини-полка «читаю»: до 3 вертикальных корешков без текста (тап → тултип с названием)
+  function miniShelfHTML(arr){
+    return (arr||[]).slice(0,3).map((b,i)=>{ const bg=spineBg(b); const h=34+(i%3)*2;   // лёгкий разброс высоты 34/36/38
+      const info=b.t+(b.a?(" — "+b.a):"");
+      return `<span class="ms-spine" data-info="${esc(info)}" title="${esc(info)}" style="background:${bg};height:${h}px"></span>`;
+    }).join("");
   }
   /* ---- настоящие обложки: ID тома Google Books → картинка с CDN (без лимитов) ---- */
   const GBID = {
@@ -3097,7 +3085,8 @@ main,footer{position:relative;z-index:1}
     ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
-  $("#pReading").addEventListener("click", ()=>{ if(isMe()) openProfile(); });
+  // тап по корешку мини-полки «читаю» → показать название (тултип)
+  { const _ms=$("#miniShelf"); if(_ms) _ms.addEventListener("click", e=>{ const sp=e.target.closest(".ms-spine"); if(sp) toast("📖 "+sp.dataset.info); }); }
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 160, url=>{ tempPhoto=url; paintPhoto(); }, true);
