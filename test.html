@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="209" />
+<meta name="app-version" content="210" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -734,7 +734,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v209: genreFromBook — поэзия по категориям проверяется ДО классики (Пушкин/Лермонтов/Гюго прежде всего поэты; у Верони поэзия — отдельный раздел). Совпадение автора-классика с начала слова (?:^|[^a-zа-яё]), чтобы «лондон/гюго» внутри чужих слов не давали ложную классику. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v210: экран приветствия — две мелкие ссылки объединены в одну «Хочу полный доступ» → экран welAccess (кнопка на BUY_URL сверху, поле кода снизу). welAccessGo уводит на создание полки, затем код применяется сам (pendingAccessCode). welAccessBack → welChoose. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1015,9 +1015,8 @@ main,footer{position:relative;z-index:1}
     <p class="mp">Вы здесь впервые или у вас уже есть полка?</p>
     <button class="btn" id="welNew" style="width:100%;display:flex;justify-content:center">Создать новую полку</button>
     <button class="btn ghost" id="welHaveBtn" style="width:100%;display:flex;justify-content:center;margin-top:10px">Войти по коду</button>
-    <div style="margin-top:18px;text-align:center;line-height:2.1">
-      <a href="#" id="welHaveCode" style="color:#a99a92;font-size:13px;text-decoration:none">У меня есть код доступа</a><br>
-      <a href="#" id="welGetFull" style="color:#a99a92;font-size:13px;text-decoration:none">Получить полный доступ</a>
+    <div style="margin-top:18px;text-align:center">
+      <a href="#" id="welWantFull" style="color:#a99a92;font-size:13px;text-decoration:none">Хочу полный доступ</a>
     </div>
   </div>
   <div id="welStep1" style="display:none">
@@ -1041,8 +1040,8 @@ main,footer{position:relative;z-index:1}
     <div class="modal-foot"><button class="btn ghost" id="welBack2" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welLoginGo" style="justify-content:center;display:flex">Войти</button></div>
   </div>
   <div id="welAccess" style="display:none">
-    <p class="mp" id="welAccessMsg">Чтобы создать свою полку, нужен доступ — разово, навсегда. Получите код у автора в Telegram и введите ниже.</p>
-    <a class="btn" id="welBuyBtn" href="#" target="_blank" rel="noopener" style="width:100%;display:flex;justify-content:center;text-decoration:none">Получить доступ в Telegram</a>
+    <p class="mp" id="welAccessMsg">Полный доступ — разово и навсегда: снимает лимит в 5 книг. Получите код у автора в Telegram, а если он уже есть — введите ниже 👇</p>
+    <a class="btn" id="welBuyBtn" href="#" target="_blank" rel="noopener" style="width:100%;display:flex;justify-content:center;text-decoration:none">Получить код в Telegram</a>
     <div class="field" style="margin-top:14px"><input id="welAccessCode" placeholder="код доступа" /></div>
     <div class="modal-foot"><button class="btn ghost" id="welAccessBack" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welAccessGo" style="justify-content:center;display:flex">Активировать</button></div>
   </div>
@@ -3132,18 +3131,17 @@ main,footer{position:relative;z-index:1}
   let pendingAccessCode = "";  // человек ввёл код ДОСТУПА в «Войти по коду» → создаём полку и сами применяем код
   function hideAccessNote(){ const n=$("#welAccessNote"); if(n) n.style.display="none"; }
   // заботливый поток: код доступа приняли за код полки → создаём полку, потом применяем код
-  function startAccessCodeFlow(code){
+  function startAccessCodeFlow(code, note){
     pendingAccessCode = code; wantCodeAfter = false;
     hideSplash();
-    const n=$("#welAccessNote"); if(n) n.style.display="";
+    const n=$("#welAccessNote"); if(n){ n.innerHTML = note || "🔑 Это <b>код доступа</b>, а не код полки — ничего страшного! Сначала создадим твою полку, а полный доступ применится сам."; n.style.display=""; }
     welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:"";
     overlay.classList.add("open"); welModal.classList.add("open");
     setTimeout(()=>$("#welName").focus(),60);
   }
   $("#welNew").addEventListener("click", ()=>{ wantCodeAfter=false; pendingAccessCode=""; hideAccessNote(); welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
   $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
-  { const _hc=$("#welHaveCode"); if(_hc) _hc.addEventListener("click", (e)=>{ e.preventDefault(); wantCodeAfter=true; pendingAccessCode=""; hideAccessNote(); welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); }); }
-  { const _gf=$("#welGetFull"); if(_gf) _gf.addEventListener("click", (e)=>{ e.preventDefault(); try{ window.open(BUY_URL||"#","_blank","noopener"); }catch(_){ location.href=BUY_URL||"#"; } }); }
+  { const _wf=$("#welWantFull"); if(_wf) _wf.addEventListener("click", (e)=>{ e.preventDefault(); wantCodeAfter=false; pendingAccessCode=""; hideAccessNote(); if($("#welBuyBtn")) $("#welBuyBtn").href = BUY_URL || "#"; $("#welAccessCode").value=""; welShow("welAccess"); }); }
   $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
   $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
   let pendingName = "";
@@ -3183,14 +3181,13 @@ main,footer{position:relative;z-index:1}
       else toast("Код доступа не сработал — возможно, уже использован");
     }
   });
-  $("#welAccessBack").addEventListener("click", ()=>welShow("welStep1"));
-  $("#welAccessGo").addEventListener("click", ()=>withBtn($("#welAccessGo"),"Проверяю…", async ()=>{
+  $("#welAccessBack").addEventListener("click", ()=>welShow("welChoose"));
+  $("#welAccessGo").addEventListener("click", ()=>{
     const code = $("#welAccessCode").value.trim().toUpperCase();
-    if(!code) return;
-    const ok = await sbRedeem(code);
-    if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} toast("Доступ открыт! 💛"); createShelf(pendingName); }
-    else toast("Код неверный или уже использован");
-  }));
+    if(!code){ toast("Введите код — или нажмите кнопку выше, чтобы получить его"); return; }
+    // нет полки → сначала имя и создание, потом код применится сам (welGo → pendingAccessCode)
+    startAccessCodeFlow(code, "🔑 Сначала создадим твою полку — и полный доступ по коду применится к ней сам.");
+  });
   $("#welCopy").addEventListener("click", ()=>{ const v=$("#welCode").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код скопирован!"), ()=>$("#welCode").select()); else $("#welCode").select(); });
   $("#welLinkCopy").addEventListener("click", ()=>{ const v=$("#welLink").value;
