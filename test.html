@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="213" />
+<meta name="app-version" content="214" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -196,13 +196,15 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .reading b{color:var(--ink);font-weight:600}
 .reading.editable{cursor:pointer}
 .reading-lbl{font-size:13px;color:var(--ink-soft);margin-bottom:6px}
-.reading-covers{display:flex;gap:8px;flex-wrap:wrap}
-.rc-mini{width:46px;height:66px;border-radius:6px;box-shadow:var(--shadow);display:flex;align-items:flex-end;padding:5px;box-sizing:border-box;overflow:hidden}
-.rc-mini-t{font-size:9px;font-weight:600;line-height:1.15;max-height:44px;overflow:hidden}
+.reading-covers{display:flex;gap:7px;flex-wrap:wrap}
+/* корешок как на полке — вертикальный текст */
+.rc-mini{position:relative;width:30px;height:96px;border-radius:2px 4px 4px 2px;box-shadow:2px 2px 6px -2px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:8px 3px;box-sizing:border-box;overflow:hidden}
+.rc-mini::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.22),transparent 22%,transparent 78%,rgba(0,0,0,.25));pointer-events:none}
+.rc-mini-t{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;font-size:11px;line-height:1.3;text-align:center;max-height:100%;overflow:hidden;overflow-wrap:anywhere}
 /* редактор «сейчас читаю» в профиле */
 .rd-edit-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
-.rd-edit-cover{width:34px;height:48px;border-radius:5px;flex:0 0 auto;display:flex;align-items:flex-end;padding:3px;box-sizing:border-box;overflow:hidden}
-.rd-edit-cover span{font-size:7px;font-weight:600;line-height:1.1;max-height:32px;overflow:hidden}
+.rd-edit-cover{position:relative;width:22px;height:44px;border-radius:2px 3px 3px 2px;flex:0 0 auto;box-shadow:1px 1px 3px -1px rgba(0,0,0,.5);overflow:hidden}
+.rd-edit-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.2),transparent 30%,transparent 75%,rgba(0,0,0,.22))}
 .rd-edit-meta{flex:1;min-width:0}
 .rd-edit-t{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rd-edit-a{font-size:12px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -748,7 +750,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v213 (ТЕСТ): «Сейчас читаю» — из строки в массив до 3 книг с обложками. В профиле редактор списком с автоподсказкой + «✓ прочитал» (→ на полку). В хотелках кнопка «📖 Читаю сейчас» (→ в чтение), «на полку» стала второстепенной; при 3 книгах — выбор какую перенести на полку. Миграция: старая строка → [одна книга]. Пока только в test.html, прод на v212. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v214 (ТЕСТ): «Сейчас читаю» — массив до 3 книг, обложки как КОРЕШКИ (вертикальный текст). Поле ввода: выбор из подсказки ИЛИ Enter/кнопка «＋» добавляют вписанное как есть (автор пустой, жанр Проза). Enter в обычном добавлении книги (#fTitle) тоже сохраняет. В хотелках «📖 Читаю сейчас» (→ чтение), при 3 книгах — выбор какую на полку. Миграция строки→массив. Пока только test.html, прод v212. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -822,7 +824,10 @@ main,footer{position:relative;z-index:1}
   <div class="field"><label>Любимая цитата</label><textarea id="pQuoteInput" placeholder="строчка, которая про вас" maxlength="400"></textarea></div>
   <div class="field"><label>📖 Сейчас читаю <span style="font-weight:400;color:var(--ink-soft)">— до 3 книг</span></label>
     <div id="pReadingList"></div>
-    <div class="bk-search" id="pReadingAddWrap" style="margin-top:8px"><input id="pReadingInput" placeholder="＋ добавить книгу — начни вводить" autocomplete="off" style="width:100%;box-sizing:border-box" /><div id="pReadingSuggest" class="bk-suggest" hidden></div></div>
+    <div class="bk-search" id="pReadingAddWrap" style="margin-top:8px">
+      <div style="display:flex;gap:8px"><input id="pReadingInput" placeholder="выбери из подсказок или впиши и нажми ＋" autocomplete="off" style="flex:1;min-width:0;box-sizing:border-box" /><button type="button" id="pReadingAdd" class="btn" style="flex:0 0 auto;padding:0 16px;justify-content:center">＋</button></div>
+      <div id="pReadingSuggest" class="bk-suggest" hidden></div>
+    </div>
     <div id="pReadingFull" class="mp" style="display:none;font-size:12px;margin-top:6px">Читаешь уже 3 книги — заверши «✓ прочитал» или убери одну, чтобы добавить новую.</div>
   </div>
   <div class="field"><label>✉️ Привязать почту</label><input id="pEmailInput" type="email" placeholder="you@example.com" autocomplete="off" inputmode="email" maxlength="120" /><div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Если потеряешь код полки — по почте автор поможет вернуть доступ. Входа по почте нет.</div></div>
@@ -2881,23 +2886,32 @@ main,footer{position:relative;z-index:1}
     $("#fAuthor").value=(v.authors&&v.authors[0])||$("#fAuthor").value;
     $("#fGenre").value=genreFromBook(v);
   });
+  // Enter в поле названия — добавить книгу как есть (не обязательно ждать/выбирать подсказку Google)
+  { const _ft=$("#fTitle"); if(_ft) _ft.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); const s=$("#fSuggest"); if(s) s.hidden=true; $("#saveBook").click(); } }); }
   bkAutocomplete($("#wishTitle"), $("#wishSuggest"), v=>{
     $("#wishTitle").value=v.title;
     $("#wishAuthor").value=(v.authors&&v.authors[0])||$("#wishAuthor").value;
   });
-  bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // выбор книги → добавить в список «сейчас читаю»
-    const t=v.title, a=(v.authors&&v.authors[0])||"";
-    if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return; }
-    if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a))){ toast("Эту книгу уже читаешь"); $("#pReadingInput").value=""; return; }
-    myReading.push({t, a, g:genreFromBook(v), c:COLORS[myReading.length%COLORS.length], cover:""});
-    saveReadingLS(); syncUp(); $("#pReadingInput").value=""; renderReadingEditor(); renderAll();
+  function addReadingBook(t, a, g){
+    t=String(t||"").trim(); if(!t) return false;
+    if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return false; }
+    if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a||""))){ toast("Эту книгу уже читаешь"); return false; }
+    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:""});
+    saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return true;
+  }
+  bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // выбор из подсказки
+    if(addReadingBook(v.title, (v.authors&&v.authors[0])||"", genreFromBook(v))) $("#pReadingInput").value="";
   });
+  // Enter / кнопка «＋» — добавить вписанное как есть (автор пустой, жанр «Проза»)
+  function pReadingManualAdd(){ const i=$("#pReadingInput"); if(!i) return; if(addReadingBook(i.value,"","Проза")) i.value=""; const s=$("#pReadingSuggest"); if(s){ s.hidden=true; s.innerHTML=""; } }
+  { const _i=$("#pReadingInput"); if(_i) _i.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); pReadingManualAdd(); } }); }
+  { const _b=$("#pReadingAdd"); if(_b) _b.addEventListener("click", pReadingManualAdd); }
   // рендер редактора списка «сейчас читаю» в профиле
   function renderReadingEditor(){
     const list=$("#pReadingList"); if(!list) return;
     list.innerHTML = myReading.map((b,i)=>{ const bg=spineBg(b);
       return `<div class="rd-edit-item">
-        <div class="rd-edit-cover" style="background:${bg};color:${pickFg(bg)}"><span>${esc(b.t)}</span></div>
+        <div class="rd-edit-cover" style="background:${bg}"></div>
         <div class="rd-edit-meta"><div class="rd-edit-t">${esc(b.t)}</div><div class="rd-edit-a">${esc(b.a||"")}</div></div>
         <button type="button" class="rd-edit-btn done" data-done="${i}">✓ прочитал</button>
         <button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>
