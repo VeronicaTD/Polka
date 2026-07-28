@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="207" />
+<meta name="app-version" content="208" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -734,7 +734,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v207: looksLikeAccessCode распознаёт префикс POLKA- (реальный формат кодов доступа Верони) в дополнение к KEY-/FREE-. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v208: genreFromBook (правки Вани) — «Классика» по дополняемому списку авторов (надёжнее publishedDate у переизданий), проверяется ДО остальных правил; исправлена опечатка preступ→преступ; сначала v.categories, название — только если категорий нет. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2754,10 +2754,16 @@ main,footer{position:relative;z-index:1}
   });
 
   /* ---- автоподсказка книги из Google Books (переиспользуемая: и «добавить книгу», и «хотелки») ---- */
+  // дополняемый список авторов-классиков: определяем по АВТОРУ, т.к. publishedDate у переизданий = дата переиздания (ненадёжно). Кириллица + латинские варианты (Google часто отдаёт имена по-английски).
+  const CLASSIC_AUTHORS=/(толст|tolstoy|достоевск|dostoevsk|тургенев|turgenev|чехов|chekhov|булгаков|bulgakov|шолохов|sholokhov|куприн|kuprin|гогол|gogol|пушкин|pushkin|лермонтов|lermontov|остен|austen|диккенс|dickens|лондон|london|фицджеральд|fitzgerald|гюго|hugo|оруэлл|orwell)/i;
   function genreFromBook(v){
-    const s=(((v.categories||[]).join(" "))+" "+(v.title||"")).toLowerCase();
+    // классика — по автору, ДО остальных правил (иначе «Преступление и наказание» уйдёт в «Детектив» по слову «преступ»)
+    if(CLASSIC_AUTHORS.test((v.authors||[]).join(" "))) return "Классика";
+    // основной сигнал — категории Google; на название смотрим ТОЛЬКО если категорий нет
+    const cats=(v.categories||[]).join(" ").toLowerCase();
+    const s = cats || (v.title||"").toLowerCase();
     if(/поэзия|poetry|стих|стихотвор/.test(s)) return "Поэзия";
-    if(/детектив|триллер|thriller|crime|mystery|detective|preступ/.test(s)) return "Детектив";
+    if(/детектив|триллер|thriller|crime|mystery|detective|преступ/.test(s)) return "Детектив";
     if(/фантаст|фэнтези|fantasy|science fiction|sci-?fi/.test(s)) return "Фантастика";
     if(/non-?fiction|нон-?фикшн|биограф|biograph|self-?help|психолог|psychology|история|history|science|наука|бизнес|business|мемуар/.test(s)) return "Нон-фикшн";
     return "Проза";
