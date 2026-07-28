@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="216" />
+<meta name="app-version" content="217" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -196,9 +196,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .reading b{color:var(--ink);font-weight:600}
 .reading.editable{cursor:pointer}
 /* мини-полка «читаю» в ряду счётчиков: до 3 корешков на планке цветом полки */
-#readingStat{display:flex;flex-direction:column;align-items:center;gap:5px}
-.mini-shelf{display:flex;align-items:flex-end;gap:2px;height:38px;padding:0 2px;border-bottom:3px solid var(--accent)}
-.ms-spine{width:10px;border-radius:1px 2px 0 0;box-shadow:1px 0 2px -1px rgba(0,0,0,.5);cursor:pointer;display:block}
+#readingStat{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:44px;min-height:44px;justify-content:flex-end}
+.mini-shelf{display:flex;align-items:flex-end;gap:2px;min-height:58px;padding:0 2px;border-bottom:3px solid var(--accent)}
+.ms-spine{width:17px;border-radius:1px 2px 0 0;box-shadow:1px 0 2px -1px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:5px 1px;box-sizing:border-box;overflow:hidden}
+.mini-shelf .ms-t{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;font-size:8.5px;line-height:1.15;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;color:inherit}
 /* редактор «сейчас читаю» в профиле */
 .rd-edit-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .rd-edit-cover{position:relative;width:22px;height:44px;border-radius:2px 3px 3px 2px;flex:0 0 auto;box-shadow:1px 1px 3px -1px rgba(0,0,0,.5);overflow:hidden}
@@ -209,7 +210,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .rd-edit-btn{background:none;border:1px solid var(--line);border-radius:14px;padding:5px 10px;font-size:12px;font-family:inherit;cursor:pointer;color:var(--ink);white-space:nowrap}
 .rd-edit-btn.done{border-color:var(--accent);color:var(--accent)}
 .rd-edit-x{background:none;border:none;font-size:20px;line-height:1;cursor:pointer;color:var(--ink-soft);padding:0 4px}
-.stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap;align-items:center}
+.stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap;align-items:flex-end}
 .stats div b{font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;display:block;line-height:1}
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
 
@@ -747,7 +748,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v216 (ТЕСТ): «сейчас читаю» — мини-полка в ряду счётчиков (до 3 вертикальных корешков 34–38×10px цветом книги, без текста, на планке 3px цветом полки, подпись «читаю»; тап по корешку → тултип с названием). Стопку из профиля убрали, фото/имя как было. Кнопку «что почитать» перенесли на страницу подборок. Прод v212. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v217 (ТЕСТ): мини-полка «читаю» — корешки крупнее (54–58×17px) с вертикальным названием внутри (writing-mode:vertical-rl, 8.5px, контрастный цвет pickFg, обрезка ellipsis); планка по ширине группы; тап по всему блоку (≥44×44) → окошко со списком полных названий. Ряд счётчиков выровнен по нижнему краю. Кубик «что почитать» на подборках. Прод v212. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2106,9 +2107,8 @@ main,footer{position:relative;z-index:1}
   }
   // мини-полка «читаю»: до 3 вертикальных корешков без текста (тап → тултип с названием)
   function miniShelfHTML(arr){
-    return (arr||[]).slice(0,3).map((b,i)=>{ const bg=spineBg(b); const h=34+(i%3)*2;   // лёгкий разброс высоты 34/36/38
-      const info=b.t+(b.a?(" — "+b.a):"");
-      return `<span class="ms-spine" data-info="${esc(info)}" title="${esc(info)}" style="background:${bg};height:${h}px"></span>`;
+    return (arr||[]).slice(0,3).map((b,i)=>{ const bg=spineBg(b); const h=54+(i%3)*2;   // разброс высоты 54/56/58
+      return `<span class="ms-spine" title="${esc(b.t)}" style="background:${bg};color:${pickFg(bg)};height:${h}px"><span class="ms-t">${esc(b.t)}</span></span>`;
     }).join("");
   }
   /* ---- настоящие обложки: ID тома Google Books → картинка с CDN (без лимитов) ---- */
@@ -3085,8 +3085,21 @@ main,footer{position:relative;z-index:1}
     ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
-  // тап по корешку мини-полки «читаю» → показать название (тултип)
-  { const _ms=$("#miniShelf"); if(_ms) _ms.addEventListener("click", e=>{ const sp=e.target.closest(".ms-spine"); if(sp) toast("📖 "+sp.dataset.info); }); }
+  // тап по всему блоку «читаю» → окошко со списком полных названий
+  function showReadingList(arr){
+    if(!arr || !arr.length) return;
+    const back=document.createElement("div"); back.className="confirm-back";
+    const box=document.createElement("div"); box.className="confirm-box";
+    box.innerHTML=`<p style="margin:0 0 12px;font-weight:700">📖 Сейчас читаю</p>`
+      + `<div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">`
+      + arr.map(b=>`<div style="display:flex;align-items:center;gap:9px;text-align:left"><span style="width:13px;height:20px;border-radius:2px 3px 3px 2px;background:${spineBg(b)};flex:0 0 auto"></span><span><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span></div>`).join("")
+      + `</div><div class="confirm-btns"><button class="confirm-no" type="button">Закрыть</button></div>`;
+    back.appendChild(box); document.body.appendChild(back);
+    const done=()=>{ try{ back.remove(); }catch(e){} };
+    box.querySelector(".confirm-no").addEventListener("click", done);
+    back.addEventListener("click", e=>{ if(e.target===back) done(); });
+  }
+  { const _rs=$("#readingStat"); if(_rs) _rs.addEventListener("click", ()=>{ const rd=isMe()?myReading:asReadingArr(friend().reading); showReadingList(rd); }); }
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 160, url=>{ tempPhoto=url; paintPhoto(); }, true);
