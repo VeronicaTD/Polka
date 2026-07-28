@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="206" />
+<meta name="app-version" content="207" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -734,7 +734,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v206: автоподсказка книг — правки Вани: убран langRestrict=ru (терял книги) из bkAutocomplete и fetchBookInfo, запрос обёрнут в intitle:, порог 3→2 символа, задержка 350→500мс, состояния «Ищу…» и «Ничего не нашли — впиши название сам». Подсказки теперь и в поле «Сейчас читаю» (было только в «добавить книгу» и «хотелки»). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v207: looksLikeAccessCode распознаёт префикс POLKA- (реальный формат кодов доступа Верони) в дополнение к KEY-/FREE-. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1189,9 +1189,9 @@ main,footer{position:relative;z-index:1}
     if(!CLOUD() || !code) return false;
     try{ const v = await sbRpc("check_access_code", {p_code:code}); return v===true; }catch(e){ return false; }
   }
-  // код похож на код доступа: префикс KEY-/FREE- (новые коды) ИЛИ сервер подтвердил (старые без префикса)
+  // код похож на код доступа: префикс POLKA-/KEY-/FREE- (новые коды) ИЛИ сервер подтвердил (старые без префикса)
   async function looksLikeAccessCode(code){
-    if(/^(KEY|FREE)-/i.test(code)) return true;
+    if(/^(POLKA|KEY|FREE)-/i.test(code)) return true;
     return await sbCheckAccessCode(String(code||"").toUpperCase());
   }
   /* ПРОМО-ДОСТУП для блогеров: ссылка с ?free (или ?promo) → бесплатный код из отдельного пула (коды с префиксом FREE-) подставляется сам */
