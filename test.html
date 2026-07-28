@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="204" />
+<meta name="app-version" content="205" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -674,6 +674,7 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
   <button class="menu-item" id="mTheme">🎨 Тема оформления</button>
+  <button class="menu-item" id="mAccess" style="display:none;color:#c98a2b;font-weight:700">🔓 Подключить полный доступ</button>
 </nav>
 
 <main class="wrap">
@@ -732,7 +733,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v204: УМНОЕ ПОЛЕ (Шаг 7 Вани) — если код доступа вводят в «Войти по коду», приложение распознаёт его (префикс KEY-/FREE- или проверка check_access_code без гашения), уводит на создание полки с подсказкой и само применяет код. Старые коды без префикса тоже распознаются. Оплата теперь сохраняется в облако (syncUp после redeem) — доступ есть и на новом телефоне. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v205: пункт меню «🔓 Подключить полный доступ» — виден только на бесплатном тарифе (isPaid=false), открывает окно доступа. Чтобы человек мог купить в любой момент, а не только упёршись в 6-ю книгу. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -2683,12 +2684,14 @@ main,footer{position:relative;z-index:1}
   $("#bpBack").addEventListener("click", ()=>{ $("#bookPage").classList.remove("open"); });   // назад — только закрыть книгу, подборки остаются
 
   /* ---- боковое меню ---- */
-  function openMenu(){ $("#menuBack").classList.add("open"); $("#sideMenu").classList.add("open"); }
+  function openMenu(){ const ma=$("#mAccess"); if(ma) ma.style.display = isPaid() ? "none" : "";   // «Подключить полный доступ» — только для бесплатного тарифа
+    $("#menuBack").classList.add("open"); $("#sideMenu").classList.add("open"); }
   function closeMenu(){ $("#menuBack").classList.remove("open"); $("#sideMenu").classList.remove("open"); }
   // переход из меню в раздел: закрываем меню и любой открытый раздел, потом открываем нужный (чтобы разделы не «стопкой»)
   function menuGo(fn){ closeMenu(); document.querySelectorAll(".fullpage.open").forEach(m=>m.classList.remove("open")); if(fn) fn(); }
   $("#menuBtn").addEventListener("click", openMenu);
   $("#menuBack").addEventListener("click", closeMenu);
+  { const _ma=$("#mAccess"); if(_ma) _ma.addEventListener("click", ()=>{ closeMenu(); openAccess(); }); }   // открыть окно полного доступа из меню
   // кнопка ☰ внутри разделов — открывает это же меню (чтобы переходить между разделами, не возвращаясь на полку)
   document.addEventListener("click", e=>{ if(e.target.closest(".fp-menu")) openMenu(); });
   // «Моя полка» — вернуться на свою полку
