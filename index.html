@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="202" />
+<meta name="app-version" content="203" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -732,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v202: БЕЗОПАСНОСТЬ — запись полки тоже через серверную функцию save_shelf (upsert не проходит под RLS напрямую). Теперь и чтение, и запись, и коды идут через RPC; прямой доступ к shelves/access_codes закрыт RLS. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v203: БЕСПЛАТНЫЙ СТАРТ (freemium) — полка создаётся сразу без стены оплаты; бесплатно до 5 книг, 6-я и дальше по коду. Убрана авто-выдача «оплачено» через ownsShelf (пункт Вани №1). Друзья/цитаты/рецензии бесплатны. Две мелкие ссылки на экране входа для тех, кто купил код. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -839,7 +839,7 @@ main,footer{position:relative;z-index:1}
 <div class="modal" id="accessModal" role="dialog" aria-modal="true" aria-label="Доступ">
   <button class="close" data-close>×</button>
   <h3>Полный доступ к Polka 🔓</h3>
-  <p class="mp">Смотреть можно бесплатно. Чтобы вести свою полку, нужен доступ — разово, навсегда.</p>
+  <p class="mp" id="accessMsg">Полкой можно пользоваться бесплатно — до 5 книг. Полный доступ снимает лимит, разово навсегда.</p>
   <a class="btn" id="buyBtn" href="#" target="_blank" rel="noopener" style="display:flex;justify-content:center;text-decoration:none">Получить доступ в Telegram</a>
   <div class="field" style="margin-top:16px"><label>У меня есть код доступа</label><input id="accessCode" placeholder="код из бота" /></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Позже</button><button class="btn" id="redeemBtn">Активировать</button></div>
@@ -1013,6 +1013,10 @@ main,footer{position:relative;z-index:1}
     <p class="mp">Вы здесь впервые или у вас уже есть полка?</p>
     <button class="btn" id="welNew" style="width:100%;display:flex;justify-content:center">Создать новую полку</button>
     <button class="btn ghost" id="welHaveBtn" style="width:100%;display:flex;justify-content:center;margin-top:10px">Войти по коду</button>
+    <div style="margin-top:18px;text-align:center;line-height:2.1">
+      <a href="#" id="welHaveCode" style="color:#a99a92;font-size:13px;text-decoration:none">У меня есть код доступа</a><br>
+      <a href="#" id="welGetFull" style="color:#a99a92;font-size:13px;text-decoration:none">Получить полный доступ</a>
+    </div>
   </div>
   <div id="welStep1" style="display:none">
     <p class="mp">Как вас зовут? Имя будет на вашем профиле (потом можно поменять).</p>
@@ -1159,12 +1163,16 @@ main,footer{position:relative;z-index:1}
   const BUY_URL = "https://t.me/AppPolka";   // канал Polka — оттуда пишут «Написать» за кодом
   /* ============================================== */
   const isPaid = () => localStorage.getItem("polka_paid")==="1";
-  // у тебя уже есть своя полка (вошёл/создал) → редактировать можно без повторной оплаты
-  function ownsShelf(){ return !!(localStorage.getItem("polka_registered") && (myCode || localStorage.getItem("polka_code"))); }
-  function requirePaid(){
-    if(isPaid()) return true;
-    if(ownsShelf()){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} return true; }
-    openAccess(); return false;
+  /* БЕСПЛАТНЫЙ СТАРТ (freemium): полка, друзья, цитаты, рецензии — бесплатно.
+     Ограничение только на число книг: до 5 книг бесплатно, 6-я и дальше — по коду (600₽, навсегда).
+     Оплата больше НЕ выдаётся автоматически за факт наличия полки (это делал старый ownsShelf) —
+     полный доступ включает только активированный код (или промо ?free). Старые полки уже имеют pd=1 в облаке. */
+  const FREE_BOOK_LIMIT = 5;
+  function canAddBook(){ return isPaid() || (Array.isArray(myBooks) ? myBooks.length : 0) < FREE_BOOK_LIMIT; }
+  // упёрлись в бесплатный лимит книг — показать окно полного доступа
+  function requireBookSlot(){
+    if(canAddBook()) return true;
+    openAccess("limit"); return false;
   }
   async function sbRedeem(code){
     if(!CLOUD()) return false;
@@ -1917,7 +1925,7 @@ main,footer{position:relative;z-index:1}
   $("#waClose").addEventListener("click", closeWishAct);
   $("#waBack").addEventListener("click", closeWishAct);
   $("#waShelf").addEventListener("click", ()=>{
-    if(!requirePaid()) return;
+    if(!requireBookSlot()) return;
     const w=waBook; closeWishAct(); closeModals();
     if(!w) return;
     view="me";
@@ -2713,7 +2721,7 @@ main,footer{position:relative;z-index:1}
   $("#fRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; rateNew=+b.dataset.r; paintRate($("#fRate"),rateNew); });
   let pendingWish = null;
   function openAdd(pre){
-    if(!requirePaid()) return;
+    if(!requireBookSlot()) return;
     $("#fTitle").value=(pre&&pre.t)||""; $("#fAuthor").value=(pre&&pre.a)||""; $("#fGenre").value="Проза"; renderQuoteEditor("fQuotes", []); growAll("#addModal textarea");
     { const _s=$("#fSuggest"); if(_s){ _s.hidden=true; _s.innerHTML=""; } }
     selColor=COLORS[0]; favNew=false; rateNew=0; paintColors(); paintFav(); paintRate($("#fRate"),0);
@@ -2822,7 +2830,6 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
   $("#saveInfo").addEventListener("click", ()=>{
-    if(!requirePaid()) return;
     if(infoBook && isMe()){
       infoBook.t = $("#iTitle").value.trim() || infoBook.t;
       infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
@@ -2901,7 +2908,6 @@ main,footer{position:relative;z-index:1}
     btn.disabled=false;
   });
   $("#iPublishReview").addEventListener("click", ()=>{
-    if(!requirePaid()) return;
     const b=infoBook; if(!b) return;
     const text=$("#iReview").value.trim();
     if(text.length<10){ $("#iReviewMsg").textContent="Напиши чуть подробнее 🙂"; return; }
@@ -2956,9 +2962,15 @@ main,footer{position:relative;z-index:1}
 
   /* ---- доступ (оплата навсегда) ---- */
   const accessModal = $("#accessModal");
-  function openAccess(){
+  function openAccess(context){
     $("#buyBtn").href = BUY_URL || "#";
     $("#accessCode").value = "";
+    const msg = $("#accessMsg");
+    if(msg){
+      if(context==="limit") msg.textContent = "Бесплатно на полке живёт 5 книг 🌱 Чтобы добавлять больше — полный доступ, разово и навсегда.";
+      else if(context==="welcome") msg.textContent = "Введи код доступа, который получил у автора — откроется полный доступ, без лимита книг.";
+      else msg.textContent = "Полкой можно пользоваться бесплатно — до 5 книг. Полный доступ снимает лимит, разово навсегда.";
+    }
     overlay.classList.add("open"); accessModal.classList.add("open");
   }
   $("#redeemBtn").addEventListener("click", ()=>withBtn($("#redeemBtn"),"Проверяю…", async ()=>{
@@ -3013,7 +3025,6 @@ main,footer{position:relative;z-index:1}
   $("#joinAdd").addEventListener("click", ()=>withBtn($("#joinAdd"),"Добавляю…", ()=>addFriendByCode($("#joinInput").value)));
   async function addFriendByCode(code){
     if(!code || !code.trim()) return;
-    if(!requirePaid()) return;
     code = code.trim();
     let p = null, used = "";
     if(/^PLK/i.test(code)){
@@ -3074,8 +3085,11 @@ main,footer{position:relative;z-index:1}
   const welModal = $("#welModal");
   function welShow(id){ ["welChoose","welStep1","welStep2","welLogin","welAccess"].forEach(s=>{ $("#"+s).style.display = (s===id?"":"none"); }); }
   function openWelcome(){ hideSplash(); welShow("welChoose"); overlay.classList.add("open"); welModal.classList.add("open"); }
-  $("#welNew").addEventListener("click", ()=>{ welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
+  let wantCodeAfter = false;   // пришёл по ссылке «У меня есть код доступа» → после создания полки сразу предложим ввести код
+  $("#welNew").addEventListener("click", ()=>{ wantCodeAfter=false; welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
   $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
+  { const _hc=$("#welHaveCode"); if(_hc) _hc.addEventListener("click", (e)=>{ e.preventDefault(); wantCodeAfter=true; welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); }); }
+  { const _gf=$("#welGetFull"); if(_gf) _gf.addEventListener("click", (e)=>{ e.preventDefault(); try{ window.open(BUY_URL||"#","_blank","noopener"); }catch(_){ location.href=BUY_URL||"#"; } }); }
   $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
   $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
   let pendingName = "";
@@ -3103,21 +3117,11 @@ main,footer{position:relative;z-index:1}
   }
   $("#welGo").addEventListener("click", async ()=>{
     const name = $("#welName").value.trim() || "Моя полка";
-    if(!isPaid()){
-      pendingName = name;
-      if(FREE_MODE){   // промо-доступ для подписчиков блогера
-        welShow("welAccess");
-        if($("#welBuyBtn")) $("#welBuyBtn").style.display="none";
-        if($("#welAccessMsg")) $("#welAccessMsg").textContent="🎁 Тебе открыт бесплатный доступ! Код уже подставлен — просто нажми «Активировать».";
-        const fc = await withBtn($("#welAccessGo"), "Готовлю доступ…", sbFetchFreeCode);
-        if(fc){ $("#welAccessCode").value=fc; }
-        else { if($("#welAccessMsg")) $("#welAccessMsg").textContent="Ой, бесплатные места закончились 😔 Напиши автору за доступом."; if($("#welBuyBtn")){ $("#welBuyBtn").style.display=""; $("#welBuyBtn").href=BUY_URL||"#"; } }
-        return;
-      }
-      if($("#welBuyBtn")){ $("#welBuyBtn").style.display=""; $("#welBuyBtn").href = BUY_URL || "#"; }
-      welShow("welAccess"); return;
+    if(FREE_MODE && !isPaid()){   // промо для подписчиков блогера — тихо активируем полный доступ до создания полки
+      const fc = await withBtn($("#welGo"), "Готовлю доступ…", sbFetchFreeCode);
+      if(fc){ const okc = await sbRedeem(fc); if(okc){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} } }
     }
-    createShelf(name);
+    createShelf(name);   // полка создаётся сразу, без стены оплаты — бесплатный старт (лимит 5 книг сработает позже)
   });
   $("#welAccessBack").addEventListener("click", ()=>welShow("welStep1"));
   $("#welAccessGo").addEventListener("click", ()=>withBtn($("#welAccessGo"),"Проверяю…", async ()=>{
@@ -3131,7 +3135,7 @@ main,footer{position:relative;z-index:1}
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код скопирован!"), ()=>$("#welCode").select()); else $("#welCode").select(); });
   $("#welLinkCopy").addEventListener("click", ()=>{ const v=$("#welLink").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#welLink").select()); else $("#welLink").select(); });
-  $("#welDone").addEventListener("click", closeModals);
+  $("#welDone").addEventListener("click", ()=>{ closeModals(); if(wantCodeAfter){ wantCodeAfter=false; openAccess("welcome"); } });
   $("#welLoginGo").addEventListener("click", ()=>withBtn($("#welLoginGo"),"Вхожу…", ()=>doLogin($("#welLoginInput").value)));
   async function doLogin(code){
     code=(code||"").trim(); if(!code) return;
