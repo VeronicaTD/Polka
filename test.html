@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="203" />
+<meta name="app-version" content="204" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -732,7 +732,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v203: БЕСПЛАТНЫЙ СТАРТ (freemium) — полка создаётся сразу без стены оплаты; бесплатно до 5 книг, 6-я и дальше по коду. Убрана авто-выдача «оплачено» через ownsShelf (пункт Вани №1). Друзья/цитаты/рецензии бесплатны. Две мелкие ссылки на экране входа для тех, кто купил код. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v204: УМНОЕ ПОЛЕ (Шаг 7 Вани) — если код доступа вводят в «Войти по коду», приложение распознаёт его (префикс KEY-/FREE- или проверка check_access_code без гашения), уводит на создание полки с подсказкой и само применяет код. Старые коды без префикса тоже распознаются. Оплата теперь сохраняется в облако (syncUp после redeem) — доступ есть и на новом телефоне. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1019,6 +1019,7 @@ main,footer{position:relative;z-index:1}
     </div>
   </div>
   <div id="welStep1" style="display:none">
+    <p class="mp" id="welAccessNote" style="display:none;background:#fbf1e3;border-radius:12px;padding:11px 13px;line-height:1.45">🔑 Это <b>код доступа</b>, а не код полки — ничего страшного! Сначала создадим твою полку, а полный доступ применится сам.</p>
     <p class="mp">Как вас зовут? Имя будет на вашем профиле (потом можно поменять).</p>
     <div class="field"><input id="welName" placeholder="ваше имя" maxlength="40" /></div>
     <div class="modal-foot"><button class="btn ghost" id="welBack1" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welGo" style="justify-content:center;display:flex">Создать полку</button></div>
@@ -1180,6 +1181,16 @@ main,footer{position:relative;z-index:1}
       const v = await sbRpc("redeem_code", {p_code:code});   // сервер сам проверяет и гасит код
       return v===true;
     }catch(e){ return false; }
+  }
+  // это код ДОСТУПА (оплата), а не код полки? — проверяем на сервере, НЕ гася его
+  async function sbCheckAccessCode(code){
+    if(!CLOUD() || !code) return false;
+    try{ const v = await sbRpc("check_access_code", {p_code:code}); return v===true; }catch(e){ return false; }
+  }
+  // код похож на код доступа: префикс KEY-/FREE- (новые коды) ИЛИ сервер подтвердил (старые без префикса)
+  async function looksLikeAccessCode(code){
+    if(/^(KEY|FREE)-/i.test(code)) return true;
+    return await sbCheckAccessCode(String(code||"").toUpperCase());
   }
   /* ПРОМО-ДОСТУП для блогеров: ссылка с ?free (или ?promo) → бесплатный код из отдельного пула (коды с префиксом FREE-) подставляется сам */
   const FREE_MODE = /[?&](free|promo)(=|&|$)/i.test(location.href);
@@ -2977,7 +2988,7 @@ main,footer{position:relative;z-index:1}
     const code = $("#accessCode").value.trim().toUpperCase();
     if(!code) return;
     const ok = await sbRedeem(code);
-    if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }
+    if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} syncUp(); closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }   // syncUp — сохранить pd=1 в облако, чтобы доступ был и на новом телефоне
     else toast("Код неверный или уже использован");
   }));
   // «уже есть полка» → вход по коду полки (вернёт профиль и оплату из облака)
@@ -3032,7 +3043,15 @@ main,footer{position:relative;z-index:1}
     } else if(CLOUD()){
       used = code.toUpperCase();
       let row; try{ row = await sbFetch(used); }catch(e){ return toast("Облако: "+(e.message||e)); }
-      if(!row || !row.data) return toast("Полка с таким кодом не найдена");
+      if(!row || !row.data){
+        // возможно, это код ДОСТУПА (оплата), а не код полки друга — предложим применить к своей полке
+        if(await looksLikeAccessCode(used)){
+          const yes = await askConfirm("Это код доступа 🔑, а не код полки друга.\nПрименить его к вашей полке — открыть полный доступ?", "Да, открыть доступ");
+          if(yes){ const ok=await sbRedeem(used); if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} syncUp(); closeModals(); renderAll(); toast("Полный доступ открыт! 💛"); } else toast("Код не сработал — возможно, уже использован"); }
+          return;
+        }
+        return toast("Полка с таким кодом не найдена");
+      }
       try{ p = decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
     } else {
       return toast("Короткие коды работают только с Supabase");
@@ -3086,9 +3105,20 @@ main,footer{position:relative;z-index:1}
   function welShow(id){ ["welChoose","welStep1","welStep2","welLogin","welAccess"].forEach(s=>{ $("#"+s).style.display = (s===id?"":"none"); }); }
   function openWelcome(){ hideSplash(); welShow("welChoose"); overlay.classList.add("open"); welModal.classList.add("open"); }
   let wantCodeAfter = false;   // пришёл по ссылке «У меня есть код доступа» → после создания полки сразу предложим ввести код
-  $("#welNew").addEventListener("click", ()=>{ wantCodeAfter=false; welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
+  let pendingAccessCode = "";  // человек ввёл код ДОСТУПА в «Войти по коду» → создаём полку и сами применяем код
+  function hideAccessNote(){ const n=$("#welAccessNote"); if(n) n.style.display="none"; }
+  // заботливый поток: код доступа приняли за код полки → создаём полку, потом применяем код
+  function startAccessCodeFlow(code){
+    pendingAccessCode = code; wantCodeAfter = false;
+    hideSplash();
+    const n=$("#welAccessNote"); if(n) n.style.display="";
+    welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:"";
+    overlay.classList.add("open"); welModal.classList.add("open");
+    setTimeout(()=>$("#welName").focus(),60);
+  }
+  $("#welNew").addEventListener("click", ()=>{ wantCodeAfter=false; pendingAccessCode=""; hideAccessNote(); welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
   $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
-  { const _hc=$("#welHaveCode"); if(_hc) _hc.addEventListener("click", (e)=>{ e.preventDefault(); wantCodeAfter=true; welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); }); }
+  { const _hc=$("#welHaveCode"); if(_hc) _hc.addEventListener("click", (e)=>{ e.preventDefault(); wantCodeAfter=true; pendingAccessCode=""; hideAccessNote(); welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); }); }
   { const _gf=$("#welGetFull"); if(_gf) _gf.addEventListener("click", (e)=>{ e.preventDefault(); try{ window.open(BUY_URL||"#","_blank","noopener"); }catch(_){ location.href=BUY_URL||"#"; } }); }
   $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
   $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
@@ -3122,6 +3152,12 @@ main,footer{position:relative;z-index:1}
       if(fc){ const okc = await sbRedeem(fc); if(okc){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} } }
     }
     createShelf(name);   // полка создаётся сразу, без стены оплаты — бесплатный старт (лимит 5 книг сработает позже)
+    if(pendingAccessCode){   // пришёл с кодом ДОСТУПА, который принял за код полки → применяем его к новой полке
+      const code = pendingAccessCode; pendingAccessCode = ""; hideAccessNote();
+      const ok = await sbRedeem(code);
+      if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} syncUp(); toast("Код доступа применён — полный доступ открыт! 💛"); }
+      else toast("Код доступа не сработал — возможно, уже использован");
+    }
   });
   $("#welAccessBack").addEventListener("click", ()=>welShow("welStep1"));
   $("#welAccessGo").addEventListener("click", ()=>withBtn($("#welAccessGo"),"Проверяю…", async ()=>{
@@ -3143,7 +3179,11 @@ main,footer{position:relative;z-index:1}
     if(/^PLK/i.test(code)){ try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); } }
     else if(CLOUD()){
       let row; try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Облако: "+(e.message||e)); }
-      if(!row || !row.data) return toast("Полка с таким кодом не найдена");
+      if(!row || !row.data){
+        // может, это код ДОСТУПА (оплата), а не код полки — заботливо направим на создание полки
+        if(await looksLikeAccessCode(code)){ startAccessCodeFlow(code.toUpperCase()); return; }
+        return toast("Полка с таким кодом не найдена");
+      }
       try{ p=decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
       used=code.toUpperCase();
     } else { return toast("Короткие коды работают только с облаком"); }
