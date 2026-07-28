@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="211" />
+<meta name="app-version" content="212" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -734,7 +734,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v211: почта для восстановления доступа — колонка shelves.email + пункт профиля «✉️ Привязать почту». Пишется через save_shelf (p_email), нижний регистр + trim, пустая не затирает сохранённую (coalesce). Обратно НЕ читается и НЕ отдаётся друзьям (get_shelf/readers_content без email) — приватность; поиск только вручную в панели. Авто-входа по почте нет (без подтверждения письмом — дыра). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v212: оплата перенесена из браузера на сервер (shelves.paid). redeem_code(код, код_полки) сам ставит paid нужной полке; get_shelf отдаёт paid; клиент читает его в кэш (localStorage — только офлайн-кэш, перезаписывается сервером при каждой загрузке). Подделка галочки в консоли не переживает перезагрузку. Миграция: всем pd=1 в blob проставлен paid=true (покупатели сохранили доступ). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1165,7 +1165,11 @@ main,footer{position:relative;z-index:1}
      Вставь ссылку на своего Telegram-бота: */
   const BUY_URL = "https://t.me/AppPolka";   // канал Polka — оттуда пишут «Написать» за кодом
   /* ============================================== */
+  // Оплата — свойство полки НА СЕРВЕРЕ (shelves.paid). localStorage — только офлайн-кэш,
+  // который перезаписывается ответом get_shelf при каждой загрузке. Подделать галочку в консоли
+  // бессмысленно: на следующей загрузке сервер вернёт правду и кэш сбросится.
   const isPaid = () => localStorage.getItem("polka_paid")==="1";
+  function setPaidCache(v){ try{ if(v) localStorage.setItem("polka_paid","1"); else localStorage.removeItem("polka_paid"); }catch(e){} }
   /* БЕСПЛАТНЫЙ СТАРТ (freemium): полка, друзья, цитаты, рецензии — бесплатно.
      Ограничение только на число книг: до 5 книг бесплатно, 6-я и дальше — по коду (600₽, навсегда).
      Оплата больше НЕ выдаётся автоматически за факт наличия полки (это делал старый ownsShelf) —
@@ -1177,10 +1181,11 @@ main,footer{position:relative;z-index:1}
     if(canAddBook()) return true;
     openAccess("limit"); return false;
   }
-  async function sbRedeem(code){
+  async function sbRedeem(code, shelfCode){
     if(!CLOUD()) return false;
     try{
-      const v = await sbRpc("redeem_code", {p_code:code});   // сервер сам проверяет и гасит код
+      // сервер гасит код И проставляет paid=true нужной полке — в одной операции (не браузер)
+      const v = await sbRpc("redeem_code", {p_code:code, p_shelf_code:(shelfCode||myCode||"")});
       return v===true;
     }catch(e){ return false; }
   }
@@ -3012,8 +3017,8 @@ main,footer{position:relative;z-index:1}
   $("#redeemBtn").addEventListener("click", ()=>withBtn($("#redeemBtn"),"Проверяю…", async ()=>{
     const code = $("#accessCode").value.trim().toUpperCase();
     if(!code) return;
-    const ok = await sbRedeem(code);
-    if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} syncUp(); closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }   // syncUp — сохранить pd=1 в облако, чтобы доступ был и на новом телефоне
+    const ok = await sbRedeem(code);   // сервер проставил paid этой полке
+    if(ok){ setPaidCache(true); syncUp(); closeModals(); toast("Доступ открыт! Спасибо 💛"); renderAll(); }
     else toast("Код неверный или уже использован");
   }));
   // «уже есть полка» → вход по коду полки (вернёт профиль и оплату из облака)
@@ -3072,7 +3077,7 @@ main,footer{position:relative;z-index:1}
         // возможно, это код ДОСТУПА (оплата), а не код полки друга — предложим применить к своей полке
         if(await looksLikeAccessCode(used)){
           const yes = await askConfirm("Это код доступа 🔑, а не код полки друга.\nПрименить его к вашей полке — открыть полный доступ?", "Да, открыть доступ");
-          if(yes){ const ok=await sbRedeem(used); if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} syncUp(); closeModals(); renderAll(); toast("Полный доступ открыт! 💛"); } else toast("Код не сработал — возможно, уже использован"); }
+          if(yes){ const ok=await sbRedeem(used); if(ok){ setPaidCache(true); syncUp(); closeModals(); renderAll(); toast("Полный доступ открыт! 💛"); } else toast("Код не сработал — возможно, уже использован"); }
           return;
         }
         return toast("Полка с таким кодом не найдена");
@@ -3164,6 +3169,7 @@ main,footer{position:relative;z-index:1}
       localStorage.setItem("polka_registered","1");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
+    setPaidCache(false);   // новая полка бесплатная; оплату проставит сервер при активации кода (paid в колонке)
     syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
     $("#welCode").value = myShareCode();
     $("#welLink").value = loginLink();
@@ -3172,15 +3178,16 @@ main,footer{position:relative;z-index:1}
   }
   $("#welGo").addEventListener("click", async ()=>{
     const name = $("#welName").value.trim() || "Моя полка";
-    if(FREE_MODE && !isPaid()){   // промо для подписчиков блогера — тихо активируем полный доступ до создания полки
-      const fc = await withBtn($("#welGo"), "Готовлю доступ…", sbFetchFreeCode);
-      if(fc){ const okc = await sbRedeem(fc); if(okc){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} } }
+    createShelf(name);              // сначала создаём полку — строка появляется в облаке (paid=false), без стены оплаты
+    await syncUp();                 // гарантируем, что полка в облаке, прежде чем сервер проставит ей paid
+    if(FREE_MODE && !isPaid()){     // промо ?free — берём бесплатный код и применяем к ЭТОЙ полке
+      const fc = await sbFetchFreeCode();
+      if(fc){ const okc = await sbRedeem(fc); if(okc) setPaidCache(true); }
     }
-    createShelf(name);   // полка создаётся сразу, без стены оплаты — бесплатный старт (лимит 5 книг сработает позже)
-    if(pendingAccessCode){   // пришёл с кодом ДОСТУПА, который принял за код полки → применяем его к новой полке
+    if(pendingAccessCode){          // пришёл с кодом ДОСТУПА → применяем к новой полке
       const code = pendingAccessCode; pendingAccessCode = ""; hideAccessNote();
       const ok = await sbRedeem(code);
-      if(ok){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} syncUp(); toast("Код доступа применён — полный доступ открыт! 💛"); }
+      if(ok){ setPaidCache(true); syncUp(); toast("Код доступа применён — полный доступ открыт! 💛"); }
       else toast("Код доступа не сработал — возможно, уже использован");
     }
   });
@@ -3199,10 +3206,10 @@ main,footer{position:relative;z-index:1}
   $("#welLoginGo").addEventListener("click", ()=>withBtn($("#welLoginGo"),"Вхожу…", ()=>doLogin($("#welLoginInput").value)));
   async function doLogin(code){
     code=(code||"").trim(); if(!code) return;
-    let p=null, used="";
+    let p=null, used="", row=null;
     if(/^PLK/i.test(code)){ try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); } }
     else if(CLOUD()){
-      let row; try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Облако: "+(e.message||e)); }
+      try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Облако: "+(e.message||e)); }
       if(!row || !row.data){
         // может, это код ДОСТУПА (оплата), а не код полки — заботливо направим на создание полки
         if(await looksLikeAccessCode(code)){ startAccessCodeFlow(code.toUpperCase()); return; }
@@ -3222,7 +3229,7 @@ main,footer{position:relative;z-index:1}
       localStorage.setItem("polka_wishlist",JSON.stringify(myWishlist));
       localStorage.setItem("polka_stickers",JSON.stringify(myStickers)); localStorage.setItem("polka_books",JSON.stringify(myBooks));
       localStorage.setItem("polka_registered","1");
-      if(p && p.pd) localStorage.setItem("polka_paid","1");
+      if(row){ setPaidCache(!!row.paid); } else { setPaidCache(!!(p && p.pd)); }   // облако — источник истины по оплате; PLK-код офлайн — из blob
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
     }catch(e){}
@@ -3257,7 +3264,7 @@ main,footer{position:relative;z-index:1}
         myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
         if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
         myReading = cp.rd || ""; try{ localStorage.setItem("polka_reading", myReading); }catch(e){}
-        if(cp.pd){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} }
+        setPaidCache(!!row.paid);   // оплата — из колонки на сервере (авторитетно): если сервер говорит «не оплачено», кэш сбрасывается (подделка в консоли не переживёт перезагрузку)
         bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
         renderAll();
       }catch(e){} }
@@ -3312,7 +3319,7 @@ main,footer{position:relative;z-index:1}
     myReading = cp.rd || ""; try{ localStorage.setItem("polka_reading", myReading); }catch(e){}
     if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
-    if(cp.pd){ try{ localStorage.setItem("polka_paid","1"); }catch(e){} }
+    setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
     renderAll();
   }
   setInterval(pullCloud, 45000);                          // каждые 45 секунд
