@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="217" />
+<meta name="app-version" content="218" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -200,6 +200,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .mini-shelf{display:flex;align-items:flex-end;gap:2px;min-height:58px;padding:0 2px;border-bottom:3px solid var(--accent)}
 .ms-spine{width:17px;border-radius:1px 2px 0 0;box-shadow:1px 0 2px -1px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:5px 1px;box-sizing:border-box;overflow:hidden}
 .mini-shelf .ms-t{writing-mode:vertical-rl;text-orientation:mixed;font-family:"Fraunces",serif;font-weight:600;font-size:8.5px;line-height:1.15;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:100%;color:inherit}
+.ms-empty{width:34px;min-height:54px;border:1.5px dashed var(--line);border-radius:2px 3px 0 0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:18px;box-sizing:border-box}
 /* редактор «сейчас читаю» в профиле */
 .rd-edit-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .rd-edit-cover{position:relative;width:22px;height:44px;border-radius:2px 3px 3px 2px;flex:0 0 auto;box-shadow:1px 1px 3px -1px rgba(0,0,0,.5);overflow:hidden}
@@ -748,7 +749,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v217 (ТЕСТ): мини-полка «читаю» — корешки крупнее (54–58×17px) с вертикальным названием внутри (writing-mode:vertical-rl, 8.5px, контрастный цвет pickFg, обрезка ellipsis); планка по ширине группы; тап по всему блоку (≥44×44) → окошко со списком полных названий. Ряд счётчиков выровнен по нижнему краю. Кубик «что почитать» на подборках. Прод v212. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v218 (ТЕСТ): окошко «читаю» стало интерактивным — список + плюсик (добавить книгу с автоподсказкой/Enter/＋) и удаление ×, прямо из мини-полки без захода в профиль. Пустая мини-полка показывается с плейсхолдером ＋, чтобы добавить первую книгу. Всё синхронно с профилем. Прод v212. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1503,7 +1504,11 @@ main,footer{position:relative;z-index:1}
     // мини-полка «читаю» в ряду счётчиков (я → мои книги, в гостях → книги друга)
     { const rd = isMe() ? myReading : asReadingArr(friend().reading);
       const stat=$("#readingStat"), ms=$("#miniShelf");
-      if(stat && ms){ if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; } else { ms.innerHTML=""; stat.style.display="none"; } } }
+      if(stat && ms){
+        if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; }
+        else if(isMe()){ ms.innerHTML=`<span class="ms-empty">＋</span>`; stat.style.display=""; }   // пустая полка с плюсом — добавить первую книгу прямо тут
+        else { ms.innerHTML=""; stat.style.display="none"; }
+      } }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     const meV = isMe();
     // нижний ряд кнопок — только когда я в гостях (цитаты/хотелки друга)
@@ -3085,21 +3090,43 @@ main,footer{position:relative;z-index:1}
     ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
-  // тап по всему блоку «читаю» → окошко со списком полных названий
-  function showReadingList(arr){
-    if(!arr || !arr.length) return;
+  // тап по всему блоку «читаю» → окошко со списком; для своей полки — с плюсом (добавить прямо тут) и удалением
+  function showReadingList(mine){
     const back=document.createElement("div"); back.className="confirm-back";
-    const box=document.createElement("div"); box.className="confirm-box";
-    box.innerHTML=`<p style="margin:0 0 12px;font-weight:700">📖 Сейчас читаю</p>`
-      + `<div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">`
-      + arr.map(b=>`<div style="display:flex;align-items:center;gap:9px;text-align:left"><span style="width:13px;height:20px;border-radius:2px 3px 3px 2px;background:${spineBg(b)};flex:0 0 auto"></span><span><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span></div>`).join("")
-      + `</div><div class="confirm-btns"><button class="confirm-no" type="button">Закрыть</button></div>`;
-    back.appendChild(box); document.body.appendChild(back);
+    const box=document.createElement("div"); box.className="confirm-box"; box.style.maxWidth="360px";
     const done=()=>{ try{ back.remove(); }catch(e){} };
-    box.querySelector(".confirm-no").addEventListener("click", done);
+    const render=()=>{
+      const arr = mine ? myReading : asReadingArr(friend().reading);
+      let h = `<p style="margin:0 0 12px;font-weight:700">📖 Сейчас читаю${mine?` <span style="font-weight:400;color:var(--ink-soft);font-size:13px">— до 3</span>`:""}</p>`
+        + `<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:12px">`;
+      h += arr.length ? arr.map((b,i)=>`<div style="display:flex;align-items:center;gap:9px;padding:5px 0;text-align:left">
+            <span style="width:13px;height:20px;border-radius:2px 3px 3px 2px;background:${spineBg(b)};flex:0 0 auto"></span>
+            <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span>
+            ${mine?`<button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>`:""}
+          </div>`).join("")
+        : `<p class="mp" style="margin:0">${mine?"Пока пусто — добавь книгу ниже 👇":"Пока ничего не читает"}</p>`;
+      h += `</div>`;
+      if(mine){
+        h += (arr.length<READING_MAX)
+          ? `<div class="bk-search" style="margin-bottom:12px"><div style="display:flex;gap:8px"><input id="rdlInput" placeholder="выбери из подсказок или впиши и нажми ＋" autocomplete="off" style="flex:1;min-width:0;box-sizing:border-box"/><button type="button" id="rdlAdd" class="btn" style="flex:0 0 auto;padding:0 15px;justify-content:center">＋</button></div><div id="rdlSuggest" class="bk-suggest" hidden></div></div>`
+          : `<p class="mp" style="font-size:12px;margin:0 0 12px">Читаешь уже 3 — убери одну, чтобы добавить новую.</p>`;
+      }
+      h += `<div class="confirm-btns"><button class="confirm-no" type="button">Закрыть</button></div>`;
+      box.innerHTML=h;
+      box.querySelector(".confirm-no").addEventListener("click", done);
+      box.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{ const i=+b.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); render(); }));
+      if(mine && arr.length<READING_MAX){
+        const inp=box.querySelector("#rdlInput"), sug=box.querySelector("#rdlSuggest"), addBtn=box.querySelector("#rdlAdd");
+        if(inp && sug){ bkAutocomplete(inp, sug, v=>{ if(addReadingBook(v.title,(v.authors&&v.authors[0])||"",genreFromBook(v))) render(); });
+          inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); if(addReadingBook(inp.value,"","Проза")) render(); } }); setTimeout(()=>inp.focus(),40); }
+        if(addBtn) addBtn.addEventListener("click", ()=>{ const i=box.querySelector("#rdlInput"); if(addReadingBook(i?i.value:"","","Проза")) render(); });
+      }
+    };
+    back.appendChild(box); document.body.appendChild(back);
     back.addEventListener("click", e=>{ if(e.target===back) done(); });
+    render();
   }
-  { const _rs=$("#readingStat"); if(_rs) _rs.addEventListener("click", ()=>{ const rd=isMe()?myReading:asReadingArr(friend().reading); showReadingList(rd); }); }
+  { const _rs=$("#readingStat"); if(_rs) _rs.addEventListener("click", ()=> showReadingList(isMe()) ); }
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 160, url=>{ tempPhoto=url; paintPhoto(); }, true);
