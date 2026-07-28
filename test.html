@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="218" />
+<meta name="app-version" content="219" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -749,7 +749,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v218 (ТЕСТ): окошко «читаю» стало интерактивным — список + плюсик (добавить книгу с автоподсказкой/Enter/＋) и удаление ×, прямо из мини-полки без захода в профиль. Пустая мини-полка показывается с плейсхолдером ＋, чтобы добавить первую книгу. Всё синхронно с профилем. Прод v212. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v219 (ТЕСТ): в окошке «читаю» тап по книге → её мини-редактор: сменить цвет (палитра COLORS), «📚 Поставить на полку» (перенос в myBooks с цветом), «📖 страница книги» (openBookPage), «← назад». Плюс v218: добавление/удаление прямо в окошке. Прод v212. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -3090,16 +3090,18 @@ main,footer{position:relative;z-index:1}
     ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
-  // тап по всему блоку «читаю» → окошко со списком; для своей полки — с плюсом (добавить прямо тут) и удалением
+  // тап по всему блоку «читаю» → окошко: список (+ добавить/убрать), тап по книге → её мини-страница (цвет / на полку / страница книги)
   function showReadingList(mine){
     const back=document.createElement("div"); back.className="confirm-back";
     const box=document.createElement("div"); box.className="confirm-box"; box.style.maxWidth="360px";
     const done=()=>{ try{ back.remove(); }catch(e){} };
-    const render=()=>{
+    let editIdx=null;
+    const closeBtn=()=>`<div class="confirm-btns"><button class="confirm-no" type="button">Закрыть</button></div>`;
+    const renderList=()=>{
       const arr = mine ? myReading : asReadingArr(friend().reading);
       let h = `<p style="margin:0 0 12px;font-weight:700">📖 Сейчас читаю${mine?` <span style="font-weight:400;color:var(--ink-soft);font-size:13px">— до 3</span>`:""}</p>`
         + `<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:12px">`;
-      h += arr.length ? arr.map((b,i)=>`<div style="display:flex;align-items:center;gap:9px;padding:5px 0;text-align:left">
+      h += arr.length ? arr.map((b,i)=>`<div class="rdl-row" ${mine?`data-open="${i}"`:""} style="display:flex;align-items:center;gap:9px;padding:6px 0;text-align:left;${mine?"cursor:pointer":""}">
             <span style="width:13px;height:20px;border-radius:2px 3px 3px 2px;background:${spineBg(b)};flex:0 0 auto"></span>
             <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span>
             ${mine?`<button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>`:""}
@@ -3111,16 +3113,43 @@ main,footer{position:relative;z-index:1}
           ? `<div class="bk-search" style="margin-bottom:12px"><div style="display:flex;gap:8px"><input id="rdlInput" placeholder="выбери из подсказок или впиши и нажми ＋" autocomplete="off" style="flex:1;min-width:0;box-sizing:border-box"/><button type="button" id="rdlAdd" class="btn" style="flex:0 0 auto;padding:0 15px;justify-content:center">＋</button></div><div id="rdlSuggest" class="bk-suggest" hidden></div></div>`
           : `<p class="mp" style="font-size:12px;margin:0 0 12px">Читаешь уже 3 — убери одну, чтобы добавить новую.</p>`;
       }
-      h += `<div class="confirm-btns"><button class="confirm-no" type="button">Закрыть</button></div>`;
+      h += closeBtn();
       box.innerHTML=h;
       box.querySelector(".confirm-no").addEventListener("click", done);
-      box.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{ const i=+b.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); render(); }));
+      box.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",(e)=>{ e.stopPropagation(); const i=+b.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); render(); }));
+      box.querySelectorAll("[data-open]").forEach(r=>r.addEventListener("click",()=>{ editIdx=+r.dataset.open; render(); }));
       if(mine && arr.length<READING_MAX){
         const inp=box.querySelector("#rdlInput"), sug=box.querySelector("#rdlSuggest"), addBtn=box.querySelector("#rdlAdd");
         if(inp && sug){ bkAutocomplete(inp, sug, v=>{ if(addReadingBook(v.title,(v.authors&&v.authors[0])||"",genreFromBook(v))) render(); });
-          inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); if(addReadingBook(inp.value,"","Проза")) render(); } }); setTimeout(()=>inp.focus(),40); }
+          inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); if(addReadingBook(inp.value,"","Проза")) render(); } }); }
         if(addBtn) addBtn.addEventListener("click", ()=>{ const i=box.querySelector("#rdlInput"); if(addReadingBook(i?i.value:"","","Проза")) render(); });
       }
+    };
+    const renderEditor=(b,i)=>{
+      box.innerHTML = `<button class="linklike" id="rdlBack" type="button" style="margin-bottom:8px">← назад</button>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="width:40px;height:56px;border-radius:2px 4px 4px 2px;background:${spineBg(b)};flex:0 0 auto;box-shadow:2px 2px 6px -2px rgba(0,0,0,.5)"></div>
+          <div style="min-width:0"><div style="font-weight:700">${esc(b.t)}</div>${b.a?`<div class="mp" style="margin:2px 0 0">${esc(b.a)}</div>`:""}</div>
+        </div>
+        <p class="mp" style="font-size:13px;margin:0 0 6px">Цвет книги</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">${COLORS.map(c=>`<button type="button" data-c="${esc(c)}" style="width:30px;height:30px;border-radius:50%;border:2px solid ${c===b.c?'var(--ink)':'rgba(0,0,0,.12)'};background:${c};cursor:pointer;padding:0"></button>`).join("")}</div>
+        <button class="btn" id="rdlToShelf" type="button" style="width:100%;justify-content:center;display:flex">📚 Поставить на полку</button>
+        <button class="btn ghost" id="rdlBookPage" type="button" style="width:100%;justify-content:center;display:flex;margin-top:8px">📖 страница книги</button>
+        ${closeBtn()}`;
+      box.querySelector(".confirm-no").addEventListener("click", done);
+      box.querySelector("#rdlBack").addEventListener("click", ()=>{ editIdx=null; render(); });
+      box.querySelectorAll("[data-c]").forEach(sw=>sw.addEventListener("click", ()=>{ if(myReading[i]){ myReading[i].c=sw.dataset.c; saveReadingLS(); syncUp(); renderAll(); render(); } }));
+      box.querySelector("#rdlToShelf").addEventListener("click", ()=>{
+        const rb=myReading[i]; if(!rb) return;
+        if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[]}); saveMine(); }
+        myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); toast("На полке 📚"); editIdx=null; render();
+      });
+      box.querySelector("#rdlBookPage").addEventListener("click", ()=>{ done(); openBookPage(b.t, b.a); });
+    };
+    const render=()=>{
+      const arr = mine ? myReading : asReadingArr(friend().reading);
+      if(mine && editIdx!=null && arr[editIdx]) renderEditor(arr[editIdx], editIdx);
+      else { editIdx=null; renderList(); }
     };
     back.appendChild(box); document.body.appendChild(back);
     back.addEventListener("click", e=>{ if(e.target===back) done(); });
