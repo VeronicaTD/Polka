@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="234" />
+<meta name="app-version" content="235" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -797,7 +797,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v234 (ТЕСТ): (1) профиль друга — имя НЕ обрезается (снят text-overflow:ellipsis/nowrap, overflow-wrap:anywhere — длинное имя переносится по словам целиком); кнопки «в любимки» и «совместное» вынесены из строки имени в отдельную строку НИЖЕ (#friendPills, flex, каждая flex:1 — на всю ширину поровну); на своей полке строка скрыта. (2) coread_cancel добавлена в Supabase (готово) — «прекратить совместное чтение» проверено end-to-end: статус→cancelled, исчезает у обоих, не идёт в историю. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1258,6 +1258,7 @@ main,footer{position:relative;z-index:1}
   async function crFinish(id){ try{ return await sbRpc("coread_finish",{p_id:id, p_code:myCode}); }catch(e){ return null; } }
   async function crAddQuote(id, text, page){ try{ return (await sbRpc("coread_add_quote",{p_id:id, p_code:myCode, p_text:String(text||"").slice(0,600), p_page:page|0}))===true; }catch(e){ return false; } }
   async function crCancel(id){ try{ return (await sbRpc("coread_cancel",{p_id:id, p_code:myCode}))===true; }catch(e){ return false; } }
+  async function crPublic(code){ if(!CLOUD()||!code) return []; try{ const v=await sbRpc("coread_public",{p_code:code}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
   // «виденные» реакции партнёра (чтобы пинговать в колокольчик только новые)
   let crSeenReact = {}; try{ crSeenReact = JSON.parse(localStorage.getItem("polka_cr_seen")||"{}"); }catch(e){ crSeenReact={}; }
   function crSaveSeen(){ try{ localStorage.setItem("polka_cr_seen", JSON.stringify(crSeenReact)); }catch(e){} }
@@ -1606,9 +1607,9 @@ main,footer{position:relative;z-index:1}
       $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
       $("#editProfile").style.display = "";
       $("#favFriendBtn").style.display = "none";
-      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display="none"; }
+      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display = myCode ? "" : "none"; }
       { const _av=$("#addFriendVibe"); if(_av) _av.style.display="none"; }
-      { const _fp=$("#friendPills"); if(_fp) _fp.style.display="none"; }
+      { const _fp=$("#friendPills"); if(_fp) _fp.style.display = myCode ? "flex" : "none"; }
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
@@ -1617,7 +1618,7 @@ main,footer{position:relative;z-index:1}
       $("#editProfile").style.display = "none";
       const _isStranger = (view==="guest");   // гость из стиха/ссылки, ещё не в друзьях
       const fb = $("#favFriendBtn"); fb.style.display = (!_isStranger && f.code) ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
-      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display = (!_isStranger && f.code) ? "" : "none"; }
+      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display = f.code ? "" : "none"; }
       const _av=$("#addFriendVibe"); if(_av) _av.style.display = (_isStranger && f.code) ? "" : "none";
       { const _fp=$("#friendPills"); if(_fp) _fp.style.display = f.code ? "flex" : "none"; }
       setAva(f.photo, f.color, (f.name[0]||"?"));
@@ -3777,53 +3778,65 @@ main,footer{position:relative;z-index:1}
   });
 
   /* ===== СОВМЕСТНОЕ ЧТЕНИЕ — экран и предложение ===== */
-  let crFriend=null, crProposeBook=null, crPagesCtx=null, crLastList=[], crdCur=null;
-  function openCoread(fr){
-    if(!fr) fr=friend(); if(!fr) return;
-    crFriend=fr;
-    $("#coreadTitle").textContent = "Совместное чтение · " + (fr.name||"друг");
+  let crFriend=null, crTarget=null, crProposeBook=null, crPagesCtx=null, crLastList=[], crdCur=null;
+  function openCoread(){
+    const meV = isMe();
+    const t = meV ? {code:myCode, name:myName, photo:myPhoto, isMe:true} : friend();
+    if(!t || !t.code){ toast("У этой полки ещё нет облачного кода"); return; }
+    crTarget = t;
+    crFriend = meV ? null : t;   // цель приглашения (у своего профиля предлагать некому)
+    $("#coreadTitle").textContent = meV ? "Мои совместные чтения" : ("Совместные чтения · " + (t.name||"друг"));
     openPage("coreadPage"); renderCoread();
   }
-  function coreadCardHTML(c){
-    const mp=c.my_pages?Math.min(100,Math.round(c.my_page/c.my_pages*100)):0;
+  function coreadCardHTML(c, mine){
+    const op=c.owner_pages?Math.min(100,Math.round(c.owner_page/c.owner_pages*100)):0;
     const pp=c.partner_pages?Math.min(100,Math.round(c.partner_page/c.partner_pages*100)):0;
-    return `<div class="cr-card" data-crid="${esc(c.id)}">
+    return `<div class="cr-card${mine?" mine":""}" data-crid="${esc(c.id)}">
       <div class="cr-card-t">${esc(c.title)}</div>
-      <div class="cr-bar"><span style="width:${mp}%"></span></div><div class="cr-bar-lbl">ты ${c.my_page}/${c.my_pages||"?"}</div>
+      <div class="cr-bar"><span style="width:${op}%"></span></div><div class="cr-bar-lbl">${esc(c.owner_name||"?")} ${c.owner_page}/${c.owner_pages||"?"}</div>
       <div class="cr-bar"><span class="p" style="width:${pp}%"></span></div><div class="cr-bar-lbl">${esc(c.partner_name||"друг")} ${c.partner_page}/${c.partner_pages||"?"}</div>
+      ${mine?`<div class="mp" style="margin-top:5px;color:var(--accent)">это ваше чтение — нажми, чтобы открыть →</div>`:``}
     </div>`;
   }
   function crAvaColor(name){ let h=0; const s=String(name||"?"); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return FRIEND_COLORS[h%FRIEND_COLORS.length]; }
-  function coreadHistHTML(done){
-    const name = (crFriend&&crFriend.name) || (done[0]&&done[0].partner_name) || "друг";
-    const col = crAvaColor(name);
+  function coreadHistHTML(done, target){
+    const name = (target&&target.name) || "друг";
+    const avaStyle = (target&&target.photo) ? `background-image:url(${target.photo});background-size:cover;background-position:center` : `background:${crAvaColor(name)}`;
+    const avaInner = (target&&target.photo) ? "" : esc((name[0]||"?").toUpperCase());
     const rows = done.slice().sort((a,b)=> new Date(b.finished_at||0) - new Date(a.finished_at||0)).map(c=>{
       const cu=coverUrl(c.title,c.author);
       const cov = cu ? `<div class="cr-hist-cov" style="background-image:url(${cu})"></div>`
                      : `<div class="cr-hist-cov" style="background:${crAvaColor(c.title)}">${esc((c.title[0]||"·").toUpperCase())}</div>`;
       const date = c.finished_at ? new Date(c.finished_at).toLocaleDateString("ru",{day:"numeric",month:"short",year:"numeric"}) : "";
-      return `<div class="cr-hist-row">${cov}<div style="min-width:0"><div class="t">${esc(c.title)}</div>${c.author?`<div class="mp" style="font-size:12px">${esc(c.author)}</div>`:""}</div>${date?`<div class="d">${esc(date)}</div>`:""}</div>`;
+      const withWhom = c.partner_name ? `с ${esc(c.partner_name)}` : "";
+      const sub = [withWhom, c.author?esc(c.author):""].filter(Boolean).join(" · ");
+      return `<div class="cr-hist-row">${cov}<div style="min-width:0"><div class="t">${esc(c.title)}</div>${sub?`<div class="mp" style="font-size:12px">${sub}</div>`:""}</div>${date?`<div class="d">${esc(date)}</div>`:""}</div>`;
     }).join("");
-    return `<div class="cr-hist-head"><button class="cr-hist-ava" id="crHistAva" type="button" style="background:${col}" title="полка ${esc(name)}">${esc((name[0]||"?").toUpperCase())}</button>`+
+    return `<div class="cr-hist-head"><button class="cr-hist-ava" id="crHistAva" type="button" style="${avaStyle}" title="полка ${esc(name)}">${avaInner}</button>`+
       `<div style="font-weight:600">Прочитали вместе <span class="mp" style="font-weight:400">· ${done.length}</span></div></div>`+ rows;
   }
   async function renderCoread(){
-    if(!crFriend) return;
-    const list = await crList(crFriend.code); crLastList = list;
-    const active = list.filter(c=>c.status==="active");
-    const sent = list.filter(c=>c.status==="invite" && c.is_initiator);
-    const done = list.filter(c=>c.status==="done");
+    if(!crTarget) return;
+    const isOwn = !!crTarget.isMe;
+    const pub = await crPublic(crTarget.code);                          // публичная активность этого человека
+    const myList = await crList(isOwn ? null : crTarget.code); crLastList = myList;   // мои co-read'ы (для «моё»/отмены)
+    const myIds = new Set(myList.map(c=>c.id));
+    const active = pub.filter(c=>c.status==="active");
+    const done   = pub.filter(c=>c.status==="done");
+    const sent   = isOwn ? [] : myList.filter(c=>c.status==="invite" && c.is_initiator);   // мои неотвеченные приглашения этому человеку
+    // предлагать книгу можно только на ЧУЖОЙ полке и если у меня есть своя полка (код)
+    { const pb=$("#coreadProposeBtn"); if(pb) pb.style.display = (isOwn || !myCode) ? "none" : ""; }
     let ah="";
     if(active.length||sent.length){
-      ah += `<div class="cat-genre">Сейчас читаем</div>`;
-      ah += active.map(coreadCardHTML).join("");
-      ah += sent.map(c=>`<div class="cr-card cr-pending"><div class="cr-card-t">${esc(c.title)}</div><div class="mp">⏳ ждём ответа ${esc(crFriend.name||"друга")}</div><button type="button" class="crd-cancel cr-cancel-sent" data-crid="${esc(c.id)}" style="margin-top:4px;text-align:left;padding:4px 0">✖ отменить приглашение</button></div>`).join("");
+      ah += `<div class="cat-genre">${isOwn?"Читаю вместе сейчас":"Сейчас читают вместе"}</div>`;
+      ah += active.map(c=>coreadCardHTML(c, myIds.has(c.id))).join("");
+      ah += sent.map(c=>`<div class="cr-card cr-pending"><div class="cr-card-t">${esc(c.title)}</div><div class="mp">⏳ ждём ответа ${esc(crTarget.name||"друга")}</div><button type="button" class="crd-cancel cr-cancel-sent" data-crid="${esc(c.id)}" style="margin-top:4px;text-align:left;padding:4px 0">✖ отменить приглашение</button></div>`).join("");
     }
     $("#coreadActive").innerHTML=ah;
-    $("#coreadHistory").innerHTML = done.length ? coreadHistHTML(done) : "";
-    $("#coreadEmpty").style.display = (active.length||sent.length||done.length)?"none":"";
+    $("#coreadHistory").innerHTML = done.length ? coreadHistHTML(done, crTarget) : "";
+    { const em=$("#coreadEmpty"); if(em){ em.textContent = isOwn ? "Здесь появятся ваши совместные чтения." : ((crTarget.name||"Этот человек")+" пока ни с кем не читает вместе."); em.style.display = (active.length||sent.length||done.length)?"none":""; } }
   }
-  { const _cb=$("#coreadBtn"); if(_cb) _cb.addEventListener("click", ()=> openCoread(friend()) ); }
+  { const _cb=$("#coreadBtn"); if(_cb) _cb.addEventListener("click", ()=> openCoread() ); }
   { const _ch=$("#coreadHistory"); if(_ch) _ch.addEventListener("click", e=>{ if(e.target.closest("#crHistAva")){ const bk=document.querySelector("#coreadPage .fp-friendback"); if(bk) bk.click(); } }); }
   function crSrcRow(b){ return `<button type="button" class="cr-src" data-t="${esc(b.t)}" data-a="${esc(b.a||"")}"><b>${esc(b.t)}</b>${b.a?` <span class="mp">— ${esc(b.a)}</span>`:""}</button>`; }
   $("#coreadProposeBtn").addEventListener("click", ()=>{
@@ -3872,7 +3885,7 @@ main,footer{position:relative;z-index:1}
         const ok=await crCancel(cancelSent.dataset.crid);
         if(ok){ toast("Приглашение отменено"); renderCoread(); } else toast("Не получилось 😔");
         return; }
-      const card=e.target.closest(".cr-card"); if(!card||card.classList.contains("cr-pending")) return; const c=crLastList.find(x=>x.id===card.dataset.crid); if(c) openCoreadDetail(c); }); }
+      const card=e.target.closest(".cr-card"); if(!card||card.classList.contains("cr-pending")) return; const c=crLastList.find(x=>x.id===card.dataset.crid); if(c) openCoreadDetail(c); else toast("Это чужое чтение — открыть можно только своё 👀"); }); }
 
   /* ---- экран одного совместного чтения ---- */
   function openCoreadDetail(c){ crdCur=c; crMarkReactSeen(c); crReactNotifs=crReactNotifs.filter(x=>x.id!==c.id); updateReqBadge(); renderCoreadDetail(); openPage("coreadDetail"); crdRefresh(); }
