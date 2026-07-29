@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="228" />
+<meta name="app-version" content="229" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -787,7 +787,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v228 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ — кнопка входа переделана в маленькую пилюлю «📖 читать вместе» (.co-pill, книжный коричневый) и перенесена в строку имени СПРАВА от «🤍 в любимки» (была большой .dice-btn в блоке действий). Видна только на полке сохранённого друга (та же логика, что favFriendBtn: !stranger && f.code), скрыта на своей полке. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v229 (ТЕСТ): колокольчик — исправлен вводящий в заблуждение заголовок. Раньше приглашение на совместное чтение показывалось под шапкой «Вас добавили 👋 / Эти люди добавили вашу полку» — неверно, ведь друзья уже добавлены. Теперь заголовок #reqTitle динамический: только запросы в друзья → «Вас добавили 👋»; только co-read → «Совместное чтение 📖»; вперемешку → «Уведомления 🔔». Внутри списка секции-подзаголовки: «Вас добавили — добавить в ответ?», «📖 Зовут читать вместе», «💬 Новые отклики». Убрана жёсткая подпись про «добавили вашу полку». Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -923,8 +923,7 @@ main,footer{position:relative;z-index:1}
 <!-- запросы «добавили вас» -->
 <div class="modal" id="reqModal" role="dialog" aria-modal="true" aria-label="Запросы">
   <button class="close" data-close>×</button>
-  <h3>Вас добавили 👋</h3>
-  <p class="mp">Эти люди добавили вашу полку. Добавить их в ответ?</p>
+  <h3 id="reqTitle">Уведомления 🔔</h3>
   <div id="reqList"></div>
 </div>
 
@@ -3694,21 +3693,35 @@ main,footer{position:relative;z-index:1}
   }
   function showRequests(){
     if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length){ toast("Пока никто вас не добавил"); return; }
-    let h = pendingReqs.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
+    let h = "";
+    if(pendingReqs.length){
+      h += `<div class="cat-genre">Вас добавили — добавить в ответ?</div>`;
+      h += pendingReqs.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
         ${faceFor(r.from_name, r.from_photo, '#b8493a')}
         <span class="req-who">${esc(r.from_name||'Кто-то')}</span>
         <button class="btn ghost req-dismiss">Скрыть</button>
         <button class="btn req-accept">Добавить</button>
       </div>`).join("");
-    h += crInvites.map(c=>`<div class="req-item cr-invite" data-crid="${esc(c.id)}" data-crtitle="${esc(c.title)}">
-        <span class="req-who">📖 <b>${esc(c.partner_name||'Друг')}</b> зовёт читать вместе «${esc(c.title)}»</span>
+    }
+    if(crInvites.length){
+      h += `<div class="cat-genre"${h?' style="margin-top:14px"':''}>📖 Зовут читать вместе</div>`;
+      h += crInvites.map(c=>`<div class="req-item cr-invite" data-crid="${esc(c.id)}" data-crtitle="${esc(c.title)}">
+        <span class="req-who"><b>${esc(c.partner_name||'Друг')}</b> зовёт читать «${esc(c.title)}»</span>
         <button class="btn ghost cr-decline">Отклонить</button>
         <button class="btn cr-accept">Принять</button>
       </div>`).join("");
-    h += crReactNotifs.map(c=>`<div class="req-item cr-react-notif" data-crid="${esc(c.id)}">
-        <span class="req-who">💬 <b>${esc(c.partner_name||'Друг')}</b> о «${esc(c.title)}»: «${esc(c.partner_reaction)}»</span>
+    }
+    if(crReactNotifs.length){
+      h += `<div class="cat-genre"${h?' style="margin-top:14px"':''}>💬 Новые отклики</div>`;
+      h += crReactNotifs.map(c=>`<div class="req-item cr-react-notif" data-crid="${esc(c.id)}">
+        <span class="req-who"><b>${esc(c.partner_name||'Друг')}</b> о «${esc(c.title)}»: «${esc(c.partner_reaction)}»</span>
         <button class="btn cr-react-open">Открыть</button>
       </div>`).join("");
+    }
+    // заголовок окна — по содержимому: только друзья → «Вас добавили»; только co-read → «Совместное чтение»; вперемешку → «Уведомления»
+    const onlyFriends = pendingReqs.length && !crInvites.length && !crReactNotifs.length;
+    const onlyCoread = !pendingReqs.length && (crInvites.length || crReactNotifs.length);
+    { const t=$("#reqTitle"); if(t) t.textContent = onlyFriends ? "Вас добавили 👋" : onlyCoread ? "Совместное чтение 📖" : "Уведомления 🔔"; }
     $("#reqList").innerHTML = h;
     overlay.classList.add("open"); reqModal.classList.add("open");
   }
