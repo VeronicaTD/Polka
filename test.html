@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="236" />
+<meta name="app-version" content="237" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -222,6 +222,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .cr-hist-cov{width:34px;height:50px;border-radius:2px 4px 4px 2px;flex:0 0 auto;background-size:cover;background-position:center;box-shadow:1px 1px 5px -2px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:15px}
 .cr-hist-row .t{font-weight:600;font-size:14px;line-height:1.25}
 .cr-hist-row .d{margin-left:auto;flex:0 0 auto;font-size:12px;color:var(--muted);white-space:nowrap}
+.cr-hist-with{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap}
+.cr-hist-partner{display:inline-flex;align-items:center;gap:5px;background:none;border:none;padding:0;margin:0;font:inherit;font-size:12px;color:var(--ink);cursor:pointer}
+.cr-hist-partner:hover{text-decoration:underline}
+.cr-hist-pava{width:19px;height:19px;border-radius:50%;color:#fff;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background-size:cover;background-position:center}
 .cr-src{display:block;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;cursor:pointer;font-family:inherit;color:var(--ink)}
 .cr-src:hover{border-color:var(--accent)}
 .req-item.cr-invite{flex-wrap:wrap}
@@ -797,7 +801,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
+<!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
 <!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
@@ -3809,9 +3814,10 @@ main,footer{position:relative;z-index:1}
       const cov = cu ? `<div class="cr-hist-cov" style="background-image:url(${cu})"></div>`
                      : `<div class="cr-hist-cov" style="background:${crAvaColor(c.title)}">${esc((c.title[0]||"·").toUpperCase())}</div>`;
       const date = c.finished_at ? new Date(c.finished_at).toLocaleDateString("ru",{day:"numeric",month:"short",year:"numeric"}) : "";
-      const withWhom = c.partner_name ? `с ${esc(c.partner_name)}` : "";
-      const sub = [withWhom, c.author?esc(c.author):""].filter(Boolean).join(" · ");
-      return `<div class="cr-hist-row">${cov}<div style="min-width:0"><div class="t">${esc(c.title)}</div>${sub?`<div class="mp" style="font-size:12px">${sub}</div>`:""}</div>${date?`<div class="d">${esc(date)}</div>`:""}</div>`;
+      const pn = c.partner_name || "";
+      const partnerChip = pn ? `с <button type="button" class="cr-hist-partner" data-name="${esc(pn)}"><span class="cr-hist-pava" style="background:${crAvaColor(pn)}">${esc((pn[0]||"?").toUpperCase())}</span>${esc(pn)}</button>` : "";
+      const authorLine = c.author ? `<div class="mp" style="font-size:12px">${esc(c.author)}</div>` : "";
+      return `<div class="cr-hist-row">${cov}<div style="min-width:0"><div class="t">${esc(c.title)}</div>${authorLine}${partnerChip?`<div class="cr-hist-with">${partnerChip}</div>`:""}</div>${date?`<div class="d">${esc(date)}</div>`:""}</div>`;
     }).join("");
     return `<div class="cr-hist-head"><button class="cr-hist-ava" id="crHistAva" type="button" style="${avaStyle}" title="полка ${esc(name)}">${avaInner}</button>`+
       `<div style="font-weight:600">Прочитали вместе <span class="mp" style="font-weight:400">· ${done.length}</span></div></div>`+ rows;
@@ -3838,7 +3844,16 @@ main,footer{position:relative;z-index:1}
     { const em=$("#coreadEmpty"); if(em){ em.textContent = isOwn ? "Здесь появятся ваши совместные чтения." : ((crTarget.name||"Этот человек")+" пока ни с кем не читает вместе."); em.style.display = (active.length||sent.length||done.length)?"none":""; } }
   }
   { const _cb=$("#coreadBtn"); if(_cb) _cb.addEventListener("click", ()=> openCoread() ); }
-  { const _ch=$("#coreadHistory"); if(_ch) _ch.addEventListener("click", e=>{ if(e.target.closest("#crHistAva")){ const bk=document.querySelector("#coreadPage .fp-friendback"); if(bk) bk.click(); } }); }
+  { const _ch=$("#coreadHistory"); if(_ch) _ch.addEventListener("click", e=>{
+      if(e.target.closest("#crHistAva")){ const bk=document.querySelector("#coreadPage .fp-friendback"); if(bk) bk.click(); return; }
+      const pc=e.target.closest(".cr-hist-partner"); if(pc){ crOpenShelfByName(pc.dataset.name); }
+    }); }
+  function crOpenShelfByName(name){
+    if(!name) return;
+    if(name===myName){ view="me"; }
+    else { const f=savedFriends.find(x=>x.name===name); if(!f){ toast("Полки «"+name+"» пока нет у тебя — добавь её по коду, чтобы зайти 🙂"); return; } view=f.id; }
+    casePage=0; closeModals(); renderAll();
+  }
   function crSrcRow(b){ return `<button type="button" class="cr-src" data-t="${esc(b.t)}" data-a="${esc(b.a||"")}"><b>${esc(b.t)}</b>${b.a?` <span class="mp">— ${esc(b.a)}</span>`:""}</button>`; }
   $("#coreadProposeBtn").addEventListener("click", ()=>{
     if(!crFriend) return; crProposeBook=null;
@@ -3882,7 +3897,7 @@ main,footer{position:relative;z-index:1}
   { const _ca=$("#coreadActive"); if(_ca) _ca.addEventListener("click", async e=>{
       const cancelSent=e.target.closest(".cr-cancel-sent");
       if(cancelSent){ e.stopPropagation();
-        if(!(await askConfirm("Отменить приглашение? Его больше не будет у друга."))) return;
+        if(!(await askConfirm("Отменить приглашение? Его больше не будет у друга.", "Отменить"))) return;
         const ok=await crCancel(cancelSent.dataset.crid);
         if(ok){ toast("Приглашение отменено"); renderCoread(); } else toast("Не получилось 😔");
         return; }
@@ -3942,7 +3957,7 @@ main,footer{position:relative;z-index:1}
   $("#crReactGo").addEventListener("click", ()=>{ const t=$("#crReactInput").value.trim().slice(0,100); closeModalsKeepPage(); if(t) crdSendReaction(t); });
   $("#crdFinishBtn").addEventListener("click", async ()=>{
     if(!crdCur) return;
-    if(!(await askConfirm("Завершить совместное чтение «"+crdCur.title+"»? Книга переедет на твою полку."))) return;
+    if(!(await askConfirm("Завершить совместное чтение «"+crdCur.title+"»? Книга переедет на твою полку.", "Завершить"))) return;
     const st=await crFinish(crdCur.id);
     if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(crdCur.title,crdCur.author||""))){ myBooks.push({t:crdCur.title, a:crdCur.author||"неизвестный автор", g:"Проза", c:COLORS[myBooks.length%COLORS.length], cover:"", fav:false, r:0, note:"", qt:[]}); saveMine(); syncUp(); }
     crdCur.my_finished=true; if(st==="done") crdCur.status="done";
@@ -3951,7 +3966,7 @@ main,footer{position:relative;z-index:1}
   });
   $("#crdCancelBtn").addEventListener("click", async ()=>{
     if(!crdCur) return;
-    if(!(await askConfirm("Прекратить совместное чтение «"+crdCur.title+"»? Оно исчезнет у вас обоих и не попадёт в «Прочитали вместе». Книгу можно будет начать заново когда угодно."))) return;
+    if(!(await askConfirm("Прекратить совместное чтение «"+crdCur.title+"»? Оно исчезнет у вас обоих и не попадёт в «Прочитали вместе». Книгу можно будет начать заново когда угодно.", "Прекратить"))) return;
     const ok=await crCancel(crdCur.id);
     if(ok){ toast("Совместное чтение прекращено"); $("#coreadDetail").classList.remove("open"); renderCoread(); }
     else toast("Не получилось 😔");
