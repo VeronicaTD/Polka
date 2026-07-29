@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="230" />
+<meta name="app-version" content="231" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -791,7 +791,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v230 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ, полировка UX по фидбеку — (1) реакции: под каждым смайликом подпись (подбодрить/догоняю/как тебе?/дочитал/своё), .crd-rbtn стал колонкой flex:1, ряд не переносится; (2) пилюля входа сокращена до «📖 совместное» (полное «Совместное чтение · Имя» в шапке окна); строка имени .pname-row теперь nowrap + имя с ellipsis + пилюли flex:0 0 auto — имя/в любимки/совместное всегда в одну строку, кнопка не прыгает; (3) на экране чтения аватарки показывают ФОТО: дорожка «ты» — фото-кружок + твой ник (был 🧍), партнёр — его фото (setCrdAva, фото из savedFriends по partner_code). Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v231 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ баг — после «отметить страницу» (а также добавить цитату / своя реакция / предложить книгу) окно закрывалось через closeModals(), который гасит и .fullpage.open → экран чтения закрывался, выбрасывая в профиль. Добавлен closeModalsKeepPage() (закрывает только .modal + overlay, НЕ трогает полностраничный экран); применён в markpage/quote/react-custom/propose. Теперь остаёшься на экране чтения. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -3462,6 +3462,8 @@ main,footer{position:relative;z-index:1}
   /* ---- закрытие модалок ---- */
   function welcomeLocked(){ return $("#welModal").classList.contains("open") && !localStorage.getItem("polka_registered"); }
   function closeModals(){ overlay.classList.remove("open"); document.querySelectorAll(".wa-back.open, #menuBack.open, .side-menu.open").forEach(x=>x.classList.remove("open")); document.querySelectorAll(".modal.open, .fullpage.open").forEach(m=>m.classList.remove("open")); }
+  // закрыть только всплывающие окна, НЕ трогая открытую полностраничную (.fullpage) — чтобы после действия остаться на том же экране (напр. совместное чтение)
+  function closeModalsKeepPage(){ overlay.classList.remove("open"); document.querySelectorAll(".wa-back.open, #menuBack.open, .side-menu.open").forEach(x=>x.classList.remove("open")); document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open")); }
   overlay.addEventListener("click", ()=>{ if(welcomeLocked()) return; closeModals(); });
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", closeModals));
   document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !welcomeLocked()) closeModals(); });
@@ -3829,8 +3831,8 @@ main,footer{position:relative;z-index:1}
     if(pages<1){ toast("Укажи число страниц"); return; }
     const ctx=crPagesCtx; crPagesCtx=null;
     if(ctx && ctx.mode==="markpage"){
-      if(!crdCur){ closeModals(); return; }
-      const ok=await crPage(crdCur.id, pages); closeModals();
+      if(!crdCur){ closeModalsKeepPage(); return; }
+      const ok=await crPage(crdCur.id, pages); closeModalsKeepPage();
       if(ok){ crdCur.my_page=pages; renderCoreadDetail(); toast("Отмечено ✓"); } else toast("Не получилось 😔");
       return;
     }
@@ -3842,9 +3844,9 @@ main,footer{position:relative;z-index:1}
         if(c){ if(c.partner_code && !savedFriends.some(f=>f.code===c.partner_code)) await addFriendByCode(c.partner_code); openCoreadDetail(c); } }catch(e){}
       return;
     }
-    if(!crProposeBook || !crFriend){ closeModals(); return; }
+    if(!crProposeBook || !crFriend){ closeModalsKeepPage(); return; }
     const id=await crInvite(crFriend.code, crProposeBook.t, crProposeBook.a, pages);
-    crProposeBook=null; closeModals();
+    crProposeBook=null; closeModalsKeepPage();
     if(id){ toast("Приглашение отправлено! 📖"); renderCoread(); } else toast("Не получилось отправить 😔");
   });
   // клик по активной карточке → экран одного чтения
@@ -3893,7 +3895,7 @@ main,footer{position:relative;z-index:1}
   function crdOpenQuote(){ if(!crdCur) return; $("#crQuotePageNote").textContent="Отметится на твоей странице: "+(crdCur.my_page||0); $("#crQuoteInput").value=""; overlay.classList.add("open"); $("#coreadQuoteModal").classList.add("open"); setTimeout(()=>$("#crQuoteInput").focus(),60); }
   $("#crQuoteGo").addEventListener("click", async ()=>{
     if(!crdCur) return; const t=$("#crQuoteInput").value.trim(); if(!t){ toast("Впиши цитату"); return; }
-    const ok=await crAddQuote(crdCur.id, t, crdCur.my_page||0); closeModals();
+    const ok=await crAddQuote(crdCur.id, t, crdCur.my_page||0); closeModalsKeepPage();
     if(ok){ toast("Цитата добавлена ✍️"); crdRefresh(); } else toast("Не получилось 😔");
   });
   $("#crdBack").addEventListener("click", ()=>{ $("#coreadDetail").classList.remove("open"); renderCoread(); });
@@ -3901,7 +3903,7 @@ main,footer{position:relative;z-index:1}
   $("#crdPartnerAva").addEventListener("click", ()=>{ if(crdCur && crdCur.partner_code){ $("#coreadDetail").classList.remove("open"); addFriendByCode(crdCur.partner_code); } });
   async function crdSendReaction(text){ if(!crdCur||!text) return; const ok=await crReact(crdCur.id, text); if(ok){ crdCur.my_reaction=text; toast("Реакция отправлена 💌"); } else toast("Не получилось 😔"); }
   $("#crdReact").addEventListener("click", e=>{ const b=e.target.closest(".crd-rbtn"); if(!b) return; if(b.id==="crdReactCustom"){ $("#crReactInput").value=""; overlay.classList.add("open"); $("#coreadReactModal").classList.add("open"); setTimeout(()=>$("#crReactInput").focus(),60); return; } crdSendReaction(b.dataset.r); });
-  $("#crReactGo").addEventListener("click", ()=>{ const t=$("#crReactInput").value.trim().slice(0,100); closeModals(); if(t) crdSendReaction(t); });
+  $("#crReactGo").addEventListener("click", ()=>{ const t=$("#crReactInput").value.trim().slice(0,100); closeModalsKeepPage(); if(t) crdSendReaction(t); });
   $("#crdFinishBtn").addEventListener("click", async ()=>{
     if(!crdCur) return;
     if(!(await askConfirm("Завершить совместное чтение «"+crdCur.title+"»? Книга переедет на твою полку."))) return;
