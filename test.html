@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="226" />
+<meta name="app-version" content="227" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -352,6 +352,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .wa-back{display:none;position:fixed;inset:0;z-index:150;background:rgba(20,10,5,.45)}
 .wa-back.open{display:block}
 .modal.wa-modal{z-index:160}
+/* co-read модалки открываются поверх полноэкранного окна (.fullpage z-index:120) — поднимаем выше него, иначе они прячутся ЗА окном и «ничего не происходит» */
+#coreadProposeModal,#coreadPagesModal,#coreadReactModal,#coreadQuoteModal{z-index:160}
 .read-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 /* подборки книг */
 .cat-genre{margin:22px 0 8px;font-family:var(--head);font-size:19px;color:var(--ink)}
@@ -783,7 +785,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v226 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ Фаза E (ФИНАЛ) — блок «Прочитали вместе» (coreadHistHTML): шапка с аватаркой друга (крашеный кружок по хешу имени, клик → полка друга) + счётчик, строки с миниатюрой обложки (coverUrl или крашеный плейсхолдер с буквой), автор, дата завершения; сортировка по дате убыв. Все 5 фаз A–E совместного чтения готовы и проверены. Прод остаётся v222 — совместное чтение целиком только на тесте, ждёт отдельной выкатки в прод. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v227 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ фиксы по фидбеку — (1) в шапке экрана убрана кнопка ☰ (осталась только ←), чтобы заголовок «Совместное чтение · Имя» помещался в строку; (2) БАГ «ничего не происходит» при нажатии «Предложить книгу»: co-read модалки (z-index 90) открывались ПОД полноэкранным окном (.fullpage z-index 120) и были не видны/не кликабельны — подняли #coreadProposeModal/#coreadPagesModal/#coreadReactModal/#coreadQuoteModal до z-index 160 (как wa-modal). Проверено: модалка поверх окна, книги кликабельны, приглашение уходит. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -926,7 +928,7 @@ main,footer{position:relative;z-index:1}
 
 <!-- СОВМЕСТНОЕ ЧТЕНИЕ: экран -->
 <div class="fullpage" id="coreadPage" aria-label="Совместное чтение">
-  <div class="fp-head"><button class="fp-back fp-menu" type="button" title="Разделы" aria-label="Разделы">☰</button><button class="fp-back fp-friendback" data-close type="button" title="Назад" aria-label="Назад">←</button><h3 id="coreadTitle">Совместное чтение 📖</h3></div>
+  <div class="fp-head"><button class="fp-back fp-friendback" data-close type="button" title="Назад" aria-label="Назад">←</button><h3 id="coreadTitle">Совместное чтение 📖</h3></div>
   <div class="fp-body">
     <button class="btn" id="coreadProposeBtn" style="width:100%;justify-content:center;display:flex;margin-bottom:18px">＋ Предложить книгу</button>
     <div id="coreadActive"></div>
