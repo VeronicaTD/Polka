@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="237" />
+<meta name="app-version" content="238" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -801,7 +801,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
+<!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
 <!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
 <!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
 
@@ -1247,13 +1248,17 @@ main,footer{position:relative;z-index:1}
     return Array.isArray(a)?a[0]:null;
   }
   async function sbInsertRequest(row){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/requests",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
-    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
+    // канал requests защищён серверными функциями (коды не сливаются в таблицу целиком)
+    await sbRpc("req_send", {p_from_code:row.from_code, p_from_name:row.from_name||"", p_from_photo:row.from_photo||"", p_to_code:row.to_code});
   }
   async function sbFetchRequests(code){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/requests?select=*&to_code=eq."+encodeURIComponent(code),{headers:SB_H()});
-    if(!r.ok) return [];
-    const a = await r.json(); return Array.isArray(a)?a:[];
+    try{ const a = await sbRpc("req_incoming", {p_code:code}); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+  }
+  async function sbFetchOutgoing(code){
+    try{ const a = await sbRpc("req_outgoing", {p_code:code}); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+  }
+  async function sbResolveRequest(id, accept){
+    try{ return (await sbRpc("req_resolve", {p_id:id, p_code:myCode, p_accept:!!accept}))===true; }catch(e){ return false; }
   }
   /* ===== СОВМЕСТНОЕ ЧТЕНИЕ (coreads) — обёртки серверных функций ===== */
   async function crList(partnerCode){ if(!CLOUD()||!myCode) return []; try{ const v=await sbRpc("coread_list",{p_code:myCode, p_partner:partnerCode||null}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
@@ -1270,7 +1275,7 @@ main,footer{position:relative;z-index:1}
   function crSaveSeen(){ try{ localStorage.setItem("polka_cr_seen", JSON.stringify(crSeenReact)); }catch(e){} }
   function crMarkReactSeen(c){ if(c && c.partner_reaction){ crSeenReact[c.id]=c.partner_reaction; crSaveSeen(); } }
   async function sbDeleteRequest(id){
-    await fetch(SUPABASE_URL+"/rest/v1/requests?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:SB_H()});
+    try{ await sbRpc("req_delete", {p_id:id, p_code:myCode}); }catch(e){}
   }
   async function sbFetchReviews(bookKey){
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?select=*&book=eq."+encodeURIComponent(bookKey)+"&order=created_at.desc",{headers:SB_H()});

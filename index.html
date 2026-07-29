@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="222" />
+<meta name="app-version" content="223" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -749,7 +749,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v222 (ТЕСТ): мини-полка «читаю» у ДРУГА подписана «читает» (isMe()?«читаю»:«читает», класс .rd-lbl). Плюс v221: убрана «Убрать» из карточки читаемой книги. Плюс v220: одна книга=одна страница, регистр, полная карточка «читаю». Прод v219. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v223 (ПРОД, только безопасность): канал requests (колокольчик) переведён на защищённые серверные функции req_send/req_incoming/req_delete вместо прямого доступа к таблице — подготовка к включению RLS на requests (чтобы коды полок нельзя было слить дампом таблицы). Функционал не меняется. Раньше v222 (ТЕСТ): мини-полка «читаю» у ДРУГА подписана «читает» (isMe()?«читаю»:«читает», класс .rd-lbl). Плюс v221: убрана «Убрать» из карточки читаемой книги. Плюс v220: одна книга=одна страница, регистр, полная карточка «читаю». Прод v219. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1128,16 +1128,14 @@ main,footer{position:relative;z-index:1}
     return Array.isArray(a)?a[0]:null;
   }
   async function sbInsertRequest(row){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/requests",{method:"POST",headers:{...SB_H(),Prefer:"return=minimal"},body:JSON.stringify(row)});
-    if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
+    // канал requests защищён серверными функциями (коды не сливаются в таблицу целиком)
+    await sbRpc("req_send", {p_from_code:row.from_code, p_from_name:row.from_name||"", p_from_photo:row.from_photo||"", p_to_code:row.to_code});
   }
   async function sbFetchRequests(code){
-    const r = await fetch(SUPABASE_URL+"/rest/v1/requests?select=*&to_code=eq."+encodeURIComponent(code),{headers:SB_H()});
-    if(!r.ok) return [];
-    const a = await r.json(); return Array.isArray(a)?a:[];
+    try{ const a = await sbRpc("req_incoming", {p_code:code}); return Array.isArray(a)?a:[]; }catch(e){ return []; }
   }
   async function sbDeleteRequest(id){
-    await fetch(SUPABASE_URL+"/rest/v1/requests?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:SB_H()});
+    try{ await sbRpc("req_delete", {p_id:id, p_code:myCode}); }catch(e){}
   }
   async function sbFetchReviews(bookKey){
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews?select=*&book=eq."+encodeURIComponent(bookKey)+"&order=created_at.desc",{headers:SB_H()});
