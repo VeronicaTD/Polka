@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="231" />
+<meta name="app-version" content="232" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -791,7 +791,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v231 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ баг — после «отметить страницу» (а также добавить цитату / своя реакция / предложить книгу) окно закрывалось через closeModals(), который гасит и .fullpage.open → экран чтения закрывался, выбрасывая в профиль. Добавлен closeModalsKeepPage() (закрывает только .modal + overlay, НЕ трогает полностраничный экран); применён в markpage/quote/react-custom/propose. Теперь остаёшься на экране чтения. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v232 (ТЕСТ): колокольчик — при пустом списке теперь открывается окно «Уведомления 🔔» с надписью «Уведомлений пока нет 🌙» (раньше был тост «Пока никто вас не добавил» и окно не открывалось). Колокольчик = центр уведомлений, список внутри зависит от действий. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -3698,7 +3698,12 @@ main,footer{position:relative;z-index:1}
     updateReqBadge();
   }
   function showRequests(){
-    if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length){ toast("Пока никто вас не добавил"); return; }
+    if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length){
+      { const t=$("#reqTitle"); if(t) t.textContent="Уведомления 🔔"; }
+      $("#reqList").innerHTML=`<p class="mp" style="text-align:center;margin:10px 0">Уведомлений пока нет 🌙</p>`;
+      overlay.classList.add("open"); reqModal.classList.add("open");
+      return;
+    }
     let h = "";
     if(pendingReqs.length){
       h += `<div class="cat-genre">Вас добавили — добавить в ответ?</div>`;
