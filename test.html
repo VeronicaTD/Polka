@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="227" />
+<meta name="app-version" content="228" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -188,6 +188,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .vibe-pill{border-color:var(--accent);color:#fff;background:var(--accent);font-weight:600}
 .vibe-pill:active{opacity:.8}
 .fav-pill.on{background:#e0556a;color:#fff;border-color:#e0556a}
+.co-pill{border-color:#b8894a;color:#8a5f2c;background:rgba(184,137,74,.08)}
+.co-pill:active{opacity:.8}
 .tab .tab-heart{font-size:11px;margin-left:2px}
 .tab.fav{border-color:#e0556a}
 .profile .sub{color:var(--ink-soft);font-family:"Fraunces",serif;font-style:italic;font-weight:400;
@@ -738,6 +740,7 @@ main,footer{position:relative;z-index:1}
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
         <button class="fav-pill" id="favFriendBtn" style="display:none">🤍 в любимки</button>
+        <button class="fav-pill co-pill" id="coreadBtn" style="display:none">📖 читать вместе</button>
         <button class="fav-pill vibe-pill" id="addFriendVibe" style="display:none">🤍 хочу следить за полкой</button>
       </div>
       <div class="sub" id="pSub"></div>
@@ -773,7 +776,6 @@ main,footer{position:relative;z-index:1}
     <div class="bookcase" id="bookcase"></div>
     <div class="case-ind" id="caseInd"></div>
     <div class="case-actions" id="friendActions" style="display:none">
-      <button class="dice-btn" id="coreadBtn">📖 Совместное чтение</button>
       <button class="dice-btn" id="quotesBtn">💬 цитаты друга</button>
       <button class="dice-btn" id="wishBtn">📌 хотелки друга</button>
       <button class="dice-btn" id="poemsFriendBtn">✒️ стихи друга</button>
@@ -785,7 +787,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v227 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ фиксы по фидбеку — (1) в шапке экрана убрана кнопка ☰ (осталась только ←), чтобы заголовок «Совместное чтение · Имя» помещался в строку; (2) БАГ «ничего не происходит» при нажатии «Предложить книгу»: co-read модалки (z-index 90) открывались ПОД полноэкранным окном (.fullpage z-index 120) и были не видны/не кликабельны — подняли #coreadProposeModal/#coreadPagesModal/#coreadReactModal/#coreadQuoteModal до z-index 160 (как wa-modal). Проверено: модалка поверх окна, книги кликабельны, приглашение уходит. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v228 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ — кнопка входа переделана в маленькую пилюлю «📖 читать вместе» (.co-pill, книжный коричневый) и перенесена в строку имени СПРАВА от «🤍 в любимки» (была большой .dice-btn в блоке действий). Видна только на полке сохранённого друга (та же логика, что favFriendBtn: !stranger && f.code), скрыта на своей полке. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1593,6 +1595,7 @@ main,footer{position:relative;z-index:1}
       $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
       $("#editProfile").style.display = "";
       $("#favFriendBtn").style.display = "none";
+      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display="none"; }
       { const _av=$("#addFriendVibe"); if(_av) _av.style.display="none"; }
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
@@ -1602,6 +1605,7 @@ main,footer{position:relative;z-index:1}
       $("#editProfile").style.display = "none";
       const _isStranger = (view==="guest");   // гость из стиха/ссылки, ещё не в друзьях
       const fb = $("#favFriendBtn"); fb.style.display = (!_isStranger && f.code) ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
+      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display = (!_isStranger && f.code) ? "" : "none"; }
       const _av=$("#addFriendVibe"); if(_av) _av.style.display = (_isStranger && f.code) ? "" : "none";
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
