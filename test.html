@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="229" />
+<meta name="app-version" content="230" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -179,8 +179,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;position:relative;overflow:hidden;
   font-family:"Fredoka",sans-serif;font-weight:600;font-size:44px;color:#fff;background-size:cover;background-position:center}
 .ava-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.pname-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0}
+.pname-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pname-row .fav-pill,.pname-row .edit-profile{flex:0 0 auto}
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
   color:var(--ink-soft);font-size:14px}
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
@@ -227,10 +228,13 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .crd-track{margin-top:14px}
 .crd-track-lbl{font-size:13px;color:var(--ink-soft);margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .crd-track .cr-bar{height:10px}
-.crd-ava{width:26px;height:26px;border-radius:50%;border:none;color:#fff;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.crd-ava{width:26px;height:26px;border-radius:50%;border:none;color:#fff;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background-size:cover;background-position:center;vertical-align:middle}
+.crd-ava.me{cursor:default}
 .crd-bubble{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:2px 9px;font-size:12px;color:var(--ink)}
-.crd-react{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center}
-.crd-rbtn{font-size:22px;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;width:54px;height:48px;cursor:pointer}
+.crd-react{display:flex;gap:8px;margin-top:16px;justify-content:center}
+.crd-rbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;flex:1 1 0;min-width:0;padding:8px 2px;cursor:pointer}
+.crd-rbtn span{font-size:22px;line-height:1}
+.crd-rbtn i{font-style:normal;font-size:10px;line-height:1.1;color:var(--ink-soft);white-space:nowrap}
 .crd-rbtn:hover{border-color:var(--accent)}
 .crd-quote{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;font-family:"Fraunces",serif;font-style:italic;color:var(--ink);line-height:1.4}
 .crd-quote.mine{border-left:3px solid var(--accent)}
@@ -740,7 +744,7 @@ main,footer{position:relative;z-index:1}
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
         <button class="fav-pill" id="favFriendBtn" style="display:none">🤍 в любимки</button>
-        <button class="fav-pill co-pill" id="coreadBtn" style="display:none">📖 читать вместе</button>
+        <button class="fav-pill co-pill" id="coreadBtn" style="display:none">📖 совместное</button>
         <button class="fav-pill vibe-pill" id="addFriendVibe" style="display:none">🤍 хочу следить за полкой</button>
       </div>
       <div class="sub" id="pSub"></div>
@@ -787,7 +791,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v229 (ТЕСТ): колокольчик — исправлен вводящий в заблуждение заголовок. Раньше приглашение на совместное чтение показывалось под шапкой «Вас добавили 👋 / Эти люди добавили вашу полку» — неверно, ведь друзья уже добавлены. Теперь заголовок #reqTitle динамический: только запросы в друзья → «Вас добавили 👋»; только co-read → «Совместное чтение 📖»; вперемешку → «Уведомления 🔔». Внутри списка секции-подзаголовки: «Вас добавили — добавить в ответ?», «📖 Зовут читать вместе», «💬 Новые отклики». Убрана жёсткая подпись про «добавили вашу полку». Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v230 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ, полировка UX по фидбеку — (1) реакции: под каждым смайликом подпись (подбодрить/догоняю/как тебе?/дочитал/своё), .crd-rbtn стал колонкой flex:1, ряд не переносится; (2) пилюля входа сокращена до «📖 совместное» (полное «Совместное чтение · Имя» в шапке окна); строка имени .pname-row теперь nowrap + имя с ellipsis + пилюли flex:0 0 auto — имя/в любимки/совместное всегда в одну строку, кнопка не прыгает; (3) на экране чтения аватарки показывают ФОТО: дорожка «ты» — фото-кружок + твой ник (был 🧍), партнёр — его фото (setCrdAva, фото из savedFriends по partner_code). Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -951,15 +955,15 @@ main,footer{position:relative;z-index:1}
   <div class="fp-head"><button class="fp-back" id="crdBack" type="button" title="Назад" aria-label="Назад">←</button><h3 id="crdTitle">Читаем вместе</h3></div>
   <div class="fp-body">
     <div class="crd-head"><div class="big-spine" id="crdSpine"></div><div style="flex:1;min-width:0"><div id="crdBook" style="font-weight:700;font-size:18px"></div><div class="mp" id="crdAuthor"></div></div></div>
-    <div class="crd-track"><div class="crd-track-lbl">🧍 ты <span id="crdMyNums"></span></div><div class="cr-bar"><span id="crdMyBar"></span></div></div>
+    <div class="crd-track"><div class="crd-track-lbl"><span class="crd-ava me" id="crdMyAva"></span> <span id="crdMyName"></span> <span id="crdMyNums"></span></div><div class="cr-bar"><span id="crdMyBar"></span></div></div>
     <div class="crd-track"><div class="crd-track-lbl"><button class="crd-ava" id="crdPartnerAva" type="button" title="полка друга"></button> <span id="crdPartnerName"></span> <span id="crdPartnerNums"></span><span class="crd-bubble" id="crdBubble"></span></div><div class="cr-bar"><span class="p" id="crdPartnerBar"></span></div></div>
     <button class="btn" id="crdMarkBtn" style="width:100%;justify-content:center;display:flex;margin-top:18px;font-size:16px;padding:14px">✏️ отметить страницу</button>
     <div class="crd-react" id="crdReact">
-      <button type="button" class="crd-rbtn" data-r="🔥 подбодрить">🔥</button>
-      <button type="button" class="crd-rbtn" data-r="👀 догоняю">👀</button>
-      <button type="button" class="crd-rbtn" data-r="💬 как тебе?">💬</button>
-      <button type="button" class="crd-rbtn" data-r="✅ дочитал">✅</button>
-      <button type="button" class="crd-rbtn" id="crdReactCustom">✍️</button>
+      <button type="button" class="crd-rbtn" data-r="🔥 подбодрить"><span>🔥</span><i>подбодрить</i></button>
+      <button type="button" class="crd-rbtn" data-r="👀 догоняю"><span>👀</span><i>догоняю</i></button>
+      <button type="button" class="crd-rbtn" data-r="💬 как тебе?"><span>💬</span><i>как тебе?</i></button>
+      <button type="button" class="crd-rbtn" data-r="✅ дочитал"><span>✅</span><i>дочитал</i></button>
+      <button type="button" class="crd-rbtn" id="crdReactCustom"><span>✍️</span><i>своё</i></button>
     </div>
     <div id="crdQuotes"></div>
     <button class="btn ghost" id="crdFinishBtn" style="width:100%;justify-content:center;display:flex;margin-top:22px">✅ завершить чтение</button>
@@ -3864,6 +3868,11 @@ main,footer{position:relative;z-index:1}
     }).join("");
     return h;
   }
+  function setCrdAva(el, photo, color, initial){
+    if(!el) return;
+    if(photo){ el.style.backgroundImage=`url(${photo})`; el.textContent=""; }
+    else { el.style.backgroundImage="none"; el.style.background=color||FRIEND_COLORS[0]; el.textContent=initial||"?"; }
+  }
   function renderCoreadDetail(){
     const c=crdCur; if(!c) return;
     $("#crdBook").textContent=c.title; $("#crdAuthor").textContent=c.author||"";
@@ -3872,9 +3881,11 @@ main,footer{position:relative;z-index:1}
     const myPct=c.my_pages?Math.min(100,Math.round(c.my_page/c.my_pages*100)):0;
     const paPct=c.partner_pages?Math.min(100,Math.round(c.partner_page/c.partner_pages*100)):0;
     $("#crdMyBar").style.width=myPct+"%"; $("#crdMyNums").textContent=c.my_page+" из "+(c.my_pages||"?");
+    $("#crdMyName").textContent=myName||"ты"; setCrdAva($("#crdMyAva"), myPhoto, "var(--accent)", (myName&&myName[0])||"я");
     $("#crdPartnerBar").style.width=paPct+"%"; $("#crdPartnerName").textContent=c.partner_name||"друг"; $("#crdPartnerNums").textContent=c.partner_page+" из "+(c.partner_pages||"?");
     const bubble=$("#crdBubble"); if(c.partner_reaction){ bubble.textContent="«"+c.partner_reaction+"»"; bubble.style.display=""; } else { bubble.style.display="none"; bubble.textContent=""; }
-    const ava=$("#crdPartnerAva"); ava.textContent=((c.partner_name||"?")[0]||"?").toUpperCase(); ava.style.background=FRIEND_COLORS[0];
+    const pf=savedFriends.find(f=>f.code===c.partner_code);
+    setCrdAva($("#crdPartnerAva"), pf&&pf.photo, (pf&&pf.color)||FRIEND_COLORS[0], ((c.partner_name||"?")[0]||"?").toUpperCase());
     $("#crdFinishBtn").textContent=c.my_finished?"✅ ты дочитал(а) — ждём друга":"✅ завершить чтение"; $("#crdFinishBtn").disabled=!!c.my_finished;
     $("#crdQuotes").innerHTML = crdQuotesHTML(c) + `<button class="btn ghost" id="crdAddQuoteBtn" style="width:100%;justify-content:center;display:flex;margin-top:10px">＋ добавить цитату</button>`;
   }
