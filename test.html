@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="224" />
+<meta name="app-version" content="225" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -223,6 +223,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .crd-react{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center}
 .crd-rbtn{font-size:22px;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;width:54px;height:48px;cursor:pointer}
 .crd-rbtn:hover{border-color:var(--accent)}
+.crd-quote{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;font-family:"Fraunces",serif;font-style:italic;color:var(--ink);line-height:1.4}
+.crd-quote.mine{border-left:3px solid var(--accent)}
+.crd-quote .crd-q-meta{font-family:var(--body,inherit);font-style:normal;font-size:11px;color:var(--ink-soft);margin-top:5px}
+.crd-quote.spoiler{font-style:normal;font-family:inherit;color:var(--ink-soft);background:repeating-linear-gradient(45deg,var(--paper-2),var(--paper-2) 8px,var(--paper) 8px,var(--paper) 16px);font-size:13px}
 /* редактор «сейчас читаю» в профиле */
 .rd-edit-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .rd-edit-cover{position:relative;width:22px;height:44px;border-radius:2px 3px 3px 2px;flex:0 0 auto;box-shadow:1px 1px 3px -1px rgba(0,0,0,.5);overflow:hidden}
@@ -772,7 +776,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v224 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ Фаза C — экран одного чтения (#coreadDetail): обложка, две дорожки прогресса по доле, «✏️ отметить страницу» (crPage), ряд из 5 реакций (crReact, ✍️ своё до 100 симв.), облачко последней реакции партнёра, «✅ завершить чтение» (crFinish → книга на полку). Тап по активной карточке → экран. При принятии приглашения друг добавляется взаимно и экран открывается сам. coread_list отдаёт partner_code (только согласившимся). Прод v222. Осталось: Фаза D (уведомления реакций в колокольчик + спойлеры цитат), E (история/полировка). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v225 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ Фаза D — реакции пингуют в колокольчик (crReactNotifs: активные co-read'ы, где реакция партнёра не просмотрена, polka_cr_seen) + спойлеры цитат по ДОЛЕ: своя цитата видна всегда, цитата партнёра со стр. P прячется, пока моя доля < P/его_издание, плашка «🙈 откроется, когда дочитаешь до N стр.» (N=ceil(доля·моё_издание)); добавление своей цитаты (#coreadQuoteModal → crAddQuote). Прод v222. Осталось: Фаза E (история «Прочитали вместе» — полировка/аватарки). --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -967,6 +971,15 @@ main,footer{position:relative;z-index:1}
   <h3>Сказать своё</h3>
   <div class="field"><input id="crReactInput" maxlength="100" placeholder="до 100 символов" style="width:100%;box-sizing:border-box" /></div>
   <div class="modal-foot"><button class="btn ghost" data-close style="justify-content:center;display:flex">Отмена</button><button class="btn" id="crReactGo" style="justify-content:center;display:flex">Отправить</button></div>
+</div>
+
+<!-- СОВМЕСТНОЕ ЧТЕНИЕ: добавить цитату (со страницей = твоя текущая) -->
+<div class="modal" id="coreadQuoteModal" role="dialog" aria-modal="true" aria-label="Цитата">
+  <button class="close" data-close>×</button>
+  <h3>Цитата из книги</h3>
+  <p class="mp" id="crQuotePageNote"></p>
+  <div class="field"><textarea id="crQuoteInput" maxlength="600" placeholder="строчка, которую захотелось сохранить…"></textarea></div>
+  <div class="modal-foot"><button class="btn ghost" data-close style="justify-content:center;display:flex">Отмена</button><button class="btn" id="crQuoteGo" style="justify-content:center;display:flex">Добавить</button></div>
 </div>
 
 <!-- мои цитаты (полный экран) -->
@@ -1222,6 +1235,11 @@ main,footer{position:relative;z-index:1}
   async function crPage(id, page){ try{ return (await sbRpc("coread_page",{p_id:id, p_code:myCode, p_page:page|0}))===true; }catch(e){ return false; } }
   async function crReact(id, reaction){ try{ return (await sbRpc("coread_react",{p_id:id, p_code:myCode, p_reaction:String(reaction||"").slice(0,120)}))===true; }catch(e){ return false; } }
   async function crFinish(id){ try{ return await sbRpc("coread_finish",{p_id:id, p_code:myCode}); }catch(e){ return null; } }
+  async function crAddQuote(id, text, page){ try{ return (await sbRpc("coread_add_quote",{p_id:id, p_code:myCode, p_text:String(text||"").slice(0,600), p_page:page|0}))===true; }catch(e){ return false; } }
+  // «виденные» реакции партнёра (чтобы пинговать в колокольчик только новые)
+  let crSeenReact = {}; try{ crSeenReact = JSON.parse(localStorage.getItem("polka_cr_seen")||"{}"); }catch(e){ crSeenReact={}; }
+  function crSaveSeen(){ try{ localStorage.setItem("polka_cr_seen", JSON.stringify(crSeenReact)); }catch(e){} }
+  function crMarkReactSeen(c){ if(c && c.partner_reaction){ crSeenReact[c.id]=c.partner_reaction; crSaveSeen(); } }
   async function sbDeleteRequest(id){
     await fetch(SUPABASE_URL+"/rest/v1/requests?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:SB_H()});
   }
@@ -3650,16 +3668,19 @@ main,footer{position:relative;z-index:1}
     return photo ? `<div class="req-face" style="background-image:url(${photo})"></div>`
                  : `<div class="req-face" style="background:${color||'#7B5B4B'}">${ini}</div>`;
   }
-  let pendingReqs = [], crInvites = [];
-  function updateReqBadge(){ const b=$("#reqCount"); const n=pendingReqs.length+crInvites.length; if(n){ b.textContent=n; b.style.display=""; } else b.style.display="none"; }
+  let pendingReqs = [], crInvites = [], crReactNotifs = [];
+  function updateReqBadge(){ const b=$("#reqCount"); const n=pendingReqs.length+crInvites.length+crReactNotifs.length; if(n){ b.textContent=n; b.style.display=""; } else b.style.display="none"; }
   async function refreshReqBadge(){
-    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; updateReqBadge(); return; }
+    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; crReactNotifs=[]; updateReqBadge(); return; }
     try{ pendingReqs = await sbFetchRequests(myCode) || []; }catch(e){ pendingReqs=[]; }
-    try{ const all = await crList(); crInvites = all.filter(c=>!c.is_initiator && c.status==="invite"); }catch(e){ crInvites=[]; }   // приглашения на совместное чтение
+    try{ const all = await crList();
+      crInvites = all.filter(c=>!c.is_initiator && c.status==="invite");   // приглашения на совместное чтение
+      crReactNotifs = all.filter(c=>c.status==="active" && c.partner_reaction && crSeenReact[c.id]!==c.partner_reaction);   // новые реакции партнёра
+    }catch(e){ crInvites=[]; crReactNotifs=[]; }
     updateReqBadge();
   }
   function showRequests(){
-    if(!pendingReqs.length && !crInvites.length){ toast("Пока никто вас не добавил"); return; }
+    if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length){ toast("Пока никто вас не добавил"); return; }
     let h = pendingReqs.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
         ${faceFor(r.from_name, r.from_photo, '#b8493a')}
         <span class="req-who">${esc(r.from_name||'Кто-то')}</span>
@@ -3670,6 +3691,10 @@ main,footer{position:relative;z-index:1}
         <span class="req-who">📖 <b>${esc(c.partner_name||'Друг')}</b> зовёт читать вместе «${esc(c.title)}»</span>
         <button class="btn ghost cr-decline">Отклонить</button>
         <button class="btn cr-accept">Принять</button>
+      </div>`).join("");
+    h += crReactNotifs.map(c=>`<div class="req-item cr-react-notif" data-crid="${esc(c.id)}">
+        <span class="req-who">💬 <b>${esc(c.partner_name||'Друг')}</b> о «${esc(c.title)}»: «${esc(c.partner_reaction)}»</span>
+        <button class="btn cr-react-open">Открыть</button>
       </div>`).join("");
     $("#reqList").innerHTML = h;
     overlay.classList.add("open"); reqModal.classList.add("open");
@@ -3684,6 +3709,14 @@ main,footer{position:relative;z-index:1}
       const cid=crItem.dataset.crid, ctitle=crItem.dataset.crtitle;
       if(e.target.closest(".cr-accept")){ crItem.remove(); crInvites=crInvites.filter(c=>c.id!==cid); updateReqBadge(); if(!$("#reqList").children.length) closeModals(); crOpenPages(ctitle, {mode:"accept", id:cid}); return; }
       if(e.target.closest(".cr-decline")){ await crRespond(cid,false,0); crInvites=crInvites.filter(c=>c.id!==cid); crItem.remove(); updateReqBadge(); if(!$("#reqList").children.length) closeModals(); return; }
+      return;
+    }
+    const rn = e.target.closest(".cr-react-notif");   // уведомление о реакции → открыть чтение
+    if(rn){
+      const cid=rn.dataset.crid; const c=crReactNotifs.find(x=>x.id===cid);
+      crReactNotifs=crReactNotifs.filter(x=>x.id!==cid); rn.remove(); if(c) crMarkReactSeen(c); updateReqBadge();
+      if(!$("#reqList").children.length) closeModals();
+      if(c) openCoreadDetail(c);
       return;
     }
     const item = e.target.closest(".req-item"); if(!item) return;
@@ -3775,7 +3808,23 @@ main,footer{position:relative;z-index:1}
   { const _ca=$("#coreadActive"); if(_ca) _ca.addEventListener("click", e=>{ const card=e.target.closest(".cr-card"); if(!card||card.classList.contains("cr-pending")) return; const c=crLastList.find(x=>x.id===card.dataset.crid); if(c) openCoreadDetail(c); }); }
 
   /* ---- экран одного совместного чтения ---- */
-  function openCoreadDetail(c){ crdCur=c; renderCoreadDetail(); openPage("coreadDetail"); }
+  function openCoreadDetail(c){ crdCur=c; crMarkReactSeen(c); crReactNotifs=crReactNotifs.filter(x=>x.id!==c.id); updateReqBadge(); renderCoreadDetail(); openPage("coreadDetail"); crdRefresh(); }
+  async function crdRefresh(){ if(!crdCur) return; try{ const all=await crList(); const c=all.find(x=>x.id===crdCur.id); if(c){ crdCur=c; crMarkReactSeen(c); renderCoreadDetail(); } }catch(e){} }
+  function crdQuotesHTML(c){
+    const qs=Array.isArray(c.quotes)?c.quotes:[];
+    const meBy=c.is_initiator?"a":"b"; const myFrac=c.my_pages?(c.my_page/c.my_pages):0;
+    let h=`<div class="cat-genre" style="margin-top:22px">Цитаты</div>`;
+    if(!qs.length) h+=`<p class="mp" style="margin:0">Пока нет — добавь строчку, которую хочется сохранить 👇</p>`;
+    h+=qs.map(q=>{
+      const mine=q.by===meBy;
+      if(mine) return `<div class="crd-quote mine">«${esc(q.text)}»<div class="crd-q-meta">ты · стр. ${q.page}</div></div>`;
+      const pp=c.partner_pages||0, qFrac=pp?(q.page/pp):0;
+      if(myFrac>=qFrac) return `<div class="crd-quote">«${esc(q.text)}»<div class="crd-q-meta">${esc(c.partner_name||"друг")} · стр. ${q.page}</div></div>`;
+      const unlock=c.my_pages?Math.ceil(qFrac*c.my_pages):q.page;
+      return `<div class="crd-quote spoiler">🙈 цитата от ${esc(c.partner_name||"друга")} — откроется, когда дочитаешь до ${unlock} стр.</div>`;
+    }).join("");
+    return h;
+  }
   function renderCoreadDetail(){
     const c=crdCur; if(!c) return;
     $("#crdBook").textContent=c.title; $("#crdAuthor").textContent=c.author||"";
@@ -3788,7 +3837,15 @@ main,footer{position:relative;z-index:1}
     const bubble=$("#crdBubble"); if(c.partner_reaction){ bubble.textContent="«"+c.partner_reaction+"»"; bubble.style.display=""; } else { bubble.style.display="none"; bubble.textContent=""; }
     const ava=$("#crdPartnerAva"); ava.textContent=((c.partner_name||"?")[0]||"?").toUpperCase(); ava.style.background=FRIEND_COLORS[0];
     $("#crdFinishBtn").textContent=c.my_finished?"✅ ты дочитал(а) — ждём друга":"✅ завершить чтение"; $("#crdFinishBtn").disabled=!!c.my_finished;
+    $("#crdQuotes").innerHTML = crdQuotesHTML(c) + `<button class="btn ghost" id="crdAddQuoteBtn" style="width:100%;justify-content:center;display:flex;margin-top:10px">＋ добавить цитату</button>`;
   }
+  { const _q=$("#crdQuotes"); if(_q) _q.addEventListener("click", e=>{ if(e.target.closest("#crdAddQuoteBtn")) crdOpenQuote(); }); }
+  function crdOpenQuote(){ if(!crdCur) return; $("#crQuotePageNote").textContent="Отметится на твоей странице: "+(crdCur.my_page||0); $("#crQuoteInput").value=""; overlay.classList.add("open"); $("#coreadQuoteModal").classList.add("open"); setTimeout(()=>$("#crQuoteInput").focus(),60); }
+  $("#crQuoteGo").addEventListener("click", async ()=>{
+    if(!crdCur) return; const t=$("#crQuoteInput").value.trim(); if(!t){ toast("Впиши цитату"); return; }
+    const ok=await crAddQuote(crdCur.id, t, crdCur.my_page||0); closeModals();
+    if(ok){ toast("Цитата добавлена ✍️"); crdRefresh(); } else toast("Не получилось 😔");
+  });
   $("#crdBack").addEventListener("click", ()=>{ $("#coreadDetail").classList.remove("open"); renderCoread(); });
   $("#crdMarkBtn").addEventListener("click", ()=>{ if(crdCur) crOpenPages(crdCur.title, {mode:"markpage"}, "На какой ты странице?"); });
   $("#crdPartnerAva").addEventListener("click", ()=>{ if(crdCur && crdCur.partner_code){ $("#coreadDetail").classList.remove("open"); addFriendByCode(crdCur.partner_code); } });
