@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="221" />
+<meta name="app-version" content="222" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -711,7 +711,7 @@ main,footer{position:relative;z-index:1}
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
       <div id="stMatchWrap" style="display:none"><b id="stMatch">0</b><span>мэтч 💞</span></div>
-      <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span>читаю</span></div>
+      <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span class="rd-lbl">читаю</span></div>
     </div>
   </section>
 
@@ -749,7 +749,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v221 (ТЕСТ): карточка читаемой книги — убрана кнопка «Убрать» (удалить из чтения — крестиком в списке), остались «Прочитал»+«Сохранить» (min-width:0, помещаются, эмодзи из «Прочитал» убрано). Плюс v220: одна книга=одна страница (GBID_NORM), регистр (capTitle/capAuthor), полная карточка «читаю» с цитатами. Прод v219. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v222 (ТЕСТ): мини-полка «читаю» у ДРУГА подписана «читает» (isMe()?«читаю»:«читает», класс .rd-lbl). Плюс v221: убрана «Убрать» из карточки читаемой книги. Плюс v220: одна книга=одна страница, регистр, полная карточка «читаю». Прод v219. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1505,6 +1505,7 @@ main,footer{position:relative;z-index:1}
     { const rd = isMe() ? myReading : asReadingArr(friend().reading);
       const stat=$("#readingStat"), ms=$("#miniShelf");
       if(stat && ms){
+        { const l=stat.querySelector(".rd-lbl"); if(l) l.textContent = isMe() ? "читаю" : "читает"; }   // у друга — «читает»
         if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; }
         else if(isMe()){ ms.innerHTML=`<span class="ms-empty">＋</span>`; stat.style.display=""; }   // пустая полка с плюсом — добавить первую книгу прямо тут
         else { ms.innerHTML=""; stat.style.display="none"; }
