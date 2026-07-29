@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="235" />
+<meta name="app-version" content="236" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -744,7 +744,7 @@ main,footer{position:relative;z-index:1}
   <section class="profile">
     <div class="polaroid"><div class="ava" id="ava">М</div><div class="my-stickers" id="myStickers"></div></div>
     <div class="pmeta">
-      <div class="pname-row">
+      <div class="pname-row" id="pnameRow">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
       </div>
@@ -797,7 +797,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
+<!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1607,9 +1608,9 @@ main,footer{position:relative;z-index:1}
       $("#pSub").textContent = myQuote || "✎ добавьте любимую цитату";
       $("#editProfile").style.display = "";
       $("#favFriendBtn").style.display = "none";
-      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display = myCode ? "" : "none"; }
+      { const _cb=$("#coreadBtn"); if(_cb){ const pr=$("#pnameRow"); if(_cb.parentNode!==pr) pr.appendChild(_cb); _cb.classList.add("co-inline"); _cb.style.display = myCode ? "" : "none"; } }
       { const _av=$("#addFriendVibe"); if(_av) _av.style.display="none"; }
-      { const _fp=$("#friendPills"); if(_fp) _fp.style.display = myCode ? "flex" : "none"; }
+      { const _fp=$("#friendPills"); if(_fp) _fp.style.display = "none"; }
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
@@ -1618,7 +1619,7 @@ main,footer{position:relative;z-index:1}
       $("#editProfile").style.display = "none";
       const _isStranger = (view==="guest");   // гость из стиха/ссылки, ещё не в друзьях
       const fb = $("#favFriendBtn"); fb.style.display = (!_isStranger && f.code) ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
-      { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display = f.code ? "" : "none"; }
+      { const _cb=$("#coreadBtn"); if(_cb){ const fp=$("#friendPills"); if(_cb.parentNode!==fp) fp.insertBefore(_cb, $("#addFriendVibe")); _cb.classList.remove("co-inline"); _cb.style.display = f.code ? "" : "none"; } }
       const _av=$("#addFriendVibe"); if(_av) _av.style.display = (_isStranger && f.code) ? "" : "none";
       { const _fp=$("#friendPills"); if(_fp) _fp.style.display = f.code ? "flex" : "none"; }
       setAva(f.photo, f.color, (f.name[0]||"?"));
