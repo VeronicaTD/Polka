@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="233" />
+<meta name="app-version" content="234" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -179,9 +179,11 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;position:relative;overflow:hidden;
   font-family:"Fredoka",sans-serif;font-weight:600;font-size:44px;color:#fff;background-size:cover;background-position:center}
 .ava-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.pname-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
-.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pname-row .fav-pill,.pname-row .edit-profile{flex:0 0 auto}
+.pname-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;overflow-wrap:anywhere;word-break:break-word}
+.pname-row .edit-profile{flex:0 0 auto}
+.friend-pills{display:flex;gap:8px;margin-top:12px}
+.friend-pills .fav-pill{flex:1 1 0;min-width:0;text-align:center;padding:8px 10px}
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
   color:var(--ink-soft);font-size:14px}
 .edit-profile:hover{border-color:var(--ink);color:var(--ink)}
@@ -745,11 +747,13 @@ main,footer{position:relative;z-index:1}
       <div class="pname-row">
         <h1 id="pName">Моя полка</h1>
         <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
+      </div>
+      <div class="sub" id="pSub"></div>
+      <div class="friend-pills" id="friendPills" style="display:none">
         <button class="fav-pill" id="favFriendBtn" style="display:none">🤍 в любимки</button>
         <button class="fav-pill co-pill" id="coreadBtn" style="display:none">📖 совместное</button>
         <button class="fav-pill vibe-pill" id="addFriendVibe" style="display:none">🤍 хочу следить за полкой</button>
       </div>
-      <div class="sub" id="pSub"></div>
     </div>
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
@@ -793,7 +797,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v233 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ — можно ПРЕКРАТИТЬ чтение в любой момент (не понравилась книга / поссорились). Экран чтения: приглушённая кнопка «✖ прекратить совместное чтение» (#crdCancelBtn) под «завершить» → confirm → crCancel → исчезает у обоих, НЕ попадает в «Прочитали вместе». Карточка ожидания: «✖ отменить приглашение» (.cr-cancel-sent). Обёртка crCancel → RPC coread_cancel(p_id,p_code) ставит status='cancelled' для invite/active своих co-read'ов. ВАЖНО: функцию coread_cancel надо один раз добавить в Supabase (файл book-site/coread_cancel.sql) — до этого кнопка выдаёт «Не получилось». Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v234 (ТЕСТ): (1) профиль друга — имя НЕ обрезается (снят text-overflow:ellipsis/nowrap, overflow-wrap:anywhere — длинное имя переносится по словам целиком); кнопки «в любимки» и «совместное» вынесены из строки имени в отдельную строку НИЖЕ (#friendPills, flex, каждая flex:1 — на всю ширину поровну); на своей полке строка скрыта. (2) coread_cancel добавлена в Supabase (готово) — «прекратить совместное чтение» проверено end-to-end: статус→cancelled, исчезает у обоих, не идёт в историю. Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1604,6 +1608,7 @@ main,footer{position:relative;z-index:1}
       $("#favFriendBtn").style.display = "none";
       { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display="none"; }
       { const _av=$("#addFriendVibe"); if(_av) _av.style.display="none"; }
+      { const _fp=$("#friendPills"); if(_fp) _fp.style.display="none"; }
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
@@ -1614,6 +1619,7 @@ main,footer{position:relative;z-index:1}
       const fb = $("#favFriendBtn"); fb.style.display = (!_isStranger && f.code) ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
       { const _cb=$("#coreadBtn"); if(_cb) _cb.style.display = (!_isStranger && f.code) ? "" : "none"; }
       const _av=$("#addFriendVibe"); if(_av) _av.style.display = (_isStranger && f.code) ? "" : "none";
+      { const _fp=$("#friendPills"); if(_fp) _fp.style.display = f.code ? "flex" : "none"; }
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
     $("#stTotal").textContent = books.length;
