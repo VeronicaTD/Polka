@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="219" />
+<meta name="app-version" content="220" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -749,7 +749,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v219 (ТЕСТ): в окошке «читаю» тап по книге → её мини-редактор: сменить цвет (палитра COLORS), «📚 Поставить на полку» (перенос в myBooks с цветом), «📖 страница книги» (openBookPage), «← назад». Плюс v218: добавление/удаление прямо в окошке. Прод v212. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v220 (ТЕСТ): 1) одна книга=одна страница — GBID_NORM (обложка по нормализованному названию) + bookInfoCache по looseKey, обложка/аннотация одинаковы при любом написании автора. 2) регистр при сохранении: заглавная первая буква названия + первая буква каждого слова автора (capTitle/capAuthor), в 3 местах, «1984»/аббревиатуры целы. 3) читаемая книга — полная карточка (openInfo с fromReading): жанр/цвет/оценка/цитаты, сохраняются в облако сразу; цитаты видны в «Мои цитаты» до переноса; «Прочитал» → на полку со всем. Прод v219. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -795,7 +795,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
         <div class="field review-field"><label>📢 Рецензия</label><button class="read-link" id="openReviewBtn" type="button" style="width:100%;justify-content:center;display:flex;padding:12px;font-size:14px;cursor:pointer">✍️ Написать рецензию</button></div>
-        <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="saveInfo">Сохранить</button></div>
+        <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="infoToShelf" style="display:none">📚 Прочитал</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
       <div id="infoRead">
@@ -1336,10 +1336,10 @@ main,footer{position:relative;z-index:1}
   const READING_MAX = 3;
   function asReadingArr(rd){
     if(Array.isArray(rd)) return rd.filter(x=>x && x.t).slice(0,READING_MAX)
-      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||""}));
+      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[])}));
     const s=String(rd||"").trim(); if(!s) return [];
     const parts=s.split(" — ");   // старый формат мог быть «Название — Автор»
-    return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:""}];
+    return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:"", r:0, fav:false, note:"", qt:[]}];
   }
   function readReadingLS(){ const raw=localStorage.getItem("polka_reading"); if(raw==null) return [];
     try{ return asReadingArr(JSON.parse(raw)); }catch(e){ return asReadingArr(raw); } }
@@ -1828,7 +1828,9 @@ main,footer{position:relative;z-index:1}
   function openQuotesPage(forMe){
     quotesForMe=forMe; if(!forMe) quotesShowFav=false;
     { const b=$("#quotesPage .fp-friendback"); if(b) b.style.display=forMe?"none":""; }   // «назад» на профиль друга — только в гостях
-    qpBooks = forMe ? myBooks : ((friend()&&friend().books)||[]);
+    // цитаты читаемых книг попадают в «Мои цитаты» сразу (не дожидаясь переноса на полку)
+    if(forMe){ const seen=new Set(myBooks.map(b=>bookKey(b.t,b.a))); qpBooks = myBooks.concat(myReading.filter(b=>!seen.has(bookKey(b.t,b.a)))); }
+    else { const fb=(friend()&&friend().books)||[]; const frd=asReadingArr(friend()&&friend().reading); const seen=new Set(fb.map(b=>bookKey(b.t,b.a))); qpBooks = fb.concat(frd.filter(b=>!seen.has(bookKey(b.t,b.a)))); }
     const fn = forMe ? "" : ((friend()&&friend().name)||"друга");
     $("#quotesTitle").textContent = forMe ? "Мои цитаты 💬" : `Цитаты · ${fn} 💬`;
     $("#quotesSub").textContent = forMe ? "Цитаты, которые вы сохранили из своих книг. Сердечком ❤ отмечай любимые. Нажми на книгу справа — откроется её страница." : `Любимые цитаты из книг — ${fn}. Нажми на книгу справа — откроется её страница.`;
@@ -1953,8 +1955,8 @@ main,footer{position:relative;z-index:1}
   $("#wrPrev").addEventListener("click", ()=> wrGo(-1));
 
   $("#wishAddBtn").addEventListener("click", ()=>{
-    const t=$("#wishTitle").value.trim(); if(!t) return;
-    myWishlist.push({t, a:$("#wishAuthor").value.trim(), c:COLORS[myWishlist.length%COLORS.length]});
+    const t=capTitle($("#wishTitle").value); if(!t) return;
+    myWishlist.push({t, a:capAuthor($("#wishAuthor").value), c:COLORS[myWishlist.length%COLORS.length]});
     saveWish(); $("#wishTitle").value=""; $("#wishAuthor").value=""; renderWish();
   });
   $("#wishStack").addEventListener("click", e=>{
@@ -2033,6 +2035,7 @@ main,footer{position:relative;z-index:1}
   });
   // добавить книгу друга в свои хотелки (можно и находясь в гостях)
   function addToMyWish(t,a){
+    t=capTitle(t); a=capAuthor(a);
     if(myBooks.some(b=>bookKey(b.t,b.a)===bookKey(t,a))){ toast("Эта книга уже на твоей полке 📚"); return; }
     if(myWishlist.some(w=>bookKey(w.t,w.a)===bookKey(t,a))){ toast("Уже в твоих хотелках 📌"); return; }
     myWishlist.push({t, a, c:COLORS[myWishlist.length%COLORS.length]}); saveWish(); toast("Добавлено в твои хотелки 📌");
@@ -2186,7 +2189,15 @@ main,footer{position:relative;z-index:1}
     "Граф Монте-Кристо|Александр Дюма":"xW9LDwAAQBAJ",
     "Великий Гэтсби|Фрэнсис Фицджеральд":"_-KyCAAAQBAJ"
   };
-  const coverUrl = (t,a)=>{ const id=GBID[t+"|"+a]; return id ? `https://books.google.com/books/content?id=${id}&printsec=frontcover&img=1&zoom=1` : ""; };
+  let GBID_NORM = null;   // строим лениво: normTitle объявлен ниже по файлу
+  const coverUrl = (t,a)=>{
+    let id = GBID[t+"|"+(a||"")];   // сначала точный ключ название|автор
+    if(!id){   // промах (автор написан иначе) → по нормализованному НАЗВАНИЮ, как ANNO_NORM
+      if(!GBID_NORM){ GBID_NORM={}; try{ Object.keys(GBID).forEach(k=>{ const nk=normTitle(k.split("|")[0]); if(nk && !GBID_NORM[nk]) GBID_NORM[nk]=GBID[k]; }); }catch(e){ GBID_NORM={}; } }
+      id = GBID_NORM[normTitle(t)];
+    }
+    return id ? `https://books.google.com/books/content?id=${id}&printsec=frontcover&img=1&zoom=1` : "";
+  };
   // авторские аннотации (свой текст, не Википедия)
   const ANNO = {
     "Уроки химии|Бонни Гармус":"Начало 1960-х: блестящий химик Элизабет Зотт вынуждена уйти из лаборатории и внезапно становится звездой кулинарного телешоу. Только вот вместо рецептов она учит домохозяек всей Америки думать, спорить и не бояться быть собой — а мир вокруг совсем не готов к женщине, которая отказывается знать своё место. Умная, дерзкая и невероятно тёплая история для всех, кто любит героинь с характером.",
@@ -2466,6 +2477,11 @@ main,footer{position:relative;z-index:1}
   // «мягкий» ключ книги — по нормализованному НАЗВАНИЮ (автор у разных людей пишется по-разному:
   // «Ф.М.Достоевский» без пробелов, «Остен»/«Остин» — разная транслитерация; поэтому автора в ключ не берём).
   const looseKey = (t,a) => normTitle(t);
+  // РЕГИСТР при сохранении: заглавная первая буква названия; первая буква каждого слова в авторе.
+  // Остальные буквы НЕ трогаем (иначе «1984» и аббревиатуры пострадают). Служебные слова внутри
+  // названия не поднимаются, т.к. у названия поднимаем только самую первую букву («отцы и дети» → «Отцы и дети»).
+  const capTitle = s => { s=String(s||"").trim(); const m=s.match(/[a-zа-яё]/i); if(!m) return s; const i=s.indexOf(m[0]); return s.slice(0,i)+m[0].toUpperCase()+s.slice(i+1); };
+  const capAuthor = s => String(s||"").trim().replace(/(^|[\s.\-])([a-zа-яё])/gi, (m,p,c)=>p+c.toUpperCase());
   // статья Википедии — про КНИГУ? (защита от статей про слово/год/человека, напр. «бойфренд» → англицизм)
   // «роман(?![тс])» — чтобы не ловить «романтический/романс/романтика»; остальные основы однозначны
   const BOOK_WORDS = /(роман(?![тс])|повест|книг|рассказ|поэм|сборник|новелл|пьес|эпопе|автобиограф|мемуар|трилог|дилог|антиутопи)/i;
@@ -2476,7 +2492,7 @@ main,footer{position:relative;z-index:1}
     return startsWithTitle && BOOK_WORDS.test(ex.slice(0,220));         // иначе — статья начинается с названия и в начале есть книжное слово
   }
   async function fetchBookInfo(t,a){
-    const key=t+"|"+(a||"");
+    const key=looseKey(t,a);   // ключ по нормализованному названию — одна книга при любом написании автора
     if(bookInfoCache[key]) return bookInfoCache[key];
     const info={desc:"", img:""};
     const ot=normTitle(t);
@@ -2826,8 +2842,8 @@ main,footer{position:relative;z-index:1}
     overlay.classList.add("open"); addModal.classList.add("open"); setTimeout(()=>$("#fTitle").focus(),60);
   }
   $("#saveBook").addEventListener("click", ()=>{
-    const t=$("#fTitle").value.trim(); if(!t){ $("#fTitle").focus(); return; }
-    const nb={ t, a:$("#fAuthor").value.trim()||"неизвестный автор", g:$("#fGenre").value,
+    const t=capTitle($("#fTitle").value); if(!t){ $("#fTitle").focus(); return; }
+    const nb={ t, a:capAuthor($("#fAuthor").value)||"неизвестный автор", g:$("#fGenre").value,
       c:selColor, fav:favNew, r:rateNew, note:"", qt:collectQuotes("fQuotes") };
     myBooks.push(nb);
     if(pendingWish!=null){ myWishlist.splice(pendingWish,1); pendingWish=null; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
@@ -2894,10 +2910,11 @@ main,footer{position:relative;z-index:1}
     $("#wishAuthor").value=(v.authors&&v.authors[0])||$("#wishAuthor").value;
   });
   function addReadingBook(t, a, g){
-    t=String(t||"").trim(); if(!t) return false;
+    t=capTitle(t); if(!t) return false; a=capAuthor(a);
     if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return false; }
     if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a||""))){ toast("Эту книгу уже читаешь"); return false; }
-    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:""});
+    // читаемая книга — полноценный объект книги (цитаты/оценка/цвет пишутся во время чтения, а не после)
+    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[]});
     saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return true;
   }
   bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // выбор из подсказки
@@ -2931,14 +2948,14 @@ main,footer{position:relative;z-index:1}
   }); }
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
-  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], infoReviewData=null;
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], infoReviewData=null, infoReadingIdx=null;
   function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
   function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); }
   $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); $("#infoSpine").style.background=iSelColor; });
   $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
   $("#iFav").addEventListener("click", ()=>{ iFav=!iFav; paintIFav(); });
-  function openInfo(i){
-    const b = currentList()[i]; if(!b) return; infoBook=b;
+  function openInfo(i, fromReading){
+    const b = fromReading ? myReading[i] : currentList()[i]; if(!b) return; infoBook=b; infoReadingIdx = fromReading ? i : null;
     { const _rb=$("#infoReview"); if(_rb){ _rb.style.display="none"; _rb.innerHTML=""; } infoReviewData=null; collapseInfoModal(); }
     $("#infoTitle").textContent = b.t;
     $("#infoMeta").textContent = `${b.a} · ${b.g}`;
@@ -2947,15 +2964,19 @@ main,footer{position:relative;z-index:1}
     $("#readBookmate").href = "https://books.yandex.ru/search?query=" + bq;
     // «в хотелки» — только для книги с полки друга, которой ещё нет у меня (не метч, не своя)
     const onMyShelf = myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a));
-    $("#readWish").style.display = (!isMe() && !onMyShelf) ? "inline-flex" : "none";
-    if(isMe()){
+    $("#readWish").style.display = (!fromReading && !isMe() && !onMyShelf) ? "inline-flex" : "none";
+    const editable = fromReading || isMe();
+    { const rf=document.querySelector("#infoModal .review-field"); if(rf) rf.style.display = (editable && !fromReading) ? "" : "none"; }   // рецензия — только для книги с полки
+    { const ts=$("#infoToShelf"); if(ts) ts.style.display = fromReading ? "" : "none"; }                                                 // «Прочитал» — только у читаемой книги
+    { const db=$("#delBook"); if(db) db.textContent = fromReading ? "Убрать" : "Удалить"; }
+    if(editable){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
-      $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _draft=reviewDrafts[_bk]; const _txt=(_draft&&_draft.trim())?_draft:((_rv&&_rv.text)||""); const _hasPub=!!(_rv&&_rv.text); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=_hasPub?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=_hasPub?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); if($("#openReviewBtn")) $("#openReviewBtn").textContent=(_hasPub||(_draft&&_draft.trim()))?"✏️ Редактировать рецензию":"✍️ Написать рецензию"; }
+      if(!fromReading){ $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _draft=reviewDrafts[_bk]; const _txt=(_draft&&_draft.trim())?_draft:((_rv&&_rv.text)||""); const _hasPub=!!(_rv&&_rv.text); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=_hasPub?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=_hasPub?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); if($("#openReviewBtn")) $("#openReviewBtn").textContent=(_hasPub||(_draft&&_draft.trim()))?"✏️ Редактировать рецензию":"✍️ Написать рецензию"; } }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
@@ -2981,16 +3002,36 @@ main,footer{position:relative;z-index:1}
     }
     overlay.classList.add("open"); infoModal.classList.add("open");
   }
+  function applyInfoEdits(){   // записать поля формы в infoBook (общая книга/читаемая)
+    infoBook.t = capTitle($("#iTitle").value) || infoBook.t;
+    infoBook.a = capAuthor($("#iAuthor").value) || "неизвестный автор";
+    infoBook.g = $("#iGenre").value;
+    infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
+  }
   $("#saveInfo").addEventListener("click", ()=>{
-    if(infoBook && isMe()){
-      infoBook.t = $("#iTitle").value.trim() || infoBook.t;
-      infoBook.a = $("#iAuthor").value.trim() || "неизвестный автор";
-      infoBook.g = $("#iGenre").value;
-      infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
-      saveMine(); syncUp(); closeModals(); renderAll(); toast("Сохранено");
-    }
+    if(!infoBook) return;
+    const isReading = infoReadingIdx!=null;
+    if(!isReading && !isMe()) return;
+    applyInfoEdits();
+    if(isReading){ saveReadingLS(); } else { saveMine(); }   // цитаты/оценка читаемой книги — сразу в облако, не дожидаясь полки
+    syncUp(); closeModals(); renderAll(); toast("Сохранено");
+  });
+  // «Прочитал» — перенос читаемой книги на полку СО ВСЕМ (цитаты, оценка, цвет, обложка)
+  $("#infoToShelf").addEventListener("click", ()=>{
+    if(infoReadingIdx==null || !infoBook) return;
+    applyInfoEdits(); const rb=infoBook;
+    let nb = myBooks.find(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a));
+    if(!nb){ nb={t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:!!rb.fav,r:rb.r||0,note:rb.note||"",qt:(rb.qt||[]).slice()}; myBooks.push(nb); }
+    else { nb.qt=(nb.qt||[]).concat(rb.qt||[]); if(rb.r) nb.r=rb.r; if(rb.fav) nb.fav=true; }   // уже на полке — доливаем цитаты/оценку
+    const ri=myReading.indexOf(rb); if(ri>-1) myReading.splice(ri,1);
+    saveMine(); saveReadingLS(); syncUp(); closeModals(); renderAll(); toast("На полке 📚");
   });
   $("#delBook").addEventListener("click", async ()=>{
+    if(infoReadingIdx!=null && infoBook){   // читаемая книга → убрать из «сейчас читаю»
+      if(!(await askConfirm("Убрать «"+infoBook.t+"» из «сейчас читаю»? Цитаты и оценка потеряются."))) return;
+      const ri=myReading.indexOf(infoBook); if(ri>-1){ myReading.splice(ri,1); saveReadingLS(); syncUp(); }
+      closeModals(); renderAll(); return;
+    }
     if(infoBook && isMe()){
       if(!(await askConfirm("Удалить книгу «"+infoBook.t+"» с полки? Рецензию и цитаты тоже потеряешь."))) return;
       const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine();
@@ -3117,7 +3158,7 @@ main,footer{position:relative;z-index:1}
       box.innerHTML=h;
       box.querySelector(".confirm-no").addEventListener("click", done);
       box.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",(e)=>{ e.stopPropagation(); const i=+b.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); render(); }));
-      box.querySelectorAll("[data-open]").forEach(r=>r.addEventListener("click",()=>{ editIdx=+r.dataset.open; render(); }));
+      box.querySelectorAll("[data-open]").forEach(r=>r.addEventListener("click",()=>{ done(); openInfo(+r.dataset.open, true); }));   // тап по книге → полная карточка (цвет/оценка/цитаты/на полку)
       if(mine && arr.length<READING_MAX){
         const inp=box.querySelector("#rdlInput"), sug=box.querySelector("#rdlSuggest"), addBtn=box.querySelector("#rdlAdd");
         if(inp && sug){ bkAutocomplete(inp, sug, v=>{ if(addReadingBook(v.title,(v.authors&&v.authors[0])||"",genreFromBook(v))) render(); });
@@ -3146,11 +3187,7 @@ main,footer{position:relative;z-index:1}
       });
       box.querySelector("#rdlBookPage").addEventListener("click", ()=>{ done(); openBookPage(b.t, b.a); });
     };
-    const render=()=>{
-      const arr = mine ? myReading : asReadingArr(friend().reading);
-      if(mine && editIdx!=null && arr[editIdx]) renderEditor(arr[editIdx], editIdx);
-      else { editIdx=null; renderList(); }
-    };
+    const render=()=>{ renderList(); };   // тап по книге открывает полную карточку (openInfo), не мини-редактор
     back.appendChild(box); document.body.appendChild(back);
     back.addEventListener("click", e=>{ if(e.target===back) done(); });
     render();
