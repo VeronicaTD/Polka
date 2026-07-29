@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="232" />
+<meta name="app-version" content="233" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -236,6 +236,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .crd-rbtn span{font-size:22px;line-height:1}
 .crd-rbtn i{font-style:normal;font-size:10px;line-height:1.1;color:var(--ink-soft);white-space:nowrap}
 .crd-rbtn:hover{border-color:var(--accent)}
+.crd-cancel{display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:8px;text-align:center}
+.crd-cancel:hover{color:#c0392b;text-decoration:underline}
 .crd-quote{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;font-family:"Fraunces",serif;font-style:italic;color:var(--ink);line-height:1.4}
 .crd-quote.mine{border-left:3px solid var(--accent)}
 .crd-quote .crd-q-meta{font-family:var(--body,inherit);font-style:normal;font-size:11px;color:var(--ink-soft);margin-top:5px}
@@ -791,7 +793,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v232 (ТЕСТ): колокольчик — при пустом списке теперь открывается окно «Уведомления 🔔» с надписью «Уведомлений пока нет 🌙» (раньше был тост «Пока никто вас не добавил» и окно не открывалось). Колокольчик = центр уведомлений, список внутри зависит от действий. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v233 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ — можно ПРЕКРАТИТЬ чтение в любой момент (не понравилась книга / поссорились). Экран чтения: приглушённая кнопка «✖ прекратить совместное чтение» (#crdCancelBtn) под «завершить» → confirm → crCancel → исчезает у обоих, НЕ попадает в «Прочитали вместе». Карточка ожидания: «✖ отменить приглашение» (.cr-cancel-sent). Обёртка crCancel → RPC coread_cancel(p_id,p_code) ставит status='cancelled' для invite/active своих co-read'ов. ВАЖНО: функцию coread_cancel надо один раз добавить в Supabase (файл book-site/coread_cancel.sql) — до этого кнопка выдаёт «Не получилось». Прод остаётся v222. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -967,6 +969,7 @@ main,footer{position:relative;z-index:1}
     </div>
     <div id="crdQuotes"></div>
     <button class="btn ghost" id="crdFinishBtn" style="width:100%;justify-content:center;display:flex;margin-top:22px">✅ завершить чтение</button>
+    <button class="crd-cancel" id="crdCancelBtn" type="button">✖ прекратить совместное чтение</button>
   </div>
 </div>
 
@@ -1250,6 +1253,7 @@ main,footer{position:relative;z-index:1}
   async function crReact(id, reaction){ try{ return (await sbRpc("coread_react",{p_id:id, p_code:myCode, p_reaction:String(reaction||"").slice(0,120)}))===true; }catch(e){ return false; } }
   async function crFinish(id){ try{ return await sbRpc("coread_finish",{p_id:id, p_code:myCode}); }catch(e){ return null; } }
   async function crAddQuote(id, text, page){ try{ return (await sbRpc("coread_add_quote",{p_id:id, p_code:myCode, p_text:String(text||"").slice(0,600), p_page:page|0}))===true; }catch(e){ return false; } }
+  async function crCancel(id){ try{ return (await sbRpc("coread_cancel",{p_id:id, p_code:myCode}))===true; }catch(e){ return false; } }
   // «виденные» реакции партнёра (чтобы пинговать в колокольчик только новые)
   let crSeenReact = {}; try{ crSeenReact = JSON.parse(localStorage.getItem("polka_cr_seen")||"{}"); }catch(e){ crSeenReact={}; }
   function crSaveSeen(){ try{ localStorage.setItem("polka_cr_seen", JSON.stringify(crSeenReact)); }catch(e){} }
@@ -3807,7 +3811,7 @@ main,footer{position:relative;z-index:1}
     if(active.length||sent.length){
       ah += `<div class="cat-genre">Сейчас читаем</div>`;
       ah += active.map(coreadCardHTML).join("");
-      ah += sent.map(c=>`<div class="cr-card cr-pending"><div class="cr-card-t">${esc(c.title)}</div><div class="mp">⏳ ждём ответа ${esc(crFriend.name||"друга")}</div></div>`).join("");
+      ah += sent.map(c=>`<div class="cr-card cr-pending"><div class="cr-card-t">${esc(c.title)}</div><div class="mp">⏳ ждём ответа ${esc(crFriend.name||"друга")}</div><button type="button" class="crd-cancel cr-cancel-sent" data-crid="${esc(c.id)}" style="margin-top:4px;text-align:left;padding:4px 0">✖ отменить приглашение</button></div>`).join("");
     }
     $("#coreadActive").innerHTML=ah;
     $("#coreadHistory").innerHTML = done.length ? coreadHistHTML(done) : "";
@@ -3855,7 +3859,14 @@ main,footer{position:relative;z-index:1}
     if(id){ toast("Приглашение отправлено! 📖"); renderCoread(); } else toast("Не получилось отправить 😔");
   });
   // клик по активной карточке → экран одного чтения
-  { const _ca=$("#coreadActive"); if(_ca) _ca.addEventListener("click", e=>{ const card=e.target.closest(".cr-card"); if(!card||card.classList.contains("cr-pending")) return; const c=crLastList.find(x=>x.id===card.dataset.crid); if(c) openCoreadDetail(c); }); }
+  { const _ca=$("#coreadActive"); if(_ca) _ca.addEventListener("click", async e=>{
+      const cancelSent=e.target.closest(".cr-cancel-sent");
+      if(cancelSent){ e.stopPropagation();
+        if(!(await askConfirm("Отменить приглашение? Его больше не будет у друга."))) return;
+        const ok=await crCancel(cancelSent.dataset.crid);
+        if(ok){ toast("Приглашение отменено"); renderCoread(); } else toast("Не получилось 😔");
+        return; }
+      const card=e.target.closest(".cr-card"); if(!card||card.classList.contains("cr-pending")) return; const c=crLastList.find(x=>x.id===card.dataset.crid); if(c) openCoreadDetail(c); }); }
 
   /* ---- экран одного совместного чтения ---- */
   function openCoreadDetail(c){ crdCur=c; crMarkReactSeen(c); crReactNotifs=crReactNotifs.filter(x=>x.id!==c.id); updateReqBadge(); renderCoreadDetail(); openPage("coreadDetail"); crdRefresh(); }
@@ -3917,6 +3928,13 @@ main,footer{position:relative;z-index:1}
     crdCur.my_finished=true; if(st==="done") crdCur.status="done";
     toast(st==="done"?"Дочитали вместе! 🎉 Книга на полке":"Ты дочитал(а) — ждём друга 📖");
     $("#coreadDetail").classList.remove("open"); renderCoread();
+  });
+  $("#crdCancelBtn").addEventListener("click", async ()=>{
+    if(!crdCur) return;
+    if(!(await askConfirm("Прекратить совместное чтение «"+crdCur.title+"»? Оно исчезнет у вас обоих и не попадёт в «Прочитали вместе». Книгу можно будет начать заново когда угодно."))) return;
+    const ok=await crCancel(crdCur.id);
+    if(ok){ toast("Совместное чтение прекращено"); $("#coreadDetail").classList.remove("open"); renderCoread(); }
+    else toast("Не получилось 😔");
   });
 
   /* ---- импорт из ссылки #shelf= ---- */
