@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="225" />
+<meta name="app-version" content="226" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -210,6 +210,13 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .cr-bar-lbl{font-size:11px;color:var(--ink-soft);margin-top:3px}
 .cr-card.cr-pending{cursor:default;opacity:.85}
 .cr-hist{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.cr-hist-head{display:flex;align-items:center;gap:9px;margin:18px 0 6px}
+.cr-hist-ava{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:600;font-size:14px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border:none;cursor:pointer}
+.cr-hist-row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line)}
+.cr-hist-row:last-child{border-bottom:none}
+.cr-hist-cov{width:34px;height:50px;border-radius:2px 4px 4px 2px;flex:0 0 auto;background-size:cover;background-position:center;box-shadow:1px 1px 5px -2px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:15px}
+.cr-hist-row .t{font-weight:600;font-size:14px;line-height:1.25}
+.cr-hist-row .d{margin-left:auto;flex:0 0 auto;font-size:12px;color:var(--muted);white-space:nowrap}
 .cr-src{display:block;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;cursor:pointer;font-family:inherit;color:var(--ink)}
 .cr-src:hover{border-color:var(--accent)}
 .req-item.cr-invite{flex-wrap:wrap}
@@ -776,7 +783,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v225 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ Фаза D — реакции пингуют в колокольчик (crReactNotifs: активные co-read'ы, где реакция партнёра не просмотрена, polka_cr_seen) + спойлеры цитат по ДОЛЕ: своя цитата видна всегда, цитата партнёра со стр. P прячется, пока моя доля < P/его_издание, плашка «🙈 откроется, когда дочитаешь до N стр.» (N=ceil(доля·моё_издание)); добавление своей цитаты (#coreadQuoteModal → crAddQuote). Прод v222. Осталось: Фаза E (история «Прочитали вместе» — полировка/аватарки). --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v226 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ Фаза E (ФИНАЛ) — блок «Прочитали вместе» (coreadHistHTML): шапка с аватаркой друга (крашеный кружок по хешу имени, клик → полка друга) + счётчик, строки с миниатюрой обложки (coverUrl или крашеный плейсхолдер с буквой), автор, дата завершения; сортировка по дате убыв. Все 5 фаз A–E совместного чтения готовы и проверены. Прод остаётся v222 — совместное чтение целиком только на тесте, ждёт отдельной выкатки в прод. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -3746,6 +3753,20 @@ main,footer{position:relative;z-index:1}
       <div class="cr-bar"><span class="p" style="width:${pp}%"></span></div><div class="cr-bar-lbl">${esc(c.partner_name||"друг")} ${c.partner_page}/${c.partner_pages||"?"}</div>
     </div>`;
   }
+  function crAvaColor(name){ let h=0; const s=String(name||"?"); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return FRIEND_COLORS[h%FRIEND_COLORS.length]; }
+  function coreadHistHTML(done){
+    const name = (crFriend&&crFriend.name) || (done[0]&&done[0].partner_name) || "друг";
+    const col = crAvaColor(name);
+    const rows = done.slice().sort((a,b)=> new Date(b.finished_at||0) - new Date(a.finished_at||0)).map(c=>{
+      const cu=coverUrl(c.title,c.author);
+      const cov = cu ? `<div class="cr-hist-cov" style="background-image:url(${cu})"></div>`
+                     : `<div class="cr-hist-cov" style="background:${crAvaColor(c.title)}">${esc((c.title[0]||"·").toUpperCase())}</div>`;
+      const date = c.finished_at ? new Date(c.finished_at).toLocaleDateString("ru",{day:"numeric",month:"short",year:"numeric"}) : "";
+      return `<div class="cr-hist-row">${cov}<div style="min-width:0"><div class="t">${esc(c.title)}</div>${c.author?`<div class="mp" style="font-size:12px">${esc(c.author)}</div>`:""}</div>${date?`<div class="d">${esc(date)}</div>`:""}</div>`;
+    }).join("");
+    return `<div class="cr-hist-head"><button class="cr-hist-ava" id="crHistAva" type="button" style="background:${col}" title="полка ${esc(name)}">${esc((name[0]||"?").toUpperCase())}</button>`+
+      `<div style="font-weight:600">Прочитали вместе <span class="mp" style="font-weight:400">· ${done.length}</span></div></div>`+ rows;
+  }
   async function renderCoread(){
     if(!crFriend) return;
     const list = await crList(crFriend.code); crLastList = list;
@@ -3759,12 +3780,11 @@ main,footer{position:relative;z-index:1}
       ah += sent.map(c=>`<div class="cr-card cr-pending"><div class="cr-card-t">${esc(c.title)}</div><div class="mp">⏳ ждём ответа ${esc(crFriend.name||"друга")}</div></div>`).join("");
     }
     $("#coreadActive").innerHTML=ah;
-    $("#coreadHistory").innerHTML = done.length
-      ? `<div class="cat-genre" style="margin-top:18px">Прочитали вместе · ${done.length}</div>` + done.map(c=>`<div class="cr-hist"><b>${esc(c.title)}</b>${c.author?` <span class="mp">— ${esc(c.author)}</span>`:""}${c.finished_at?` <span class="mp">· ${new Date(c.finished_at).toLocaleDateString("ru")}</span>`:""}</div>`).join("")
-      : "";
+    $("#coreadHistory").innerHTML = done.length ? coreadHistHTML(done) : "";
     $("#coreadEmpty").style.display = (active.length||sent.length||done.length)?"none":"";
   }
   { const _cb=$("#coreadBtn"); if(_cb) _cb.addEventListener("click", ()=> openCoread(friend()) ); }
+  { const _ch=$("#coreadHistory"); if(_ch) _ch.addEventListener("click", e=>{ if(e.target.closest("#crHistAva")){ const bk=document.querySelector("#coreadPage .fp-friendback"); if(bk) bk.click(); } }); }
   function crSrcRow(b){ return `<button type="button" class="cr-src" data-t="${esc(b.t)}" data-a="${esc(b.a||"")}"><b>${esc(b.t)}</b>${b.a?` <span class="mp">— ${esc(b.a)}</span>`:""}</button>`; }
   $("#coreadProposeBtn").addEventListener("click", ()=>{
     if(!crFriend) return; crProposeBook=null;
