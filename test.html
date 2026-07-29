@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="220" />
+<meta name="app-version" content="221" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -597,7 +597,7 @@ main,footer{position:relative;z-index:1}
 .codebox{width:100%;height:92px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
   font-family:ui-monospace,monospace;font-size:12px;line-height:1.5;background:var(--paper-2);color:var(--ink);resize:none;word-break:break-all;margin-bottom:10px}
 .modal-foot{display:flex;gap:10px;margin-top:8px}
-.modal-foot .btn{flex:1;text-align:center;display:flex;justify-content:center}
+.modal-foot .btn{flex:1;min-width:0;text-align:center;display:flex;justify-content:center;white-space:nowrap}
 .close{position:absolute;top:16px;right:18px;background:none;border:none;font-size:24px;color:var(--ink-soft);line-height:1}
 .bookinfo .row{display:flex;gap:16px;align-items:flex-start}
 .bookinfo .big-spine{width:70px;height:170px;border-radius:3px 6px 6px 3px;flex-shrink:0;box-shadow:var(--shadow)}
@@ -749,7 +749,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v220 (ТЕСТ): 1) одна книга=одна страница — GBID_NORM (обложка по нормализованному названию) + bookInfoCache по looseKey, обложка/аннотация одинаковы при любом написании автора. 2) регистр при сохранении: заглавная первая буква названия + первая буква каждого слова автора (capTitle/capAuthor), в 3 местах, «1984»/аббревиатуры целы. 3) читаемая книга — полная карточка (openInfo с fromReading): жанр/цвет/оценка/цитаты, сохраняются в облако сразу; цитаты видны в «Мои цитаты» до переноса; «Прочитал» → на полку со всем. Прод v219. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v221 (ТЕСТ): карточка читаемой книги — убрана кнопка «Убрать» (удалить из чтения — крестиком в списке), остались «Прочитал»+«Сохранить» (min-width:0, помещаются, эмодзи из «Прочитал» убрано). Плюс v220: одна книга=одна страница (GBID_NORM), регистр (capTitle/capAuthor), полная карточка «читаю» с цитатами. Прод v219. --></div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -795,7 +795,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
         <div class="field review-field"><label>📢 Рецензия</label><button class="read-link" id="openReviewBtn" type="button" style="width:100%;justify-content:center;display:flex;padding:12px;font-size:14px;cursor:pointer">✍️ Написать рецензию</button></div>
-        <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="infoToShelf" style="display:none">📚 Прочитал</button><button class="btn" id="saveInfo">Сохранить</button></div>
+        <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="infoToShelf" style="display:none;min-width:0">Прочитал</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
 
       <div id="infoRead">
@@ -2968,7 +2968,7 @@ main,footer{position:relative;z-index:1}
     const editable = fromReading || isMe();
     { const rf=document.querySelector("#infoModal .review-field"); if(rf) rf.style.display = (editable && !fromReading) ? "" : "none"; }   // рецензия — только для книги с полки
     { const ts=$("#infoToShelf"); if(ts) ts.style.display = fromReading ? "" : "none"; }                                                 // «Прочитал» — только у читаемой книги
-    { const db=$("#delBook"); if(db) db.textContent = fromReading ? "Убрать" : "Удалить"; }
+    { const db=$("#delBook"); if(db) db.style.display = fromReading ? "none" : ""; }   // у читаемой книги «Удалить» прячем (убрать из чтения — крестиком в списке), чтобы «Прочитал»+«Сохранить» влезли
     if(editable){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
