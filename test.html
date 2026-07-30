@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="239" />
+<meta name="app-version" content="240" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -468,7 +468,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .fp-head{position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);
   display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);z-index:2}
 .fp-head{flex-wrap:nowrap}
-.fp-head h3{margin:0;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.fp-head h3{margin:0;font-size:22px;overflow-wrap:anywhere;word-break:break-word;min-width:0;flex:0 1 auto;line-height:1.15}
 .fp-back{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 16px;font-weight:600;color:var(--ink)}
 .fp-back:hover{border-color:var(--ink)}
 .fp-body{max-width:760px;margin:0 auto;padding:20px}
@@ -808,7 +808,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v239 (ТЕСТ): ДРУЖБА БЕЗ КОДА (на безопасном фундаменте req_*). На полке не-друга вместо «в любимки» — «＋ добавить в друзья» (#addFriendBtn, .add-pill); отправляет запрос через req_send, кнопка → «⏳ ожидание» (myOutgoingPending из req_outgoing). Получателю в колокольчик «X хочет добавить вас в друзья» + кликабельная аватарка (.req-face-btn → viewGuestByCode, зайти посмотреть без добавления) + Принять/Отклонить. Принял → req_resolve('accepted') + addFriendByCode(noNotify); инициатор при опросе видит accepted → addFriendByCode(silent, noNotify) + чистит → у обоих в друзьях, кнопка → «в любимки». Отклонил → req_resolve('declined') → инициатор чистит, кнопка тихо возвращается к «＋ добавить», без сообщения; полка всё равно видна. addFriendByCode получил опции {silent,noNotify}. Прод остаётся v223 (только безопасность). -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v240 (ТЕСТ): фикс обрезки имени — заголовок полноэкранного окна .fp-head h3 (напр. «Совместные чтения · Elisabeth») резался в «…Elisa…» (white-space:nowrap+text-overflow:ellipsis). Теперь переносится целиком (overflow-wrap:anywhere, снят nowrap/ellipsis). Профиль-имя #pName и так не резалось (правка v234). Прод остаётся v223. -->
+<!-- v239 (ТЕСТ): ДРУЖБА БЕЗ КОДА (на безопасном фундаменте req_*). На полке не-друга вместо «в любимки» — «＋ добавить в друзья» (#addFriendBtn, .add-pill); отправляет запрос через req_send, кнопка → «⏳ ожидание» (myOutgoingPending из req_outgoing). Получателю в колокольчик «X хочет добавить вас в друзья» + кликабельная аватарка (.req-face-btn → viewGuestByCode, зайти посмотреть без добавления) + Принять/Отклонить. Принял → req_resolve('accepted') + addFriendByCode(noNotify); инициатор при опросе видит accepted → addFriendByCode(silent, noNotify) + чистит → у обоих в друзьях, кнопка → «в любимки». Отклонил → req_resolve('declined') → инициатор чистит, кнопка тихо возвращается к «＋ добавить», без сообщения; полка всё равно видна. addFriendByCode получил опции {silent,noNotify}. Прод остаётся v223 (только безопасность). -->
 <!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
 <!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
 <!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
