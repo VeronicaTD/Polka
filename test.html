@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="238" />
+<meta name="app-version" content="239" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -192,6 +192,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .vibe-pill:active{opacity:.8}
 .fav-pill.on{background:#e0556a;color:#fff;border-color:#e0556a}
 .co-pill{border-color:#b8894a;color:#8a5f2c;background:rgba(184,137,74,.08)}
+.add-pill{border-color:#5a9e6f;color:#3c7a52;background:rgba(90,158,111,.1)}
+.add-pill:active{opacity:.8}
+.add-pill.waiting{border-color:var(--line);color:var(--muted);background:none;cursor:default}
 .co-pill:active{opacity:.8}
 .tab .tab-heart{font-size:11px;margin-left:2px}
 .tab.fav{border-color:#e0556a}
@@ -633,7 +636,10 @@ main,footer{position:relative;z-index:1}
 .req-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .req-face{width:40px;height:40px;border-radius:50%;flex:0 0 auto;background-size:cover;background-position:center;
   display:grid;place-items:center;color:#fff;font-weight:700;font-family:"Fredoka",sans-serif}
-.req-who{flex:1;font-weight:600;min-width:0}
+.req-face-btn{padding:0;margin:0;border:none;background:none;cursor:pointer;flex:0 0 auto;border-radius:50%}
+.req-face-btn:active{opacity:.8}
+.req-who{flex:1;font-weight:500;min-width:0;font-size:14px;line-height:1.3}
+.req-who b{font-weight:700}
 .req-item .btn{padding:8px 14px;font-size:13px}
 .preview{display:flex;align-items:flex-end;gap:14px;background:var(--paper-2);border-radius:10px;padding:14px;margin-bottom:16px}
 .preview .pl{font-size:13px;color:var(--ink-soft)}
@@ -755,6 +761,7 @@ main,footer{position:relative;z-index:1}
       <div class="sub" id="pSub"></div>
       <div class="friend-pills" id="friendPills" style="display:none">
         <button class="fav-pill" id="favFriendBtn" style="display:none">🤍 в любимки</button>
+        <button class="fav-pill add-pill" id="addFriendBtn" style="display:none">＋ добавить в друзья</button>
         <button class="fav-pill co-pill" id="coreadBtn" style="display:none">📖 совместное</button>
         <button class="fav-pill vibe-pill" id="addFriendVibe" style="display:none">🤍 хочу следить за полкой</button>
       </div>
@@ -801,7 +808,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v239 (ТЕСТ): ДРУЖБА БЕЗ КОДА (на безопасном фундаменте req_*). На полке не-друга вместо «в любимки» — «＋ добавить в друзья» (#addFriendBtn, .add-pill); отправляет запрос через req_send, кнопка → «⏳ ожидание» (myOutgoingPending из req_outgoing). Получателю в колокольчик «X хочет добавить вас в друзья» + кликабельная аватарка (.req-face-btn → viewGuestByCode, зайти посмотреть без добавления) + Принять/Отклонить. Принял → req_resolve('accepted') + addFriendByCode(noNotify); инициатор при опросе видит accepted → addFriendByCode(silent, noNotify) + чистит → у обоих в друзьях, кнопка → «в любимки». Отклонил → req_resolve('declined') → инициатор чистит, кнопка тихо возвращается к «＋ добавить», без сообщения; полка всё равно видна. addFriendByCode получил опции {silent,noNotify}. Прод остаётся v223 (только безопасность). -->
+<!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
 <!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
 <!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
 <!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
@@ -1601,7 +1609,18 @@ main,footer{position:relative;z-index:1}
   });
   $("#addFriendVibe").addEventListener("click", ()=>{
     const f = friend(); if(!f || !f.code) return;
-    addFriendByCode(f.code);   // добавить незнакомца в друзья (откроет его постоянную полку)
+    addFriendByCode(f.code);   // (старое) добавить незнакомца в друзья
+  });
+  $("#addFriendBtn").addEventListener("click", async ()=>{
+    const f = friend(); if(!f || !f.code) return;
+    if(!CLOUD() || !myCode){ toast("Сначала заведи свою полку 🙂"); return; }
+    if(f.code===myCode){ return; }
+    if(savedFriends.some(x=>x.code===f.code)){ toast("Эта полка уже у вас"); return; }
+    try{ await sbInsertRequest({to_code:f.code, from_code:myCode, from_name:myName, from_photo:myPhoto}); }
+    catch(e){ toast("Не получилось отправить 😔"); return; }
+    myOutgoingPending.add(f.code); renderProfile();
+    toast("Запрос отправлен 🤝");
+    await refreshReqBadge(); renderProfile();   // подтянуть с сервера, чтобы «⏳ ожидание» закрепилось (без гонки)
   });
 
   /* профиль */
@@ -1627,10 +1646,20 @@ main,footer{position:relative;z-index:1}
       $("#pName").textContent = f.name;
       $("#pSub").textContent = "вы в гостях · " + (f.quote || "");
       $("#editProfile").style.display = "none";
-      const _isStranger = (view==="guest");   // гость из стиха/ссылки, ещё не в друзьях
-      const fb = $("#favFriendBtn"); fb.style.display = (!_isStranger && f.code) ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
+      const _isStranger = (view==="guest");   // гость (полка не в друзьях)
+      const isSaved = (!_isStranger && f.code);   // сохранённый друг
+      const fb = $("#favFriendBtn"); fb.style.display = isSaved ? "" : "none"; fb.classList.toggle("on", isFavFriend(f)); fb.innerHTML = isFavFriend(f) ? "❤ в любимках" : "🤍 в любимки";
+      // кнопка «＋ добавить в друзья» — на полке не-друга; «⏳ ожидание» если запрос уже отправлен
+      { const ab=$("#addFriendBtn"); if(ab){
+          const showAdd = (!isSaved && !!f.code);
+          ab.style.display = showAdd ? "" : "none";
+          const waiting = showAdd && myOutgoingPending.has(f.code);
+          ab.classList.toggle("waiting", waiting);
+          ab.textContent = waiting ? "⏳ ожидание" : "＋ добавить в друзья";
+          ab.disabled = waiting;
+        } }
       { const _cb=$("#coreadBtn"); if(_cb){ const fp=$("#friendPills"); if(_cb.parentNode!==fp) fp.insertBefore(_cb, $("#addFriendVibe")); _cb.classList.remove("co-inline"); _cb.style.display = f.code ? "" : "none"; } }
-      const _av=$("#addFriendVibe"); if(_av) _av.style.display = (_isStranger && f.code) ? "" : "none";
+      { const _av=$("#addFriendVibe"); if(_av) _av.style.display = "none"; }   // заменена кнопкой «добавить в друзья»
       { const _fp=$("#friendPills"); if(_fp) _fp.style.display = f.code ? "flex" : "none"; }
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
@@ -3422,7 +3451,8 @@ main,footer{position:relative;z-index:1}
   const joinModal = $("#joinModal");
   function openJoin(){ $("#joinInput").value=""; overlay.classList.add("open"); joinModal.classList.add("open"); setTimeout(()=>$("#joinInput").focus(),60); }
   $("#joinAdd").addEventListener("click", ()=>withBtn($("#joinAdd"),"Добавляю…", ()=>addFriendByCode($("#joinInput").value)));
-  async function addFriendByCode(code){
+  async function addFriendByCode(code, opts){
+    opts = opts || {};   // {silent} — не переходить/не тостить; {noNotify} — не слать ответное уведомление
     if(!code || !code.trim()) return;
     code = code.trim();
     let p = null, used = "";
@@ -3446,18 +3476,34 @@ main,footer{position:relative;z-index:1}
     }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books)) return toast("Код не похож на полку");
-    if(used && savedFriends.some(f=>f.code===used)){ const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
+    if(used && savedFriends.some(f=>f.code===used)){ if(opts.silent) return; const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
     const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
-    DEMO_FRIENDS[id]=friendObj; delete DEMO_FRIENDS.guest; syncUp();
-    view=id; casePage=0; closeModals(); renderAll(); toast("Полка «"+name+"» добавлена!");
+    DEMO_FRIENDS[id]=friendObj; if(!opts.silent) delete DEMO_FRIENDS.guest; syncUp();
+    if(opts.silent){ toast("Теперь вы друзья с «"+name+"» 🤝"); renderProfile(); }
+    else { view=id; casePage=0; closeModals(); renderAll(); toast("Полка «"+name+"» добавлена!"); }
     // уведомить друга, что его добавили (запрос «добавить в ответ»)
-    if(CLOUD() && used && myCode && used!==myCode){
+    if(!opts.noNotify && CLOUD() && used && myCode && used!==myCode){
       sbInsertRequest({to_code:used, from_code:myCode, from_name:myName, from_photo:myPhoto}).catch(()=>{});
     }
+  }
+  // открыть чужую полку «на посмотреть» (гостём, без добавления в друзья)
+  async function viewGuestByCode(code){
+    if(!code || !CLOUD()) return;
+    code = String(code).trim().toUpperCase();
+    if(code===String(myCode).toUpperCase()){ view="me"; casePage=0; closeModals(); renderAll(); return; }
+    const ex = savedFriends.find(f=>f.code===code);
+    if(ex){ view=ex.id; casePage=0; closeModals(); renderAll(); return; }   // уже друг → его полка
+    let row; try{ row = await sbFetch(code); }catch(e){ return toast("Не получилось открыть полку"); }
+    if(!row || !row.data) return toast("Полка не найдена");
+    let p; try{ p = decodeCode(row.data); }catch(e){ return toast("Полка повреждена"); }
+    const books = Array.isArray(p) ? p : (p && p.b);
+    if(!Array.isArray(books)) return toast("Не похоже на полку");
+    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    showGuest(g);
   }
 
   /* ---- тост ---- */
@@ -3708,11 +3754,23 @@ main,footer{position:relative;z-index:1}
     return photo ? `<div class="req-face" style="background-image:url(${photo})"></div>`
                  : `<div class="req-face" style="background:${color||'#7B5B4B'}">${ini}</div>`;
   }
-  let pendingReqs = [], crInvites = [], crReactNotifs = [];
+  let pendingReqs = [], crInvites = [], crReactNotifs = [], myOutgoingPending = new Set();
   function updateReqBadge(){ const b=$("#reqCount"); const n=pendingReqs.length+crInvites.length+crReactNotifs.length; if(n){ b.textContent=n; b.style.display=""; } else b.style.display="none"; }
   async function refreshReqBadge(){
-    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; crReactNotifs=[]; updateReqBadge(); return; }
+    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; crReactNotifs=[]; myOutgoingPending=new Set(); updateReqBadge(); return; }
     try{ pendingReqs = await sbFetchRequests(myCode) || []; }catch(e){ pendingReqs=[]; }
+    // мои исходящие запросы в друзья: приняли → тихо добавляем; отклонили → чистим; ждут → «⏳ ожидание»
+    try{
+      const out = await sbFetchOutgoing(myCode) || [];
+      const pend = new Set(); let changed=false;
+      for(const r of out){
+        if(r.status==="accepted"){ await addFriendByCode(r.to_code, {silent:true, noNotify:true}); await sbDeleteRequest(r.id); changed=true; }
+        else if(r.status==="declined"){ await sbDeleteRequest(r.id); changed=true; }
+        else if(r.status==="pending"){ pend.add(r.to_code); }
+      }
+      const prevN = myOutgoingPending.size; myOutgoingPending = pend;
+      if(changed || prevN!==pend.size){ try{ renderProfile(); }catch(e){} }
+    }catch(e){ myOutgoingPending=new Set(); }
     try{ const all = await crList();
       crInvites = all.filter(c=>!c.is_initiator && c.status==="invite");   // приглашения на совместное чтение
       crReactNotifs = all.filter(c=>c.status==="active" && c.partner_reaction && crSeenReact[c.id]!==c.partner_reaction);   // новые реакции партнёра
@@ -3728,12 +3786,12 @@ main,footer{position:relative;z-index:1}
     }
     let h = "";
     if(pendingReqs.length){
-      h += `<div class="cat-genre">Вас добавили — добавить в ответ?</div>`;
+      h += `<div class="cat-genre">Хотят добавить вас в друзья</div>`;
       h += pendingReqs.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
-        ${faceFor(r.from_name, r.from_photo, '#b8493a')}
-        <span class="req-who">${esc(r.from_name||'Кто-то')}</span>
-        <button class="btn ghost req-dismiss">Скрыть</button>
-        <button class="btn req-accept">Добавить</button>
+        <button type="button" class="req-face-btn" data-viewcode="${esc(r.from_code||'')}" title="посмотреть полку">${faceFor(r.from_name, r.from_photo, '#b8493a')}</button>
+        <span class="req-who"><b>${esc(r.from_name||'Кто-то')}</b> хочет добавить вас в друзья</span>
+        <button class="btn ghost req-dismiss">Отклонить</button>
+        <button class="btn req-accept">Принять</button>
       </div>`).join("");
     }
     if(crInvites.length){
@@ -3778,13 +3836,17 @@ main,footer{position:relative;z-index:1}
       if(c) openCoreadDetail(c);
       return;
     }
+    // клик по аватарке — посмотреть полку того, кто добавляется, прежде чем решать
+    const faceBtn = e.target.closest(".req-face-btn");
+    if(faceBtn){ const vc=faceBtn.dataset.viewcode; if(vc){ closeModals(); viewGuestByCode(vc); } return; }
     const item = e.target.closest(".req-item"); if(!item) return;
     const accept = e.target.closest(".req-accept"), dismiss = e.target.closest(".req-dismiss");
     if(!accept && !dismiss) return;
     const id = item.dataset.id, from = item.dataset.from;
-    if(id){ sbDeleteRequest(id).catch(()=>{}); pendingReqs = pendingReqs.filter(r=>String(r.id)!==String(id)); }
+    pendingReqs = pendingReqs.filter(r=>String(r.id)!==String(id));
     item.remove(); updateReqBadge();
-    if(accept && from) await addFriendByCode(from);
+    if(id) await sbResolveRequest(id, !!accept);   // приняли/отклонили → инициатор узнает (и добавит в ответ / сбросит кнопку)
+    if(accept && from) await addFriendByCode(from, {noNotify:true});
     if(!$("#reqList").children.length) closeModals();
   });
 
