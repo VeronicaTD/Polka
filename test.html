@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="241" />
+<meta name="app-version" content="242" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -784,7 +784,7 @@ main,footer{position:relative;z-index:1}
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
-      <div id="streakStat" style="display:none"><b id="stStreakN">🕯 0</b><span id="stStreakLbl">дней подряд</span><span id="stStreakSub" class="streak-sub"></span></div>
+      <div id="streakStat" style="display:none"><b id="stStreakN">🕯 0</b><span id="stStreakLbl">дней подряд</span></div>
       <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span class="rd-lbl">читаю</span></div>
     </div>
   </section>
@@ -823,7 +823,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v241 (ТЕСТ): СЧЁТЧИК ДНЕЙ С КНИГОЙ (стрик). Данные в блобе индекс 11: st={s:streak,t:total,l:lastMark,p:pause} (encodeCode/decodeCode обновлены — блоб это МАССИВ, не объект!); load в 3 точках через loadStreakFrom. Логика: 1 отметка/день, total+1, пропущено 0-1 дн→streak+1, 2+→streak=1 (daysBetween>=3), total не падает, задним числом нельзя, нечитун (pause) авто-снимается при отметке. Счётчик вместо «мэтч» (#streakStat): «🕯 N дней подряд · всего M», в паузе/обрыве «🌙 пауза»; у себя кликабелен, в гостях только цифры (пауза не видна — личное). Окно #markModal: «Читала сегодня?» → «да, читала» (анимация 📖 pop, автозакрытие ~1.6с, «🕯 N дней подряд»+фраза, круглые 7/30/100 особые) / «нечитун» → «Отдыхай…». Возврат после обрыва → «С возвращением / N всего / Начинаем новую серию» (про потерю ни слова). Прод остаётся v240. -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v242 (ТЕСТ): стрик, правки пункта 3 — в ряду счётчиков только серия «🕯 N дней подряд» / «🌙 пауза», подпись «всего N» убрана (число «всего» живёт только в окне отметки). Нечитун/пауза теперь показывается И в гостях (у друга «🌙 пауза» так же, как у себя) — friendObj хранит весь st={s,t,l,p}, пауза считается f.st.p || lapsed(f.st.l). Прод остаётся v240. -->
+<!-- v241 (ТЕСТ): СЧЁТЧИК ДНЕЙ С КНИГОЙ (стрик). Данные в блобе индекс 11: st={s:streak,t:total,l:lastMark,p:pause} (encodeCode/decodeCode обновлены — блоб это МАССИВ, не объект!); load в 3 точках через loadStreakFrom. Логика: 1 отметка/день, total+1, пропущено 0-1 дн→streak+1, 2+→streak=1 (daysBetween>=3), total не падает, задним числом нельзя, нечитун (pause) авто-снимается при отметке. Счётчик вместо «мэтч» (#streakStat): «🕯 N дней подряд · всего M», в паузе/обрыве «🌙 пауза»; у себя кликабелен, в гостях только цифры (пауза не видна — личное). Окно #markModal: «Читала сегодня?» → «да, читала» (анимация 📖 pop, автозакрытие ~1.6с, «🕯 N дней подряд»+фраза, круглые 7/30/100 особые) / «нечитун» → «Отдыхай…». Возврат после обрыва → «С возвращением / N всего / Начинаем новую серию» (про потерю ни слова). Прод остаётся v240. -->
 <!-- v240 (ТЕСТ): фикс обрезки имени — заголовок полноэкранного окна .fp-head h3 (напр. «Совместные чтения · Elisabeth») резался в «…Elisa…» (white-space:nowrap+text-overflow:ellipsis). Теперь переносится целиком (overflow-wrap:anywhere, снят nowrap/ellipsis). Профиль-имя #pName и так не резалось (правка v234). Прод остаётся v223. -->
 <!-- v239 (ТЕСТ): ДРУЖБА БЕЗ КОДА (на безопасном фундаменте req_*). На полке не-друга вместо «в любимки» — «＋ добавить в друзья» (#addFriendBtn, .add-pill); отправляет запрос через req_send, кнопка → «⏳ ожидание» (myOutgoingPending из req_outgoing). Получателю в колокольчик «X хочет добавить вас в друзья» + кликабельная аватарка (.req-face-btn → viewGuestByCode, зайти посмотреть без добавления) + Принять/Отклонить. Принял → req_resolve('accepted') + addFriendByCode(noNotify); инициатор при опросе видит accepted → addFriendByCode(silent, noNotify) + чистит → у обоих в друзьях, кнопка → «в любимки». Отклонил → req_resolve('declined') → инициатор чистит, кнопка тихо возвращается к «＋ добавить», без сообщения; полка всё равно видна. addFriendByCode получил опции {silent,noNotify}. Прод остаётся v223 (только безопасность). -->
 <!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
@@ -1762,18 +1763,22 @@ main,footer{position:relative;z-index:1}
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
     // счётчик «дней с книгой» (стрик) — вместо мэтча
-    { const ss=$("#streakStat"), n=$("#stStreakN"), lbl=$("#stStreakLbl"), sub=$("#stStreakSub");
-      if(ss && n && lbl && sub){
+    { const ss=$("#streakStat"), n=$("#stStreakN"), lbl=$("#stStreakLbl");
+      if(ss && n && lbl){
         if(isMe()){
           const st=streakState();
           if(st.onPause){ n.textContent="🌙"; lbl.textContent="пауза"; }
           else { n.textContent="🕯 "+st.streak; lbl.textContent=plural(st.streak,"день","дня","дней")+" подряд"; }
-          sub.textContent="всего "+st.total;
           ss.style.display=""; ss.classList.add("clickable");
         } else {
-          const f=friend(); const ftot=f.total||0, fstr=f.streak||0;
-          if(ftot>0){ n.textContent="🕯 "+fstr; lbl.textContent=plural(fstr,"день","дня","дней")+" подряд"; sub.textContent="всего "+ftot; ss.style.display=""; ss.classList.remove("clickable"); }
-          else { ss.style.display="none"; ss.classList.remove("clickable"); }
+          const fst=(friend()&&friend().st)||null;
+          const ftot=(fst&&fst.t)||0, fstr=(fst&&fst.s)||0;
+          const fpaused=!!(fst && (fst.p || (fst.l && daysBetween(ymd(), fst.l)>=3)));   // нечитун видно и в гостях
+          if(ftot>0 || fstr>0){
+            if(fpaused){ n.textContent="🌙"; lbl.textContent="пауза"; }
+            else { n.textContent="🕯 "+fstr; lbl.textContent=plural(fstr,"день","дня","дней")+" подряд"; }
+            ss.style.display=""; ss.classList.remove("clickable");
+          } else { ss.style.display="none"; ss.classList.remove("clickable"); }
         }
       } }
     // мини-полка «читаю» в ряду счётчиков (я → мои книги, в гостях → книги друга)
@@ -2981,7 +2986,7 @@ main,footer{position:relative;z-index:1}
     if(cached && row.data===cached.raw) return;
     let p; try{ p=decodeCode(row.data); }catch(e){ if(!cached) toast("Профиль повреждён"); return; }
     const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ if(!cached) toast("Это не профиль"); return; }
-    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code, streak:(p&&p.st&&p.st.s)||0, total:(p&&p.st&&p.st.t)||0};
+    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code, st:(p&&p.st)||null};
     profileCache[code]={g, raw:row.data};
     if(!cached || view==="guest") showGuest(g);
   }
@@ -3583,7 +3588,7 @@ main,footer{position:relative;z-index:1}
     if(used && savedFriends.some(f=>f.code===used)){ if(opts.silent) return; const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], streak:(p&&p.st&&p.st.s)||0, total:(p&&p.st&&p.st.t)||0};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj; if(!opts.silent) delete DEMO_FRIENDS.guest; syncUp();
@@ -3606,7 +3611,7 @@ main,footer{position:relative;z-index:1}
     let p; try{ p = decodeCode(row.data); }catch(e){ return toast("Полка повреждена"); }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books)) return toast("Не похоже на полку");
-    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], streak:(p&&p.st&&p.st.s)||0, total:(p&&p.st&&p.st.t)||0};
+    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null};
     showGuest(g);
   }
 
@@ -3843,7 +3848,7 @@ main,footer{position:relative;z-index:1}
     const list = Array.from(new Set((codes||[]).filter(c=>c && c!==myCode)));
     const built = await Promise.all(list.map(async fc=>{
       try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null;
-        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[], streak:(fp&&fp.st&&fp.st.s)||0, total:(fp&&fp.st&&fp.st.t)||0}; }catch(e){ return null; }
+        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[], st:(fp&&fp.st)||null}; }catch(e){ return null; }
     }));
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
     savedFriends = [];
