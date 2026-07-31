@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="240" />
+<meta name="app-version" content="241" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -264,6 +264,21 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap;align-items:flex-end}
 .stats div b{font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;display:block;line-height:1}
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
+.streak-sub{display:block;font-size:11px;color:var(--muted);opacity:.85;margin-top:1px}
+#streakStat.clickable{cursor:pointer;border-radius:10px;transition:.15s}
+#streakStat.clickable:hover{opacity:.75}
+/* окно отметки чтения */
+#markModal{text-align:center}
+.mk-emoji{font-size:46px;line-height:1;margin:2px 0 6px}
+.mk-emoji.pop{animation:mkpop .6s ease}
+@keyframes mkpop{0%{transform:scale(.4) rotate(-12deg);opacity:0}55%{transform:scale(1.18) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.mk-h{font-family:var(--display);font-size:24px;margin:0 0 4px;color:var(--ink)}
+.mk-streak{font-size:15px;color:var(--ink);font-weight:600;margin:2px 0}
+.mk-sub{font-size:13px;color:var(--muted);line-height:1.5;margin:2px 0}
+.mk-phrase{font-size:16px;color:var(--ink);margin-top:8px;font-weight:600}
+.mk-go{width:100%;justify-content:center;display:flex;font-size:17px;padding:15px;margin-top:16px}
+.mk-pause-link{display:block;width:100%;background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:12px 4px 2px;text-align:center}
+.mk-pause-link:hover{color:var(--ink)}
 
 /* вкладки */
 .tabs{display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;padding:22px 0 10px;align-items:center;scrollbar-width:none}
@@ -769,7 +784,7 @@ main,footer{position:relative;z-index:1}
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
-      <div id="stMatchWrap" style="display:none"><b id="stMatch">0</b><span>мэтч 💞</span></div>
+      <div id="streakStat" style="display:none"><b id="stStreakN">🕯 0</b><span id="stStreakLbl">дней подряд</span><span id="stStreakSub" class="streak-sub"></span></div>
       <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span class="rd-lbl">читаю</span></div>
     </div>
   </section>
@@ -808,7 +823,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v240 (ТЕСТ): фикс обрезки имени — заголовок полноэкранного окна .fp-head h3 (напр. «Совместные чтения · Elisabeth») резался в «…Elisa…» (white-space:nowrap+text-overflow:ellipsis). Теперь переносится целиком (overflow-wrap:anywhere, снят nowrap/ellipsis). Профиль-имя #pName и так не резалось (правка v234). Прод остаётся v223. -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v241 (ТЕСТ): СЧЁТЧИК ДНЕЙ С КНИГОЙ (стрик). Данные в блобе индекс 11: st={s:streak,t:total,l:lastMark,p:pause} (encodeCode/decodeCode обновлены — блоб это МАССИВ, не объект!); load в 3 точках через loadStreakFrom. Логика: 1 отметка/день, total+1, пропущено 0-1 дн→streak+1, 2+→streak=1 (daysBetween>=3), total не падает, задним числом нельзя, нечитун (pause) авто-снимается при отметке. Счётчик вместо «мэтч» (#streakStat): «🕯 N дней подряд · всего M», в паузе/обрыве «🌙 пауза»; у себя кликабелен, в гостях только цифры (пауза не видна — личное). Окно #markModal: «Читала сегодня?» → «да, читала» (анимация 📖 pop, автозакрытие ~1.6с, «🕯 N дней подряд»+фраза, круглые 7/30/100 особые) / «нечитун» → «Отдыхай…». Возврат после обрыва → «С возвращением / N всего / Начинаем новую серию» (про потерю ни слова). Прод остаётся v240. -->
+<!-- v240 (ТЕСТ): фикс обрезки имени — заголовок полноэкранного окна .fp-head h3 (напр. «Совместные чтения · Elisabeth») резался в «…Elisa…» (white-space:nowrap+text-overflow:ellipsis). Теперь переносится целиком (overflow-wrap:anywhere, снят nowrap/ellipsis). Профиль-имя #pName и так не резалось (правка v234). Прод остаётся v223. -->
 <!-- v239 (ТЕСТ): ДРУЖБА БЕЗ КОДА (на безопасном фундаменте req_*). На полке не-друга вместо «в любимки» — «＋ добавить в друзья» (#addFriendBtn, .add-pill); отправляет запрос через req_send, кнопка → «⏳ ожидание» (myOutgoingPending из req_outgoing). Получателю в колокольчик «X хочет добавить вас в друзья» + кликабельная аватарка (.req-face-btn → viewGuestByCode, зайти посмотреть без добавления) + Принять/Отклонить. Принял → req_resolve('accepted') + addFriendByCode(noNotify); инициатор при опросе видит accepted → addFriendByCode(silent, noNotify) + чистит → у обоих в друзьях, кнопка → «в любимки». Отклонил → req_resolve('declined') → инициатор чистит, кнопка тихо возвращается к «＋ добавить», без сообщения; полка всё равно видна. addFriendByCode получил опции {silent,noNotify}. Прод остаётся v223 (только безопасность). -->
 <!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
 <!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
@@ -951,6 +967,12 @@ main,footer{position:relative;z-index:1}
   <button class="close" data-close>×</button>
   <h3 id="reqTitle">Уведомления 🔔</h3>
   <div id="reqList"></div>
+</div>
+
+<!-- окно отметки «дней с книгой» -->
+<div class="modal" id="markModal" role="dialog" aria-modal="true" aria-label="Отметить чтение">
+  <button class="close" data-close>×</button>
+  <div id="markBody"></div>
 </div>
 
 <!-- СОВМЕСТНОЕ ЧТЕНИЕ: экран -->
@@ -1495,6 +1517,79 @@ main,footer{position:relative;z-index:1}
   let myEmail = localStorage.getItem("polka_email") || "";   // почта для восстановления доступа (пишется в колонку shelves.email, обратно не читается — приватность)
   let myWishlist = []; try{ myWishlist = JSON.parse(localStorage.getItem("polka_wishlist") || "[]"); }catch(e){ myWishlist = []; }
   const saveWish = () => { try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
+  /* ---- счётчик «дней с книгой» (стрик) ---- */
+  let myStreak=0, myTotal=0, myLastMark="", myPause=false;
+  try{ const s=JSON.parse(localStorage.getItem("polka_streak")||"null"); if(s){ myStreak=s.s||0; myTotal=s.t||0; myLastMark=s.l||""; myPause=!!s.p; } }catch(e){}
+  function saveStreakLS(){ try{ localStorage.setItem("polka_streak", JSON.stringify({s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0})); }catch(e){} }
+  function loadStreakFrom(cp){ if(cp && cp.st){ myStreak=cp.st.s||0; myTotal=cp.st.t||0; myLastMark=cp.st.l||""; myPause=!!cp.st.p; saveStreakLS(); } }
+  function ymd(d){ d=d||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function daysBetween(a,b){ try{ return Math.round((new Date(a+"T00:00:00") - new Date(b+"T00:00:00"))/86400000); }catch(e){ return 999; } }
+  function streakState(){
+    const today=ymd();
+    const markedToday = myLastMark===today;
+    const lapsed = !!myLastMark && daysBetween(today,myLastMark)>=3;   // пропущено 2+ дней
+    return { streak:myStreak, total:myTotal, markedToday, lapsed, onPause:(myPause||lapsed), ever:myTotal>0 };
+  }
+  function doStreakMark(){
+    const today=ymd();
+    if(myLastMark===today) return {already:true, streak:myStreak, total:myTotal};
+    const first = !myLastMark;
+    const lapsed = !first && daysBetween(today,myLastMark)>=3;
+    myTotal += 1;
+    myStreak = (first || lapsed) ? 1 : (myStreak+1);
+    myLastMark = today; myPause=false;
+    saveStreakLS(); syncUp();
+    return {already:false, first, lapsed, streak:myStreak, total:myTotal};
+  }
+  function doStreakPause(){ myPause=true; saveStreakLS(); syncUp(); }
+  function plural(n, one, few, many){ n=Math.abs(n)%100; const n1=n%10; if(n>10&&n<20) return many; if(n1>1&&n1<5) return few; if(n1===1) return one; return many; }
+  const MARK_PHRASES = ["Хорошо идёшь 🤍","Так держать","Ещё один вечер с книгой","Красиво копится","Ты в потоке"];
+  function markPhrase(streak){
+    if(streak===7) return "Неделя подряд ✨";
+    if(streak===30) return "Месяц! Это уже привычка 🤍";
+    if(streak===100) return "Сто дней. Ничего себе 🌙";
+    return MARK_PHRASES[Math.floor(Math.random()*MARK_PHRASES.length)];
+  }
+  function openMarkModal(){
+    const st=streakState();
+    const marked=st.markedToday;
+    const line = st.onPause ? "🌙 пауза" : (st.streak+" "+plural(st.streak,"день","дня","дней")+" подряд");
+    $("#markBody").innerHTML =
+      `<div class="mk-emoji">🕯</div>`+
+      `<h3 class="mk-h">Читала сегодня?</h3>`+
+      `<div class="mk-streak">${line}</div>`+
+      `<div class="mk-sub">всего ${st.total} ${plural(st.total,"вечер","вечера","вечеров")} с книгой</div>`+
+      (marked
+        ? `<div class="mk-phrase" style="margin-top:14px">✓ уже отмечено сегодня 🤍</div>`
+        : `<button class="btn mk-go" id="mkGo">📖 да, читала</button>`)+
+      `<button class="mk-pause-link" id="mkPause">🌙 сейчас нечитун</button>`;
+    overlay.classList.add("open"); $("#markModal").classList.add("open");
+  }
+  function renderMarkDone(res){
+    let html;
+    if(res.lapsed){   // возвращение после обрыва — про потерянную серию ни слова
+      html = `<div class="mk-emoji pop">🕯</div><h3 class="mk-h">С возвращением</h3>`+
+        `<div class="mk-sub">${res.total} ${plural(res.total,"день","дня","дней")} с книгой всего</div>`+
+        `<div class="mk-phrase">Начинаем новую серию 🤍</div>`;
+    } else {
+      html = `<div class="mk-emoji pop">📖</div>`+
+        `<h3 class="mk-h">🕯 ${res.streak} ${plural(res.streak,"день","дня","дней")} подряд</h3>`+
+        `<div class="mk-phrase">${markPhrase(res.streak)}</div>`;
+    }
+    $("#markBody").innerHTML = html;
+    setTimeout(()=>{ if($("#markModal").classList.contains("open")) closeModals(); }, res.lapsed?2000:1600);
+  }
+  function renderMarkPause(){
+    $("#markBody").innerHTML =
+      `<div class="mk-emoji pop">🌙</div><h3 class="mk-h">Отдыхай</h3>`+
+      `<div class="mk-sub">Твои ${myTotal} ${plural(myTotal,"день","дня","дней")} остаются на месте.<br>Никуда не денутся, подождут тебя.<br>Вернёшься — продолжим</div>`;
+    setTimeout(()=>{ if($("#markModal").classList.contains("open")) closeModals(); }, 2600);
+  }
+  { const ss=$("#streakStat"); if(ss) ss.addEventListener("click", ()=>{ if(isMe()) openMarkModal(); }); }
+  { const mb=$("#markBody"); if(mb) mb.addEventListener("click", (e)=>{
+      if(e.target.closest("#mkGo")){ const res=doStreakMark(); renderMarkDone(res); renderProfile(); return; }
+      if(e.target.closest("#mkPause")){ doStreakPause(); renderMarkPause(); renderProfile(); return; }
+    }); }
   let myStickers = [];
   try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || []; } catch(e){ myStickers = []; }
   let myCode = localStorage.getItem("polka_code") || "";
@@ -1516,13 +1611,13 @@ main,footer{position:relative;z-index:1}
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk)]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[]]));   // rd=«сейчас читаю» (массив до 3 книг); pm=закладки стихов, qf=любимые цитаты
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null]));   // rd=«сейчас читаю»; pm=закладки стихов; qf=любимые цитаты; st(индекс 11)=стрик {s,t,l,p}
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null,
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[] }; }) };
@@ -1536,7 +1631,7 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav]});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}});
   }
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
@@ -1545,7 +1640,7 @@ main,footer{position:relative;z-index:1}
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
-    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav]});
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}});
     try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
@@ -1666,13 +1761,21 @@ main,footer{position:relative;z-index:1}
     }
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
-    if(isMe()){ $("#stMatchWrap").style.display="none"; }
-    else {
-      const norm = s => String(s||"").trim().toLowerCase();
-      const mine = new Set(myBooks.map(b=>norm(b.t)));
-      const m = friend().books.filter(b=>mine.has(norm(b.t))).length;
-      $("#stMatch").textContent = m; $("#stMatchWrap").style.display="";
-    }
+    // счётчик «дней с книгой» (стрик) — вместо мэтча
+    { const ss=$("#streakStat"), n=$("#stStreakN"), lbl=$("#stStreakLbl"), sub=$("#stStreakSub");
+      if(ss && n && lbl && sub){
+        if(isMe()){
+          const st=streakState();
+          if(st.onPause){ n.textContent="🌙"; lbl.textContent="пауза"; }
+          else { n.textContent="🕯 "+st.streak; lbl.textContent=plural(st.streak,"день","дня","дней")+" подряд"; }
+          sub.textContent="всего "+st.total;
+          ss.style.display=""; ss.classList.add("clickable");
+        } else {
+          const f=friend(); const ftot=f.total||0, fstr=f.streak||0;
+          if(ftot>0){ n.textContent="🕯 "+fstr; lbl.textContent=plural(fstr,"день","дня","дней")+" подряд"; sub.textContent="всего "+ftot; ss.style.display=""; ss.classList.remove("clickable"); }
+          else { ss.style.display="none"; ss.classList.remove("clickable"); }
+        }
+      } }
     // мини-полка «читаю» в ряду счётчиков (я → мои книги, в гостях → книги друга)
     { const rd = isMe() ? myReading : asReadingArr(friend().reading);
       const stat=$("#readingStat"), ms=$("#miniShelf");
@@ -2878,7 +2981,7 @@ main,footer{position:relative;z-index:1}
     if(cached && row.data===cached.raw) return;
     let p; try{ p=decodeCode(row.data); }catch(e){ if(!cached) toast("Профиль повреждён"); return; }
     const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ if(!cached) toast("Это не профиль"); return; }
-    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code};
+    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code, streak:(p&&p.st&&p.st.s)||0, total:(p&&p.st&&p.st.t)||0};
     profileCache[code]={g, raw:row.data};
     if(!cached || view==="guest") showGuest(g);
   }
@@ -3480,7 +3583,7 @@ main,footer{position:relative;z-index:1}
     if(used && savedFriends.some(f=>f.code===used)){ if(opts.silent) return; const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], streak:(p&&p.st&&p.st.s)||0, total:(p&&p.st&&p.st.t)||0};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj; if(!opts.silent) delete DEMO_FRIENDS.guest; syncUp();
@@ -3503,7 +3606,7 @@ main,footer{position:relative;z-index:1}
     let p; try{ p = decodeCode(row.data); }catch(e){ return toast("Полка повреждена"); }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books)) return toast("Не похоже на полку");
-    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], streak:(p&&p.st&&p.st.s)||0, total:(p&&p.st&&p.st.t)||0};
     showGuest(g);
   }
 
@@ -3562,6 +3665,7 @@ main,footer{position:relative;z-index:1}
   function createShelf(name){
     myName = name || "Моя полка";
     myBooks = []; myQuote = ""; myStickers = []; myReading = []; myWishlist = []; myPhoto = ""; myEmail = "";   // новая полка — полностью пустая
+    myStreak=0; myTotal=0; myLastMark=""; myPause=false; saveStreakLS();
     try{ localStorage.removeItem("polka_email"); }catch(e){}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
@@ -3627,7 +3731,7 @@ main,footer{position:relative;z-index:1}
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[];
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[]; loadStreakFrom(p);
     myEmail="";   // почта не хранится в blob и не читается обратно (приватность) — на новом устройстве вводится заново; сбрасываем, чтобы не утекла из прежнего аккаунта
     loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
     loadQuoteFavFrom(p);   // любимые цитаты
@@ -3670,7 +3774,7 @@ main,footer{position:relative;z-index:1}
         if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
         myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
         if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-        myReading = asReadingArr(cp.rd); saveReadingLS();
+        myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp);
         setPaidCache(!!row.paid);   // оплата — из колонки на сервере (авторитетно): если сервер говорит «не оплачено», кэш сбрасывается (подделка в консоли не переживёт перезагрузку)
         bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
         renderAll();
@@ -3723,7 +3827,7 @@ main,footer{position:relative;z-index:1}
     if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
     myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
     if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-    myReading = asReadingArr(cp.rd); saveReadingLS();
+    myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp);
     if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
     setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
@@ -3739,7 +3843,7 @@ main,footer{position:relative;z-index:1}
     const list = Array.from(new Set((codes||[]).filter(c=>c && c!==myCode)));
     const built = await Promise.all(list.map(async fc=>{
       try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null;
-        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[]}; }catch(e){ return null; }
+        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[], streak:(fp&&fp.st&&fp.st.s)||0, total:(fp&&fp.st&&fp.st.t)||0}; }catch(e){ return null; }
     }));
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
     savedFriends = [];
