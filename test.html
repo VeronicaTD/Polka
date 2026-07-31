@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="244" />
+<meta name="app-version" content="245" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -269,6 +269,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 #streakStat.clickable:hover{opacity:.75}
 /* окно отметки чтения */
 #markModal{text-align:center}
+#markModal.mk-compact .mk-emoji{margin-top:-2px}
+#markModal.mk-compact .mk-sub{margin-bottom:-12px}
 .mk-emoji{font-size:46px;line-height:1;margin:2px 0 6px}
 .mk-emoji.pop{animation:mkpop .6s ease}
 @keyframes mkpop{0%{transform:scale(.4) rotate(-12deg);opacity:0}55%{transform:scale(1.18) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
@@ -823,7 +825,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v244 (ТЕСТ): стрик — добавлены круглые фразы 14 («Две недели. Втянулась 🤍»), 50 («Полсотни дней подряд ✨»), 365 («Год. Целый год с книгой 🤍»). Проверено, что «вечер» в живом тексте стрика не осталось (остатки — только аннотации книг + комментарий версии). Прод остаётся v240. -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v245 (ТЕСТ): стрик — (1) окно отметки: заголовок по состоянию — не отмечено «Читала сегодня?» (кнопка + нечитун), уже отмечено «На сегодня отмечено» + низ «Увидимся завтра 🤍», ссылка нечитун СКРЫТА. (2) гостевое окно-просмотр компактнее (mk-compact: .mk-sub margin-bottom:-12px, .mk-emoji margin-top:-2px — через отрицательные отступы детей, т.к. в headless-превью padding модалки с transform не перебивался даже inline!important — но дети рендерятся ок; в реальном браузере тоже корректно). Прод остаётся v240. --> 14 («Две недели. Втянулась 🤍»), 50 («Полсотни дней подряд ✨»), 365 («Год. Целый год с книгой 🤍»). Проверено, что «вечер» в живом тексте стрика не осталось (остатки — только аннотации книг + комментарий версии). Прод остаётся v240. -->
 <!-- v243 (ТЕСТ): стрик, ещё правки — (3) счётчик в гостях кликабельный → окно ТОЛЬКО просмотр (без кнопок): актив «🕯 Имя / N дней подряд / всего M дней с книгой», пауза «🌙 У {имя-родит.падеж} сейчас пауза / всего M дней с книгой» (openFriendStreakView, genitiveName для -а/-я). (4) везде «вечеров с книгой»→«дней с книгой». (5) новый список фраз (Хорошо идёшь/Так держать/Ещё один день с книгой/Не сбавляй/И снова с книгой/Один день — один шаг). Пункты 1-2 (пауза у друзей, «всего» убрано из ряда) были уже в v242. Прод остаётся v240. -->
 <!-- v242 (ТЕСТ): стрик, правки пункта 3 — в ряду счётчиков только серия «🕯 N дней подряд» / «🌙 пауза», подпись «всего N» убрана (число «всего» живёт только в окне отметки). Нечитун/пауза теперь показывается И в гостях (у друга «🌙 пауза» так же, как у себя) — friendObj хранит весь st={s,t,l,p}, пауза считается f.st.p || lapsed(f.st.l). Прод остаётся v240. -->
 <!-- v241 (ТЕСТ): СЧЁТЧИК ДНЕЙ С КНИГОЙ (стрик). Данные в блобе индекс 11: st={s:streak,t:total,l:lastMark,p:pause} (encodeCode/decodeCode обновлены — блоб это МАССИВ, не объект!); load в 3 точках через loadStreakFrom. Логика: 1 отметка/день, total+1, пропущено 0-1 дн→streak+1, 2+→streak=1 (daysBetween>=3), total не падает, задним числом нельзя, нечитун (pause) авто-снимается при отметке. Счётчик вместо «мэтч» (#streakStat): «🕯 N дней подряд · всего M», в паузе/обрыве «🌙 пауза»; у себя кликабелен, в гостях только цифры (пауза не видна — личное). Окно #markModal: «Читала сегодня?» → «да, читала» (анимация 📖 pop, автозакрытие ~1.6с, «🕯 N дней подряд»+фраза, круглые 7/30/100 особые) / «нечитун» → «Отдыхай…». Возврат после обрыва → «С возвращением / N всего / Начинаем новую серию» (про потерю ни слова). Прод остаётся v240. -->
@@ -1568,13 +1570,13 @@ main,footer{position:relative;z-index:1}
     const line = st.onPause ? "🌙 пауза" : (st.streak+" "+plural(st.streak,"день","дня","дней")+" подряд");
     $("#markBody").innerHTML =
       `<div class="mk-emoji">🕯</div>`+
-      `<h3 class="mk-h">Читала сегодня?</h3>`+
+      `<h3 class="mk-h">${marked ? "На сегодня отмечено" : "Читала сегодня?"}</h3>`+
       `<div class="mk-streak">${line}</div>`+
       `<div class="mk-sub">всего ${st.total} ${plural(st.total,"день","дня","дней")} с книгой</div>`+
       (marked
-        ? `<div class="mk-phrase" style="margin-top:14px">✓ уже отмечено сегодня 🤍</div>`
-        : `<button class="btn mk-go" id="mkGo">📖 да, читала</button>`)+
-      `<button class="mk-pause-link" id="mkPause">🌙 сейчас нечитун</button>`;
+        ? `<div class="mk-phrase" style="margin-top:14px">Увидимся завтра 🤍</div>`
+        : `<button class="btn mk-go" id="mkGo">📖 да, читала</button><button class="mk-pause-link" id="mkPause">🌙 сейчас нечитун</button>`);
+    $("#markModal").classList.remove("mk-compact");
     overlay.classList.add("open"); $("#markModal").classList.add("open");
   }
   function openFriendStreakView(){
@@ -1587,6 +1589,7 @@ main,footer{position:relative;z-index:1}
       : `<div class="mk-emoji">🕯</div><h3 class="mk-h">${esc(name)}</h3>`+
         `<div class="mk-streak">${streak} ${plural(streak,"день","дня","дней")} подряд</div>`+
         `<div class="mk-sub">всего ${total} ${plural(total,"день","дня","дней")} с книгой</div>`;
+    $("#markModal").classList.add("mk-compact");
     overlay.classList.add("open"); $("#markModal").classList.add("open");
   }
   function renderMarkDone(res){
