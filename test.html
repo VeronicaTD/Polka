@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="250" />
+<meta name="app-version" content="251" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -200,8 +200,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .rec-note{font-style:italic;color:var(--ink-soft);background:var(--paper-2);border-radius:12px;padding:11px 14px;margin:12px 0 4px;line-height:1.5;font-size:14px}
 .rec-acts{display:flex;gap:10px;margin-top:16px}
 .rec-acts .btn{flex:1;justify-content:center;display:flex;min-width:0}
-.pname-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
-.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;flex:1 1 auto;min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.pname-row{display:flex;align-items:flex-end;gap:8px;flex-wrap:nowrap}
+.pname-wrap{flex:0 1 auto;min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.profile h1{display:inline;font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;overflow-wrap:anywhere;word-break:break-word}
+.pname-wrap .edit-profile{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:8px;flex:0 0 auto}
 .pname-row .edit-profile{flex:0 0 auto}
 .pname-row .fav-pill{flex:0 0 auto}
 .friend-pills{display:flex;gap:8px;margin-top:12px}
@@ -502,6 +504,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .read-link{display:inline-block;font-size:13px;font-weight:700;color:var(--accent-deep);
   text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 15px;background:var(--paper-2)}
 .read-link:hover{border-color:var(--accent);color:var(--accent)}
+.info-spine-col{display:flex;flex-direction:column;gap:8px;flex-shrink:0;align-items:flex-start}
+.store-links{display:flex;flex-direction:column;gap:6px;align-self:stretch}
+.store-link{display:block;text-align:center;font-size:12px;font-weight:700;color:var(--accent-deep);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;background:var(--paper-2);white-space:nowrap}
+.store-link:hover{border-color:var(--accent);color:var(--accent)}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
 .fp-head{position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);
@@ -795,8 +801,7 @@ main,footer{position:relative;z-index:1}
     <button class="match-stat" id="matchStat" style="display:none" type="button" title="разбор совпадения"><b id="matchPct">0%</b><span>мэтч 💫</span></button>
     <div class="pmeta">
       <div class="pname-row" id="pnameRow">
-        <h1 id="pName">Моя полка</h1>
-        <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
+        <span class="pname-wrap"><h1 id="pName">Моя полка</h1><button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button></span>
       </div>
       <div class="sub" id="pSub"></div>
       <div class="friend-pills" id="friendPills" style="display:none">
@@ -877,11 +882,14 @@ main,footer{position:relative;z-index:1}
 <div class="modal bookinfo" id="infoModal" role="dialog" aria-modal="true" aria-label="О книге">
   <button class="close" data-close>×</button>
   <div class="row">
-    <div class="big-spine" id="infoSpine"></div>
+    <div class="info-spine-col">
+      <div class="big-spine" id="infoSpine"></div>
+      <div class="store-links"><a id="readLitres" class="store-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="store-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
+    </div>
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><a id="readLitres" class="read-link" target="_blank" rel="noopener">Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button><button id="infoRecommend" class="read-link" type="button" style="display:none">💌 посоветовать другу</button></div>
+      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button><button id="infoRecommend" class="read-link" type="button" style="display:none">💌 посоветовать другу</button></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -1114,7 +1122,7 @@ main,footer{position:relative;z-index:1}
   <button class="btn ghost" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Поставить на полку</button>
   <button class="btn" id="waAddWish" style="width:100%;justify-content:center;display:none;margin-top:6px">📌 Добавить в свои хотелки</button>
   <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
-  <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
+  <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
 </div>
 
 <!-- подборки книг (полный экран) -->
@@ -1210,7 +1218,7 @@ main,footer{position:relative;z-index:1}
     <div id="bpAnno"></div>
     <div class="read-row bp-actions">
       <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
-      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
+      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Яндекс Книги</a>
       <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
       <button class="read-link" id="bpRecommend" type="button" style="display:none">💌 посоветовать другу</button>
     </div>
@@ -4065,9 +4073,14 @@ main,footer{position:relative;z-index:1}
     setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
     renderAll();
   }
-  setInterval(pullCloud, 45000);                          // каждые 45 секунд
-  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) pullCloud(); });
-  window.addEventListener("focus", pullCloud);
+  async function livePoll(){                               // тянем и полку, и уведомления, пока страница открыта
+    pullCloud();
+    try{ await refreshReqBadge(); }catch(e){}
+    if(typeof reqModal!=="undefined" && reqModal && reqModal.classList.contains("open")) showRequests();  // открытый колокольчик обновляем на месте
+  }
+  setInterval(livePoll, 30000);                            // каждые 30 секунд — уведомления приходят сами
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) livePoll(); });
+  window.addEventListener("focus", livePoll);
 
   /* подтянуть свежие данные друзей из облака (фото, книги, цитата) */
   async function loadFriends(codes){
