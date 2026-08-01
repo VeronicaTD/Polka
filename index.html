@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="240" />
+<meta name="app-version" content="256" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -179,9 +179,33 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .ava{width:100px;height:100px;border-radius:2px;display:grid;place-items:center;position:relative;overflow:hidden;
   font-family:"Fredoka",sans-serif;font-weight:600;font-size:44px;color:#fff;background-size:cover;background-position:center}
 .ava-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.pname-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;overflow-wrap:anywhere;word-break:break-word}
+.match-stat{align-self:flex-end;background:none;border:none;cursor:pointer;padding:0;margin:0 0 2px 12px;font:inherit;
+  display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
+.match-stat b{font-family:"Fredoka",sans-serif;font-weight:700;font-size:26px;line-height:1;color:var(--ink);display:block}
+.match-stat span{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+.match-stat:active{opacity:.7}
+#matchModal{text-align:center}
+#matchModal .mm-pct{font-family:var(--display);font-size:34px;color:var(--ink);margin:2px 0 4px}
+#matchModal .mm-block{text-align:left;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+#matchModal .mm-block:first-of-type{border-top:none;padding-top:0}
+#matchModal .mm-h{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:5px}
+#matchModal .mm-list{font-size:13px;color:var(--ink-soft);line-height:1.5}
+.mm-share{width:100%;justify-content:center;display:flex;margin-top:20px}
+/* посоветовать другу */
+.rec-friend{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-top:8px;cursor:pointer;font:inherit;color:var(--ink)}
+.rec-friend:hover{border-color:var(--accent)}
+.rec-friend.sel{border-color:var(--accent);background:rgba(184,137,74,.08)}
+#recCardModal{text-align:center}
+.rec-cov{width:120px;height:176px;margin:12px auto 0;border-radius:3px 6px 6px 3px;background:var(--paper-2);background-size:cover;background-position:center;box-shadow:2px 3px 12px -3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:38px}
+.rec-note{font-style:italic;color:var(--ink-soft);background:var(--paper-2);border-radius:12px;padding:11px 14px;margin:12px 0 4px;line-height:1.5;font-size:14px}
+.rec-acts{display:flex;gap:10px;margin-top:16px}
+.rec-acts .btn{flex:1;justify-content:center;display:flex;min-width:0}
+.pname-row{display:flex;align-items:flex-end;gap:8px;flex-wrap:nowrap}
+.pname-wrap{flex:0 1 auto;min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.profile h1{display:inline;font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;overflow-wrap:anywhere;word-break:break-word}
+.pname-wrap .edit-profile{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:8px;flex:0 0 auto}
 .pname-row .edit-profile{flex:0 0 auto}
+.pname-row .fav-pill{flex:0 0 auto}
 .friend-pills{display:flex;gap:8px;margin-top:12px}
 .friend-pills .fav-pill{flex:1 1 0;min-width:0;text-align:center;padding:8px 10px}
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
@@ -264,6 +288,23 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .stats{display:flex;gap:30px;margin-left:auto;flex-wrap:wrap;align-items:flex-end}
 .stats div b{font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;display:block;line-height:1}
 .stats div span{font-size:12.5px;color:var(--ink-soft)}
+.streak-sub{display:block;font-size:11px;color:var(--muted);opacity:.85;margin-top:1px}
+#streakStat.clickable{cursor:pointer;border-radius:10px;transition:.15s}
+#streakStat.clickable:hover{opacity:.75}
+/* окно отметки чтения */
+#markModal{text-align:center}
+#markModal.mk-compact .mk-emoji{margin-top:-2px}
+#markModal.mk-compact .mk-sub{margin-bottom:-12px}
+.mk-emoji{font-size:46px;line-height:1;margin:2px 0 6px}
+.mk-emoji.pop{animation:mkpop .6s ease}
+@keyframes mkpop{0%{transform:scale(.4) rotate(-12deg);opacity:0}55%{transform:scale(1.18) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.mk-h{font-family:var(--display);font-size:24px;margin:0 0 4px;color:var(--ink)}
+.mk-streak{font-size:15px;color:var(--ink);font-weight:600;margin:2px 0}
+.mk-sub{font-size:13px;color:var(--muted);line-height:1.5;margin:2px 0}
+.mk-phrase{font-size:16px;color:var(--ink);margin-top:8px;font-weight:600}
+.mk-go{width:100%;justify-content:center;display:flex;font-size:17px;padding:15px;margin-top:16px}
+.mk-pause-link{display:block;width:100%;background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:12px 4px 2px;text-align:center}
+.mk-pause-link:hover{color:var(--ink)}
 
 /* вкладки */
 .tabs{display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;padding:22px 0 10px;align-items:center;scrollbar-width:none}
@@ -463,6 +504,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .read-link{display:inline-block;font-size:13px;font-weight:700;color:var(--accent-deep);
   text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 15px;background:var(--paper-2)}
 .read-link:hover{border-color:var(--accent);color:var(--accent)}
+.store-links{display:flex;gap:8px;margin:12px 0 2px}
+.store-link{flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--accent-deep);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:var(--paper-2);white-space:nowrap}
+.store-link:hover{border-color:var(--accent);color:var(--accent)}
 .fullpage{position:fixed;inset:0;z-index:120;background:var(--paper);overflow-y:auto;display:none}
 .fullpage.open{display:block}
 .fp-head{position:sticky;top:0;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);
@@ -753,10 +797,10 @@ main,footer{position:relative;z-index:1}
 
   <section class="profile">
     <div class="polaroid"><div class="ava" id="ava">М</div><div class="my-stickers" id="myStickers"></div></div>
+    <button class="match-stat" id="matchStat" style="display:none" type="button" title="разбор совпадения"><b id="matchPct">0%</b><span>мэтч 💫</span></button>
     <div class="pmeta">
       <div class="pname-row" id="pnameRow">
-        <h1 id="pName">Моя полка</h1>
-        <button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button>
+        <span class="pname-wrap"><h1 id="pName">Моя полка</h1><button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button></span>
       </div>
       <div class="sub" id="pSub"></div>
       <div class="friend-pills" id="friendPills" style="display:none">
@@ -769,7 +813,7 @@ main,footer{position:relative;z-index:1}
     <div class="stats">
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
-      <div id="stMatchWrap" style="display:none"><b id="stMatch">0</b><span>мэтч 💞</span></div>
+      <div id="streakStat" style="display:none"><b id="stStreakN">🕯 0</b><span id="stStreakLbl">дней подряд</span></div>
       <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span class="rd-lbl">читаю</span></div>
     </div>
   </section>
@@ -808,12 +852,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v240 (ТЕСТ): фикс обрезки имени — заголовок полноэкранного окна .fp-head h3 (напр. «Совместные чтения · Elisabeth») резался в «…Elisa…» (white-space:nowrap+text-overflow:ellipsis). Теперь переносится целиком (overflow-wrap:anywhere, снят nowrap/ellipsis). Профиль-имя #pName и так не резалось (правка v234). Прод остаётся v223. -->
-<!-- v239 (ТЕСТ): ДРУЖБА БЕЗ КОДА (на безопасном фундаменте req_*). На полке не-друга вместо «в любимки» — «＋ добавить в друзья» (#addFriendBtn, .add-pill); отправляет запрос через req_send, кнопка → «⏳ ожидание» (myOutgoingPending из req_outgoing). Получателю в колокольчик «X хочет добавить вас в друзья» + кликабельная аватарка (.req-face-btn → viewGuestByCode, зайти посмотреть без добавления) + Принять/Отклонить. Принял → req_resolve('accepted') + addFriendByCode(noNotify); инициатор при опросе видит accepted → addFriendByCode(silent, noNotify) + чистит → у обоих в друзьях, кнопка → «в любимки». Отклонил → req_resolve('declined') → инициатор чистит, кнопка тихо возвращается к «＋ добавить», без сообщения; полка всё равно видна. addFriendByCode получил опции {silent,noNotify}. Прод остаётся v223 (только безопасность). -->
-<!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
-<!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
-<!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
-<!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -846,7 +885,10 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><a id="readLitres" class="read-link" target="_blank" rel="noopener">Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button></div>
+      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button><button id="infoRecommend" class="read-link" type="button">💌 посоветовать другу</button></div>
+    </div>
+  </div>
+  <div class="store-links"><a id="readLitres" class="store-link" target="_blank" rel="noopener">📗 Литрес</a><a id="readBookmate" class="store-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -868,8 +910,6 @@ main,footer{position:relative;z-index:1}
         <div id="infoQuotes"></div>
         <div id="infoReview" style="display:none;margin-top:10px"></div>
       </div>
-    </div>
-  </div>
 </div>
 
 <!-- редактировать профиль -->
@@ -951,6 +991,36 @@ main,footer{position:relative;z-index:1}
   <button class="close" data-close>×</button>
   <h3 id="reqTitle">Уведомления 🔔</h3>
   <div id="reqList"></div>
+</div>
+
+<!-- окно отметки «дней с книгой» -->
+<div class="modal" id="markModal" role="dialog" aria-modal="true" aria-label="Отметить чтение">
+  <button class="close" data-close>×</button>
+  <div id="markBody"></div>
+</div>
+
+<!-- разбор совпадения (мэтч) -->
+<div class="modal" id="matchModal" role="dialog" aria-modal="true" aria-label="Совпадение">
+  <button class="close" data-close>×</button>
+  <div id="matchBody"></div>
+</div>
+
+<!-- посоветовать другу: выбор друга + записка -->
+<div class="modal" id="recSendModal" role="dialog" aria-modal="true" aria-label="Посоветовать другу">
+  <button class="close" data-close>×</button>
+  <h3 style="margin:0 0 4px">💌 Посоветовать другу</h3>
+  <div class="mp" id="recSendBook" style="margin-bottom:10px"></div>
+  <div id="recFriendList"></div>
+  <div id="recNoteWrap" style="display:none;margin-top:12px">
+    <textarea id="recNote" maxlength="200" placeholder="почему советуешь? (необязательно, до 200 символов)" style="width:100%;box-sizing:border-box;min-height:80px"></textarea>
+    <button class="btn" id="recSendGo" style="width:100%;justify-content:center;display:flex;margin-top:10px">📨 отправить совет</button>
+  </div>
+</div>
+
+<!-- карточка совета у получателя -->
+<div class="modal" id="recCardModal" role="dialog" aria-modal="true" aria-label="Совет от друга">
+  <button class="close" data-close>×</button>
+  <div id="recCardBody"></div>
 </div>
 
 <!-- СОВМЕСТНОЕ ЧТЕНИЕ: экран -->
@@ -1049,7 +1119,7 @@ main,footer{position:relative;z-index:1}
   <button class="btn ghost" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Поставить на полку</button>
   <button class="btn" id="waAddWish" style="width:100%;justify-content:center;display:none;margin-top:6px">📌 Добавить в свои хотелки</button>
   <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
-  <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a></div>
+  <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📗 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
 </div>
 
 <!-- подборки книг (полный экран) -->
@@ -1144,9 +1214,10 @@ main,footer{position:relative;z-index:1}
     </div>
     <div id="bpAnno"></div>
     <div class="read-row bp-actions">
-      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
-      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
+      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📗 Литрес</a>
+      <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Яндекс Книги</a>
       <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
+      <button class="read-link" id="bpRecommend" type="button" style="display:none">💌 посоветовать другу</button>
     </div>
     <div id="bpQuotes" class="bp-section" style="display:none"></div>
     <div id="bpReviews" class="bp-section"></div>
@@ -1246,7 +1317,8 @@ main,footer{position:relative;z-index:1}
   async function sbRpc(name, params){
     const r = await fetch(SUPABASE_URL+"/rest/v1/rpc/"+name,{method:"POST",headers:SB_H(),body:JSON.stringify(params||{})});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
-    return r.json();
+    const t = await r.text();   // void-функции отдают пустое тело — не падаем на JSON.parse
+    return t ? JSON.parse(t) : null;
   }
   async function sbUpsert(row){
     // запись полки через серверную функцию (upsert в обход RLS; знать код всё равно нужно)
@@ -1279,6 +1351,64 @@ main,footer{position:relative;z-index:1}
   async function crAddQuote(id, text, page){ try{ return (await sbRpc("coread_add_quote",{p_id:id, p_code:myCode, p_text:String(text||"").slice(0,600), p_page:page|0}))===true; }catch(e){ return false; } }
   async function crCancel(id){ try{ return (await sbRpc("coread_cancel",{p_id:id, p_code:myCode}))===true; }catch(e){ return false; } }
   async function crPublic(code){ if(!CLOUD()||!code) return []; try{ const v=await sbRpc("coread_public",{p_code:code}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+  /* ===== «Посоветовать другу» (recs) ===== */
+  async function recSend(toCode,toName,title,author,cover,note){ if(!CLOUD()||!myCode) return false; try{ await sbRpc("rec_send",{p_from_code:myCode,p_from_name:myName,p_to_code:toCode,p_to_name:toName||"",p_title:title||"",p_author:author||"",p_cover:cover||"",p_note:(note||"").slice(0,200)}); return true; }catch(e){ return false; } }
+  async function recIncoming(){ if(!CLOUD()||!myCode) return []; try{ const v=await sbRpc("rec_incoming",{p_code:myCode}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+  async function recOutgoing(){ if(!CLOUD()||!myCode) return []; try{ const v=await sbRpc("rec_outgoing",{p_code:myCode}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+  async function recAct(id,action){ try{ return (await sbRpc("rec_act",{p_id:id,p_code:myCode,p_action:action}))===true; }catch(e){ return false; } }
+  async function recDelete(id){ try{ await sbRpc("rec_delete",{p_id:id,p_code:myCode}); }catch(e){} }
+  let recSeen; try{ recSeen=new Set(JSON.parse(localStorage.getItem("polka_rec_seen")||"[]")); }catch(e){ recSeen=new Set(); }
+  function recSaveSeen(){ try{ localStorage.setItem("polka_rec_seen", JSON.stringify([...recSeen])); }catch(e){} }
+  let recBook=null, recTo=null;   // bpBook уже объявлен ниже (страница книги)
+  function canRecommend(){ return CLOUD() && myCode && savedFriends.some(f=>f.code); }
+  function recCover(t,a,c){ return c || (typeof coverUrl==="function" ? coverUrl(t,a) : ""); }
+  function openRecommendPicker(book){
+    if(!book || !book.t) return;
+    if(!canRecommend()){ toast("Сначала добавь друга по коду 🙂"); return; }
+    recBook={t:book.t, a:book.a||"", cover:recCover(book.t,book.a,book.cover)}; recTo=null;
+    $("#recSendBook").textContent = "«"+book.t+"»"+(book.a?" · "+book.a:"");
+    const friends = savedFriends.filter(f=>f.code);
+    $("#recFriendList").innerHTML = `<div class="cat-genre">Кому посоветовать?</div>` + friends.map(f=>`<button type="button" class="rec-friend" data-code="${esc(f.code)}" data-name="${esc(f.name||"друг")}">${faceFor(f.name,f.photo,f.color||'#7B5B4B')}<span class="req-who">${esc(f.name||"друг")}</span></button>`).join("");
+    $("#recNoteWrap").style.display="none"; $("#recNote").value="";
+    overlay.classList.add("open"); $("#recSendModal").classList.add("open");
+  }
+  { const fl=$("#recFriendList"); if(fl) fl.addEventListener("click", e=>{ const b=e.target.closest(".rec-friend"); if(!b) return;
+      recTo={code:b.dataset.code, name:b.dataset.name};
+      [...document.querySelectorAll("#recFriendList .rec-friend")].forEach(x=>x.classList.toggle("sel", x===b));
+      $("#recNoteWrap").style.display=""; setTimeout(()=>{ const n=$("#recNote"); if(n) n.focus(); },60);
+    }); }
+  { const g=$("#recSendGo"); if(g) g.addEventListener("click", async ()=>{
+      if(!recBook || !recTo) return;
+      const ok = await recSend(recTo.code, recTo.name, recBook.t, recBook.a, recBook.cover, $("#recNote").value.trim());
+      closeModals();
+      toast(ok ? ("Совет отправлен · "+(recTo.name||"другу")+" 💌") : "Не получилось отправить 😔");
+    }); }
+  { const b=$("#infoRecommend"); if(b) b.addEventListener("click", ()=>{ if(typeof infoBook!=="undefined" && infoBook) openRecommendPicker({t:infoBook.t,a:infoBook.a,cover:infoBook.cover||""}); }); }
+  { const b=$("#bpRecommend"); if(b) b.addEventListener("click", ()=>{ if(bpBook) openRecommendPicker(bpBook); }); }
+  // карточка совета у получателя
+  function openRecCard(rec){
+    const cover = recCover(rec.title, rec.author, rec.cover);
+    $("#recCardBody").innerHTML =
+      `<div class="mp" style="text-align:center;font-size:15px">💌 <b>${esc(rec.from_name||"Друг")}</b> советует</div>`+
+      `<div class="rec-cov" id="recCov"${cover?` style="background-image:url(${cover})"`:''}>${cover?'':'📖'}</div>`+
+      `<h3 style="text-align:center;margin:8px 0 2px">${esc(rec.title)}</h3>`+
+      (rec.author?`<div class="mp" style="text-align:center">${esc(rec.author)}</div>`:'')+
+      (rec.note?`<div class="rec-note">«${esc(rec.note)}»</div>`:'')+
+      `<div class="rec-acts"><button class="btn" id="recWishBtn" data-id="${esc(rec.id)}">📌 в хотелки</button><button class="btn ghost" id="recThankBtn" data-id="${esc(rec.id)}">🤍 спасибо</button></div>`;
+    overlay.classList.add("open"); $("#recCardModal").classList.add("open");
+    if(!cover && typeof fetchBookInfo==="function"){   // обложки нет в советe — подтянуть из Google Books
+      fetchBookInfo(rec.title, rec.author).then(info=>{
+        if(info && info.img){ const el=$("#recCov"); if(el){ el.style.backgroundImage=`url(${String(info.img).replace(/^http:/,"https:")})`; el.textContent=""; } }
+      }).catch(()=>{});
+    }
+  }
+  { const cb=$("#recCardBody"); if(cb) cb.addEventListener("click", async e=>{
+      const w=e.target.closest("#recWishBtn"), t=e.target.closest("#recThankBtn"); if(!w && !t) return;
+      const id=(w||t).dataset.id, rec=recsIncoming.find(r=>String(r.id)===String(id));
+      if(w){ const ok=await recAct(id,'wishlist'); if(ok && rec) addToMyWish(rec.title, rec.author); closeModals(); toast(ok?"Добавила в хотелки 🤍":"Не получилось 😔"); }
+      else { const ok=await recAct(id,'thank'); closeModals(); toast(ok?"Спасибо отправлено 🤍":"Не получилось 😔"); }
+      recsIncoming = recsIncoming.filter(r=>String(r.id)!==String(id)); updateReqBadge();
+    }); }
   // «виденные» реакции партнёра (чтобы пинговать в колокольчик только новые)
   let crSeenReact = {}; try{ crSeenReact = JSON.parse(localStorage.getItem("polka_cr_seen")||"{}"); }catch(e){ crSeenReact={}; }
   function crSaveSeen(){ try{ localStorage.setItem("polka_cr_seen", JSON.stringify(crSeenReact)); }catch(e){} }
@@ -1495,6 +1625,206 @@ main,footer{position:relative;z-index:1}
   let myEmail = localStorage.getItem("polka_email") || "";   // почта для восстановления доступа (пишется в колонку shelves.email, обратно не читается — приватность)
   let myWishlist = []; try{ myWishlist = JSON.parse(localStorage.getItem("polka_wishlist") || "[]"); }catch(e){ myWishlist = []; }
   const saveWish = () => { try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
+  /* ---- счётчик «дней с книгой» (стрик) ---- */
+  let myStreak=0, myTotal=0, myLastMark="", myPause=false;
+  try{ const s=JSON.parse(localStorage.getItem("polka_streak")||"null"); if(s){ myStreak=s.s||0; myTotal=s.t||0; myLastMark=s.l||""; myPause=!!s.p; } }catch(e){}
+  function saveStreakLS(){ try{ localStorage.setItem("polka_streak", JSON.stringify({s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0})); }catch(e){} }
+  function loadStreakFrom(cp){ if(cp && cp.st){ myStreak=cp.st.s||0; myTotal=cp.st.t||0; myLastMark=cp.st.l||""; myPause=!!cp.st.p; saveStreakLS(); } }
+  function ymd(d){ d=d||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function daysBetween(a,b){ try{ return Math.round((new Date(a+"T00:00:00") - new Date(b+"T00:00:00"))/86400000); }catch(e){ return 999; } }
+  function streakState(){
+    const today=ymd();
+    const markedToday = myLastMark===today;
+    const lapsed = !!myLastMark && daysBetween(today,myLastMark)>=3;   // пропущено 2+ дней
+    return { streak:myStreak, total:myTotal, markedToday, lapsed, onPause:(myPause||lapsed), ever:myTotal>0 };
+  }
+  function doStreakMark(){
+    const today=ymd();
+    if(myLastMark===today) return {already:true, streak:myStreak, total:myTotal};
+    const first = !myLastMark;
+    const lapsed = !first && daysBetween(today,myLastMark)>=3;
+    myTotal += 1;
+    myStreak = (first || lapsed) ? 1 : (myStreak+1);
+    myLastMark = today; myPause=false;
+    saveStreakLS(); syncUp();
+    return {already:false, first, lapsed, streak:myStreak, total:myTotal};
+  }
+  function doStreakPause(){ myPause=true; saveStreakLS(); syncUp(); }
+  function plural(n, one, few, many){ n=Math.abs(n)%100; const n1=n%10; if(n>10&&n<20) return many; if(n1>1&&n1<5) return few; if(n1===1) return one; return many; }
+  const MARK_PHRASES = ["Хорошо идёшь 🤍","Так держать","Ещё один день с книгой","Не сбавляй 📖","И снова с книгой 🤍","Один день — один шаг ✨"];
+  function genitiveName(name){   // родительный падеж для «У ___ пауза» (частые русские имена на -а/-я)
+    const n=(name||"друг").trim(); const L=n.slice(-1).toLowerCase();
+    if(L==="я") return n.slice(0,-1)+"и";                                            // Оля→Оли, Катя→Кати
+    if(L==="а"){ const p=n.slice(-2,-1).toLowerCase(); return n.slice(0,-1)+("гкхжшщч".includes(p)?"и":"ы"); }  // Ольга→Ольги, Маша→Маши, Лиза→Лизы
+    return n;   // остальные имена оставляем как есть
+  }
+  function markPhrase(streak){
+    if(streak===7) return "Неделя подряд ✨";
+    if(streak===14) return "Две недели. Втянулась 🤍";
+    if(streak===30) return "Месяц! Это уже привычка 🤍";
+    if(streak===50) return "Полсотни дней подряд ✨";
+    if(streak===100) return "Сто дней. Ничего себе 🌙";
+    if(streak===365) return "Год. Целый год с книгой 🤍";
+    return MARK_PHRASES[Math.floor(Math.random()*MARK_PHRASES.length)];
+  }
+  function openMarkModal(){
+    const st=streakState();
+    const marked=st.markedToday;
+    const line = st.onPause ? "🌙 пауза" : (st.streak+" "+plural(st.streak,"день","дня","дней")+" подряд");
+    $("#markBody").innerHTML =
+      `<div class="mk-emoji">🕯</div>`+
+      `<h3 class="mk-h">${marked ? "На сегодня отмечено" : "Читала сегодня?"}</h3>`+
+      `<div class="mk-streak">${line}</div>`+
+      `<div class="mk-sub">всего ${st.total} ${plural(st.total,"день","дня","дней")} с книгой</div>`+
+      (marked
+        ? `<div class="mk-phrase" style="margin-top:14px">Увидимся завтра 🤍</div>`
+        : `<button class="btn mk-go" id="mkGo">📖 да, читала</button><button class="mk-pause-link" id="mkPause">🌙 сейчас нечитун</button>`);
+    $("#markModal").classList.remove("mk-compact");
+    overlay.classList.add("open"); $("#markModal").classList.add("open");
+  }
+  function openFriendStreakView(){
+    const f=friend(); const fst=(f&&f.st)||null; if(!fst) return;
+    const name=f.name||"друг", total=fst.t||0, streak=fst.s||0;
+    const paused = !!(fst.p || (fst.l && daysBetween(ymd(),fst.l)>=3));
+    $("#markBody").innerHTML = paused
+      ? `<div class="mk-emoji">🌙</div><h3 class="mk-h">У ${esc(genitiveName(name))} сейчас пауза</h3>`+
+        `<div class="mk-sub">всего ${total} ${plural(total,"день","дня","дней")} с книгой</div>`
+      : `<div class="mk-emoji">🕯</div><h3 class="mk-h">${esc(name)}</h3>`+
+        `<div class="mk-streak">${streak} ${plural(streak,"день","дня","дней")} подряд</div>`+
+        `<div class="mk-sub">всего ${total} ${plural(total,"день","дня","дней")} с книгой</div>`;
+    $("#markModal").classList.add("mk-compact");
+    overlay.classList.add("open"); $("#markModal").classList.add("open");
+  }
+  function renderMarkDone(res){
+    let html;
+    if(res.lapsed){   // возвращение после обрыва — про потерянную серию ни слова
+      html = `<div class="mk-emoji pop">🕯</div><h3 class="mk-h">С возвращением</h3>`+
+        `<div class="mk-sub">${res.total} ${plural(res.total,"день","дня","дней")} с книгой всего</div>`+
+        `<div class="mk-phrase">Начинаем новую серию 🤍</div>`;
+    } else {
+      html = `<div class="mk-emoji pop">📖</div>`+
+        `<h3 class="mk-h">🕯 ${res.streak} ${plural(res.streak,"день","дня","дней")} подряд</h3>`+
+        `<div class="mk-phrase">${markPhrase(res.streak)}</div>`;
+    }
+    $("#markBody").innerHTML = html;
+    setTimeout(()=>{ if($("#markModal").classList.contains("open")) closeModals(); }, res.lapsed?2000:1600);
+  }
+  function renderMarkPause(){
+    $("#markBody").innerHTML =
+      `<div class="mk-emoji pop">🌙</div><h3 class="mk-h">Отдыхай</h3>`+
+      `<div class="mk-sub">Твои ${myTotal} ${plural(myTotal,"день","дня","дней")} остаются на месте.<br>Никуда не денутся, подождут тебя.<br>Вернёшься — продолжим</div>`;
+    setTimeout(()=>{ if($("#markModal").classList.contains("open")) closeModals(); }, 2600);
+  }
+  { const ss=$("#streakStat"); if(ss) ss.addEventListener("click", ()=>{ if(isMe()) openMarkModal(); else openFriendStreakView(); }); }
+  { const mb=$("#markBody"); if(mb) mb.addEventListener("click", (e)=>{
+      if(e.target.closest("#mkGo")){ const res=doStreakMark(); renderMarkDone(res); renderProfile(); return; }
+      if(e.target.closest("#mkPause")){ doStreakPause(); renderMarkPause(); renderProfile(); return; }
+    }); }
+  /* ---- мэтч: окно разбора + карточка-картинка ---- */
+  function openMatchModal(){
+    const f=friend(); if(!f) return; const ms=matchStats(f); if(!ms) return;
+    const titles=(arr,max)=>{ const n=arr.slice(0,max).map(b=>esc(b.t)).join(", "); return n+(arr.length>max? " и ещё "+(arr.length-max):""); };
+    let h=`<div class="mk-emoji">💫</div><div class="mm-pct">Вы совпали на ${ms.percent}%</div>`;
+    if(ms.common.length){
+      const cList=ms.common.map(b=>esc(b.t)), MAX=5;
+      const cFirst=cList.slice(0,MAX).join(", ");
+      const cMore=cList.length>MAX ? `<span id="mmCommonRest" style="display:none">, ${cList.slice(MAX).join(", ")}</span> <a class="linklike" id="mmShowAll">показать все (${cList.length})</a>` : "";
+      h+=`<div class="mm-block"><div class="mm-h">${ms.common.length} ${plural(ms.common.length,"общая книга","общие книги","общих книг")}</div><div class="mm-list"><span id="mmCommonFirst">${cFirst}</span>${cMore}</div></div>`;
+    }
+    if(ms.herBooksInMyWish.length){ const n=ms.herBooksInMyWish.length; h+=`<div class="mm-block"><div class="mm-h">📌 ${n} ${plural(n,"книга","книги","книг")} с её полки есть в твоих хотелках</div><div class="mm-list">${titles(ms.herBooksInMyWish,99)}</div></div>`; }
+    if(ms.herWishIRead.length){ const n=ms.herWishIRead.length; h+=`<div class="mm-block"><div class="mm-h">🎁 ${n} ${plural(n,"книгу","книги","книг")} из её хотелок ты уже читала</div><div class="mm-list">${titles(ms.herWishIRead,99)}</div></div>`; }
+    h+=`<button class="btn mm-share" id="mmShare">✨ поделиться</button>`;
+    $("#matchBody").innerHTML=h; overlay.classList.add("open"); $("#matchModal").classList.add("open");
+  }
+  { const mb=$("#matchStat"); if(mb) mb.addEventListener("click", openMatchModal); }
+  { const mb=$("#matchBody"); if(mb) mb.addEventListener("click", (e)=>{
+      if(e.target.closest("#mmShare")) shareMatchCard();
+      const sa=e.target.closest("#mmShowAll"); if(sa){ const r=$("#mmCommonRest"); if(r) r.style.display=""; sa.style.display="none"; }   // раскрыть полный список без ухода со страницы
+  }); }
+  async function drawAvatarBox(ctx,x,y,s,photo,name,color,rot){
+    ctx.save(); ctx.translate(x+s/2,y+s/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-(x+s/2),-(y+s/2));
+    ctx.shadowColor="rgba(40,25,10,.35)"; ctx.shadowBlur=24; ctx.shadowOffsetY=10;
+    ctx.fillStyle="#fff"; rrect(ctx,x-12,y-12,s+24,s+66,10); ctx.fill(); ctx.shadowColor="transparent";   // рамка полароида с местом под подпись
+    const img=await loadImg(photo);
+    rrect(ctx,x,y,s,s,6); ctx.save(); ctx.clip();
+    if(img){ const r=Math.max(s/img.width,s/img.height), dw=img.width*r, dh=img.height*r; ctx.drawImage(img,x+(s-dw)/2,y+(s-dh)/2,dw,dh); }
+    else { ctx.fillStyle=color||"#7B5B4B"; ctx.fillRect(x,y,s,s); ctx.fillStyle="#fff"; ctx.font="700 "+Math.round(s*0.5)+"px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(((name||"?")[0]||"?").toUpperCase(),x+s/2,y+s/2); }
+    ctx.restore();
+    // имя — подпись ПОД фото, в белой рамке полароида (не поверх фото)
+    ctx.fillStyle="#4a382e"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="600 34px Fredoka, sans-serif";
+    ctx.fillText((name||"").slice(0,13), x+s/2, y+s+34);
+    ctx.restore();
+  }
+  function drawTallSpine(ctx,x,y,w,h,b){   // корешок: подложка темы, название ВДОЛЬ корешка — по центру и целиком (не обрезаем)
+    const cols=gradCols(spineBg(b)); const g=ctx.createLinearGradient(x,y,x+w,y); g.addColorStop(0,cols[0]); g.addColorStop(1,cols[1]);
+    rrect(ctx,x,y,w,h,6); ctx.save(); ctx.shadowColor="rgba(0,0,0,.35)"; ctx.shadowBlur=16; ctx.shadowOffsetY=8; ctx.fillStyle=g; ctx.fill(); ctx.restore();
+    ctx.fillStyle="rgba(255,255,255,.14)"; ctx.fillRect(x+5,y+10,2,h-20); ctx.fillStyle="rgba(0,0,0,.14)"; ctx.fillRect(x+w-7,y+10,2,h-20);   // блики переплёта
+    const title=(b.t||"").trim(); const maxLen=h-40;
+    let fs=Math.min(33,Math.round(w*0.46));   // шрифт подгоняется под длину корешка — целиком, без «…»
+    ctx.font=`600 ${fs}px Fraunces, Georgia, serif`;
+    while(fs>13 && ctx.measureText(title).width>maxLen){ fs--; ctx.font=`600 ${fs}px Fraunces, Georgia, serif`; }
+    ctx.save(); ctx.translate(x+w/2, y+h/2); ctx.rotate(-Math.PI/2);   // текст по ЦЕНТРУ корешка, не у низа
+    ctx.fillStyle=pickFg(spineBg(b)); ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(title, 0, 0); ctx.restore();
+  }
+  async function shareMatchCard(){
+    const f=friend(); if(!f) return; const ms=matchStats(f); if(!ms) return;
+    toast("Готовлю картинку…");
+    try{
+      try{ await Promise.all([document.fonts.load('700 112px Fredoka'),document.fonts.load('600 42px Fredoka'),document.fonts.load('700 52px Fredoka'),document.fonts.load('600 30px Fraunces')]); }catch(e){}
+      const cs=getComputedStyle(document.body), V=k=>cs.getPropertyValue(k).trim();
+      const paper=V("--paper")||"#FFF8F1", ink=V("--ink")||"#4a382e", inkSoft=V("--ink-soft")||"#7a6253", accent=V("--accent")||"#7B5B4B", accentDeep=V("--accent-deep")||"#5e4538", gold=V("--gold")||"#b8893f", wood1=V("--wood-1")||"#8a6a57", wood2=V("--wood-2")||"#5e4538", star1=V("--star-1")||gold, star2=V("--star-2")||accent;
+      const W=1080,H=1920, cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
+      const paper2=V("--paper-2")||paper, star3=V("--star-3")||gold;
+      const bgg=ctx.createLinearGradient(0,0,0,H); bgg.addColorStop(0,paper); bgg.addColorStop(1,paper2);
+      ctx.fillStyle=bgg; ctx.fillRect(0,0,W,H);   // фон текущей темы (не нейтральный бежевый)
+      const TOP=250, BOT=H-250;   // безопасные зоны сторис (9:16) — контент только между TOP и BOT
+      // звёзды темы — как на экране приложения
+      [[90,300,92,star1,.5],[985,285,122,star2,.45],[1015,660,64,gold,.4],[66,660,82,star1,.4],[1022,1150,72,star2,.4],[58,1200,88,star3,.4],[150,1470,60,star1,.42],[965,1500,80,star2,.4],[540,1560,52,gold,.42]].forEach(st=>drawSpark(ctx,st[0],st[1],st[2],st[3],st[4]));
+      // — полароиды с процентом —
+      const s=280, ay=TOP+70;
+      await drawAvatarBox(ctx, 80, ay, s, myPhoto, myName, accent, -4);
+      await drawAvatarBox(ctx, W-80-s, ay, s, f.photo, f.name, f.color||accent, 4);
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle=ink; ctx.font="700 118px Fredoka, sans-serif"; ctx.fillText(ms.percent+"%", W/2, ay+s/2-6);
+      ctx.fillStyle=inkSoft; ctx.font="400 36px Fredoka, sans-serif"; ctx.fillText("совпали 💫", W/2, ay+s/2+70);
+      // — «N общих книг» —
+      const total=ms.common.length, shown=Math.min(total,6), pick=ms.common.slice(0,shown);
+      const capY=ay+s+150;
+      ctx.fillStyle=ink; ctx.font="600 52px Fredoka, sans-serif"; ctx.textBaseline="alphabetic";
+      ctx.fillText(total ? (total+" "+plural(total,"общая книга","общие книги","общих книг")) : "нет общих книг пока", W/2, capY);
+      // — полка как в приложении: тёмное дерево темы, корешки РАЗНОЙ высоты (перемешаны), полка обнимает книги —
+      const logoY=BOT-30, plank=30;
+      const boxBottom=logoY-134, standY=boxBottom-plank;   // отступ до логотипа увеличен — не прилипает
+      const shelfX=90, shelfW=W-180;
+      // высоты корешков: перемешанные разбросы — без «высокие по краям, провал в центре»
+      const offs=[0,150,58,120,36,96].slice(0,pick.length);
+      for(let i=offs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=offs[i]; offs[i]=offs[j]; offs[j]=t; }
+      const heights=pick.map((_,i)=>440+(offs[i]||0));
+      const maxUsed=heights.length?Math.max.apply(null,heights):440;
+      const boxTop=Math.max(capY+56, standY-maxUsed-46);   // над книгами лишь узкая полоска дерева, не треть
+      const wg=ctx.createLinearGradient(0,boxTop,0,boxBottom); wg.addColorStop(0,wood1); wg.addColorStop(1,wood2);
+      ctx.save(); ctx.shadowColor="rgba(0,0,0,.4)"; ctx.shadowBlur=30; ctx.shadowOffsetY=14; rrect(ctx,shelfX,boxTop,shelfW,boxBottom-boxTop,20); ctx.fillStyle=wg; ctx.fill(); ctx.restore();
+      ctx.save(); ctx.strokeStyle="rgba(255,255,255,.14)"; ctx.lineWidth=2; rrect(ctx,shelfX+1,boxTop+1,shelfW-2,boxBottom-boxTop-2,19); ctx.stroke(); ctx.restore();   // тонкая кромка — чтобы полка читалась на любой теме
+      ctx.fillStyle="rgba(0,0,0,.15)"; rrect(ctx,shelfX,boxTop,shelfW,34,20); ctx.fill();   // верхняя тень-кромка
+      if(pick.length){
+        const bw=124, gap=Math.max(18,Math.min(48,(shelfW-56-pick.length*bw)/Math.max(1,pick.length-1)));
+        const tot=pick.length*bw+(pick.length-1)*gap, startX=shelfX+(shelfW-tot)/2;
+        pick.forEach((b,i)=>{ drawTallSpine(ctx,startX+i*(bw+gap),standY-heights[i],bw,heights[i],b); });
+      } else { ctx.fillStyle="rgba(255,255,255,.8)"; ctx.font="italic 40px Fraunces, serif"; ctx.textAlign="center"; ctx.fillText("общие книги ещё впереди ✨",W/2,(boxTop+boxBottom)/2); }
+      const pg=ctx.createLinearGradient(0,standY,0,boxBottom); pg.addColorStop(0,"rgba(0,0,0,.3)"); pg.addColorStop(1,"rgba(0,0,0,.52)"); rrect(ctx,shelfX,standY,shelfW,boxBottom-standY,8); ctx.fillStyle=pg; ctx.fill();
+      // «и ещё N» — если показаны не все общие книги
+      if(total>shown){ ctx.textAlign="center"; ctx.textBaseline="alphabetic"; ctx.fillStyle=inkSoft; ctx.font="400 36px Fredoka, sans-serif"; ctx.fillText("и ещё "+(total-shown), W/2, boxBottom+54); }
+      // — логотип Polka (с отступом от полки) —
+      ctx.textAlign="center"; ctx.textBaseline="alphabetic"; ctx.fillStyle=accentDeep; ctx.font="700 58px Fredoka, sans-serif"; ctx.fillText("📚 Polka",W/2,logoY);
+      cv.toBlob(async (blob)=>{
+        if(!blob){ toast("Не получилось создать картинку"); return; }
+        const file=new File([blob],"polka-match.png",{type:"image/png"});
+        if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file], title:"Совпадение в Polka", text:"Мы совпали на "+ms.percent+"% 💫"}); }catch(e){} }
+        else { const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="polka-match.png"; document.body.appendChild(a); a.click(); a.remove(); toast("Картинка сохранена 🤍"); }
+      },"image/png");
+    }catch(e){ toast("Не получилось создать картинку"); }
+  }
   let myStickers = [];
   try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || []; } catch(e){ myStickers = []; }
   let myCode = localStorage.getItem("polka_code") || "";
@@ -1516,13 +1846,13 @@ main,footer{position:relative;z-index:1}
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk)]);
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[]]));   // rd=«сейчас читаю» (массив до 3 книг); pm=закладки стихов, qf=любимые цитаты
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null]));   // rd=«сейчас читаю»; pm=закладки стихов; qf=любимые цитаты; st(индекс 11)=стрик {s,t,l,p}
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null,
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[] }; }) };
@@ -1536,7 +1866,7 @@ main,footer{position:relative;z-index:1}
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav]});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}});
   }
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
@@ -1545,7 +1875,7 @@ main,footer{position:relative;z-index:1}
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
-    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav]});
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}});
     try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
@@ -1631,6 +1961,23 @@ main,footer{position:relative;z-index:1}
     ava.style.backgroundImage = "none";
     ava.innerHTML = `<span>${esc(initial||"")}</span>` + (photo ? `<img class="ava-img" src="${photo}" alt="" onerror="this.remove()">` : "");
   }
+  // ---- мэтч по процентам (совпадение с полкой друга) ----
+  function matchStats(f){
+    if(!f) return null;
+    const N = t => normTitle(t);
+    const fBooks = Array.isArray(f.books)?f.books:[];
+    const fWish  = Array.isArray(f.wishlist)?f.wishlist:[];
+    const dedup = arr => { const s=new Set(); return arr.filter(b=>{ const k=N(b.t); if(!k||s.has(k)) return false; s.add(k); return true; }); };
+    const mySet = new Set(myBooks.map(b=>N(b.t)).filter(Boolean));
+    const fSet  = new Set(fBooks.map(b=>N(b.t)).filter(Boolean));
+    const myWishSet = new Set((myWishlist||[]).map(w=>N(w.t)).filter(Boolean));
+    const common = dedup(fBooks.filter(b=>mySet.has(N(b.t))));                 // общие книги (объекты с её полки)
+    const denom = Math.min(mySet.size, fSet.size);
+    const percent = denom ? Math.round(common.length/denom*100) : 0;
+    const herBooksInMyWish = dedup(fBooks.filter(b=>myWishSet.has(N(b.t))));   // 📌 её книги, что у меня в хотелках
+    const herWishIRead = dedup(fWish.filter(w=>mySet.has(N(w.t))));            // 🎁 её хотелки, что я уже читала
+    return {percent, denom, common, herBooksInMyWish, herWishIRead};
+  }
   function renderProfile(){
     const books = currentBooks();
     if(isMe()){
@@ -1641,6 +1988,7 @@ main,footer{position:relative;z-index:1}
       { const _cb=$("#coreadBtn"); if(_cb){ const pr=$("#pnameRow"); if(_cb.parentNode!==pr) pr.appendChild(_cb); _cb.classList.add("co-inline"); _cb.style.display = myCode ? "" : "none"; } }
       { const _av=$("#addFriendVibe"); if(_av) _av.style.display="none"; }
       { const _fp=$("#friendPills"); if(_fp) _fp.style.display = "none"; }
+      { const mb=$("#matchStat"); if(mb) mb.style.display="none"; }   // мэтч всегда про двоих — у себя нет
       setAva(myPhoto, "var(--accent)", (myName[0]||"М"));
     } else {
       const f = friend();
@@ -1662,17 +2010,30 @@ main,footer{position:relative;z-index:1}
       { const _cb=$("#coreadBtn"); if(_cb){ const fp=$("#friendPills"); if(_cb.parentNode!==fp) fp.insertBefore(_cb, $("#addFriendVibe")); _cb.classList.remove("co-inline"); _cb.style.display = f.code ? "" : "none"; } }
       { const _av=$("#addFriendVibe"); if(_av) _av.style.display = "none"; }   // заменена кнопкой «добавить в друзья»
       { const _fp=$("#friendPills"); if(_fp) _fp.style.display = f.code ? "flex" : "none"; }
+      { const mb=$("#matchStat"), pc=$("#matchPct"); if(mb&&pc){ const ms=matchStats(f); if(ms && ms.denom>0){ pc.textContent=ms.percent+"%"; mb.style.display="flex"; } else mb.style.display="none"; } }
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
     $("#stTotal").textContent = books.length;
     $("#stFav").textContent = books.filter(isFav).length;
-    if(isMe()){ $("#stMatchWrap").style.display="none"; }
-    else {
-      const norm = s => String(s||"").trim().toLowerCase();
-      const mine = new Set(myBooks.map(b=>norm(b.t)));
-      const m = friend().books.filter(b=>mine.has(norm(b.t))).length;
-      $("#stMatch").textContent = m; $("#stMatchWrap").style.display="";
-    }
+    // счётчик «дней с книгой» (стрик) — вместо мэтча
+    { const ss=$("#streakStat"), n=$("#stStreakN"), lbl=$("#stStreakLbl");
+      if(ss && n && lbl){
+        if(isMe()){
+          const st=streakState();
+          if(st.onPause){ n.textContent="🌙"; lbl.textContent="пауза"; }
+          else { n.textContent="🕯 "+st.streak; lbl.textContent=plural(st.streak,"день","дня","дней")+" подряд"; }
+          ss.style.display=""; ss.classList.add("clickable");
+        } else {
+          const fst=(friend()&&friend().st)||null;
+          const ftot=(fst&&fst.t)||0, fstr=(fst&&fst.s)||0;
+          const fpaused=!!(fst && (fst.p || (fst.l && daysBetween(ymd(), fst.l)>=3)));   // нечитун видно и в гостях
+          if(ftot>0 || fstr>0){
+            if(fpaused){ n.textContent="🌙"; lbl.textContent="пауза"; }
+            else { n.textContent="🕯 "+fstr; lbl.textContent=plural(fstr,"день","дня","дней")+" подряд"; }
+            ss.style.display=""; ss.classList.add("clickable");   // в гостях тоже кликабельно — открывает просмотр
+          } else { ss.style.display="none"; ss.classList.remove("clickable"); }
+        }
+      } }
     // мини-полка «читаю» в ряду счётчиков (я → мои книги, в гостях → книги друга)
     { const rd = isMe() ? myReading : asReadingArr(friend().reading);
       const stat=$("#readingStat"), ms=$("#miniShelf");
@@ -2632,6 +2993,7 @@ main,footer{position:relative;z-index:1}
     if($("#bpQuotes")){ $("#bpQuotes").style.display="none"; $("#bpQuotes").innerHTML=""; }
     if($("#bpReviews")) $("#bpReviews").innerHTML = loaderBox("Смотрю, что пишут читатели…");
     setBpWishState();                                    // «в хотелки» / «в хотелках» / скрыть, если уже на полке
+    { const br=$("#bpRecommend"); if(br) br.style.display = "inline-flex"; }   // 💌 посоветовать другу — всегда видна
     openPage("bookPage");
     loadBookExtras(t, a, seedQuotes);                    // рецензии людей + их цитаты
   }
@@ -2878,7 +3240,7 @@ main,footer{position:relative;z-index:1}
     if(cached && row.data===cached.raw) return;
     let p; try{ p=decodeCode(row.data); }catch(e){ if(!cached) toast("Профиль повреждён"); return; }
     const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ if(!cached) toast("Это не профиль"); return; }
-    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code};
+    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code, st:(p&&p.st)||null};
     profileCache[code]={g, raw:row.data};
     if(!cached || view==="guest") showGuest(g);
   }
@@ -3138,6 +3500,7 @@ main,footer{position:relative;z-index:1}
     // «в хотелки» — только для книги с полки друга, которой ещё нет у меня (не метч, не своя)
     const onMyShelf = myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a));
     $("#readWish").style.display = (!fromReading && !isMe() && !onMyShelf) ? "inline-flex" : "none";
+    { const ir=$("#infoRecommend"); if(ir) ir.style.display = "inline-flex"; }   // 💌 посоветовать другу — всегда видна (нет друзей → picker подскажет добавить)
     const editable = fromReading || isMe();
     { const rf=document.querySelector("#infoModal .review-field"); if(rf) rf.style.display = (editable && !fromReading) ? "" : "none"; }   // рецензия — только для книги с полки
     { const ts=$("#infoToShelf"); if(ts) ts.style.display = fromReading ? "" : "none"; }                                                 // «Прочитал» — только у читаемой книги
@@ -3480,7 +3843,7 @@ main,footer{position:relative;z-index:1}
     if(used && savedFriends.some(f=>f.code===used)){ if(opts.silent) return; const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj; if(!opts.silent) delete DEMO_FRIENDS.guest; syncUp();
@@ -3503,7 +3866,7 @@ main,footer{position:relative;z-index:1}
     let p; try{ p = decodeCode(row.data); }catch(e){ return toast("Полка повреждена"); }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books)) return toast("Не похоже на полку");
-    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[]};
+    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null};
     showGuest(g);
   }
 
@@ -3562,6 +3925,7 @@ main,footer{position:relative;z-index:1}
   function createShelf(name){
     myName = name || "Моя полка";
     myBooks = []; myQuote = ""; myStickers = []; myReading = []; myWishlist = []; myPhoto = ""; myEmail = "";   // новая полка — полностью пустая
+    myStreak=0; myTotal=0; myLastMark=""; myPause=false; saveStreakLS();
     try{ localStorage.removeItem("polka_email"); }catch(e){}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
@@ -3627,7 +3991,7 @@ main,footer{position:relative;z-index:1}
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[];
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[]; loadStreakFrom(p);
     myEmail="";   // почта не хранится в blob и не читается обратно (приватность) — на новом устройстве вводится заново; сбрасываем, чтобы не утекла из прежнего аккаунта
     loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
     loadQuoteFavFrom(p);   // любимые цитаты
@@ -3670,7 +4034,7 @@ main,footer{position:relative;z-index:1}
         if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
         myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
         if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-        myReading = asReadingArr(cp.rd); saveReadingLS();
+        myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp);
         setPaidCache(!!row.paid);   // оплата — из колонки на сервере (авторитетно): если сервер говорит «не оплачено», кэш сбрасывается (подделка в консоли не переживёт перезагрузку)
         bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
         renderAll();
@@ -3723,15 +4087,20 @@ main,footer{position:relative;z-index:1}
     if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
     myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
     if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-    myReading = asReadingArr(cp.rd); saveReadingLS();
+    myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp);
     if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
     setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
     renderAll();
   }
-  setInterval(pullCloud, 45000);                          // каждые 45 секунд
-  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) pullCloud(); });
-  window.addEventListener("focus", pullCloud);
+  async function livePoll(){                               // тянем и полку, и уведомления, пока страница открыта
+    pullCloud();
+    try{ await refreshReqBadge(); }catch(e){}
+    if(typeof reqModal!=="undefined" && reqModal && reqModal.classList.contains("open")) showRequests();  // открытый колокольчик обновляем на месте
+  }
+  setInterval(livePoll, 30000);                            // каждые 30 секунд — уведомления приходят сами
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) livePoll(); });
+  window.addEventListener("focus", livePoll);
 
   /* подтянуть свежие данные друзей из облака (фото, книги, цитата) */
   async function loadFriends(codes){
@@ -3739,7 +4108,7 @@ main,footer{position:relative;z-index:1}
     const list = Array.from(new Set((codes||[]).filter(c=>c && c!==myCode)));
     const built = await Promise.all(list.map(async fc=>{
       try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null;
-        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[]}; }catch(e){ return null; }
+        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[], st:(fp&&fp.st)||null}; }catch(e){ return null; }
     }));
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
     savedFriends = [];
@@ -3755,10 +4124,10 @@ main,footer{position:relative;z-index:1}
     return photo ? `<div class="req-face" style="background-image:url(${photo})"></div>`
                  : `<div class="req-face" style="background:${color||'#7B5B4B'}">${ini}</div>`;
   }
-  let pendingReqs = [], crInvites = [], crReactNotifs = [], myOutgoingPending = new Set();
-  function updateReqBadge(){ const b=$("#reqCount"); const n=pendingReqs.length+crInvites.length+crReactNotifs.length; if(n){ b.textContent=n; b.style.display=""; } else b.style.display="none"; }
+  let pendingReqs = [], crInvites = [], crReactNotifs = [], myOutgoingPending = new Set(), recsIncoming = [], recsActed = [];
+  function updateReqBadge(){ const b=$("#reqCount"); const n=pendingReqs.length+crInvites.length+crReactNotifs.length+recsIncoming.length+recsActed.length; if(n){ b.textContent=n; b.style.display=""; } else b.style.display="none"; }
   async function refreshReqBadge(){
-    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; crReactNotifs=[]; myOutgoingPending=new Set(); updateReqBadge(); return; }
+    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; crReactNotifs=[]; myOutgoingPending=new Set(); recsIncoming=[]; recsActed=[]; updateReqBadge(); return; }
     try{ pendingReqs = await sbFetchRequests(myCode) || []; }catch(e){ pendingReqs=[]; }
     // мои исходящие запросы в друзья: приняли → тихо добавляем; отклонили → чистим; ждут → «⏳ ожидание»
     try{
@@ -3776,10 +4145,13 @@ main,footer{position:relative;z-index:1}
       crInvites = all.filter(c=>!c.is_initiator && c.status==="invite");   // приглашения на совместное чтение
       crReactNotifs = all.filter(c=>c.status==="active" && c.partner_reaction && crSeenReact[c.id]!==c.partner_reaction);   // новые реакции партнёра
     }catch(e){ crInvites=[]; crReactNotifs=[]; }
+    // советы книг: входящие (мне советуют) + ответы на мои советы
+    try{ recsIncoming = await recIncoming() || []; }catch(e){ recsIncoming=[]; }
+    try{ const rout = await recOutgoing() || []; recsActed = rout.filter(r=>!recSeen.has(String(r.id))); }catch(e){ recsActed=[]; }
     updateReqBadge();
   }
   function showRequests(){
-    if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length){
+    if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length && !recsIncoming.length && !recsActed.length){
       { const t=$("#reqTitle"); if(t) t.textContent="Уведомления 🔔"; }
       $("#reqList").innerHTML=`<p class="mp" style="text-align:center;margin:10px 0">Уведомлений пока нет 🌙</p>`;
       overlay.classList.add("open"); reqModal.classList.add("open");
@@ -3810,10 +4182,26 @@ main,footer{position:relative;z-index:1}
         <button class="btn cr-react-open">Открыть</button>
       </div>`).join("");
     }
+    if(recsIncoming.length){
+      h += `<div class="cat-genre"${h?' style="margin-top:14px"':''}>💌 Советуют книгу</div>`;
+      h += recsIncoming.map(r=>`<div class="req-item rec-incoming" data-recid="${esc(r.id)}">
+        <span class="req-who"><b>${esc(r.from_name||'Друг')}</b> советует тебе «${esc(r.title)}»</span>
+        <button class="btn rec-open">Открыть</button>
+      </div>`).join("");
+    }
+    if(recsActed.length){
+      h += `<div class="cat-genre"${h?' style="margin-top:14px"':''}>💌 Ответили на совет</div>`;
+      h += recsActed.map(r=>`<div class="req-item rec-acted" data-recid="${esc(r.id)}">
+        <span class="req-who"><b>${esc(r.to_name||'Друг')}</b> ${r.status==='wishlisted'?('добавил'+"а"+' «'+esc(r.title)+'» в хотелки 🤍'):'поблагодарил'+"а"+' за совет 🤍'}</span>
+        <button class="btn ghost rec-ack">Ок</button>
+      </div>`).join("");
+    }
     // заголовок окна — по содержимому: только друзья → «Вас добавили»; только co-read → «Совместное чтение»; вперемешку → «Уведомления»
-    const onlyFriends = pendingReqs.length && !crInvites.length && !crReactNotifs.length;
-    const onlyCoread = !pendingReqs.length && (crInvites.length || crReactNotifs.length);
-    { const t=$("#reqTitle"); if(t) t.textContent = onlyFriends ? "Вас добавили 👋" : onlyCoread ? "Совместное чтение 📖" : "Уведомления 🔔"; }
+    const noRecs = !recsIncoming.length && !recsActed.length;
+    const onlyFriends = pendingReqs.length && !crInvites.length && !crReactNotifs.length && noRecs;
+    const onlyCoread = !pendingReqs.length && (crInvites.length || crReactNotifs.length) && noRecs;
+    const onlyRecs = !pendingReqs.length && !crInvites.length && !crReactNotifs.length && !noRecs;
+    { const t=$("#reqTitle"); if(t) t.textContent = onlyFriends ? "Вас добавили 👋" : onlyCoread ? "Совместное чтение 📖" : onlyRecs ? "Советы книг 💌" : "Уведомления 🔔"; }
     $("#reqList").innerHTML = h;
     overlay.classList.add("open"); reqModal.classList.add("open");
   }
@@ -3835,6 +4223,20 @@ main,footer{position:relative;z-index:1}
       crReactNotifs=crReactNotifs.filter(x=>x.id!==cid); rn.remove(); if(c) crMarkReactSeen(c); updateReqBadge();
       if(!$("#reqList").children.length) closeModals();
       if(c) openCoreadDetail(c);
+      return;
+    }
+    const ri = e.target.closest(".rec-incoming");   // мне советуют книгу → открыть карточку
+    if(ri){
+      const rid=ri.dataset.recid; const rec=recsIncoming.find(x=>String(x.id)===String(rid));
+      closeModals(); if(rec) openRecCard(rec);
+      return;
+    }
+    const ra = e.target.closest(".rec-acted");   // ответили на мой совет → «Ок» (пометить виденным + удалить)
+    if(ra){
+      const rid=ra.dataset.recid;
+      recSeen.add(String(rid)); recSaveSeen(); recDelete(rid);
+      recsActed=recsActed.filter(x=>String(x.id)!==String(rid)); ra.remove(); updateReqBadge();
+      if(!$("#reqList").children.length) closeModals();
       return;
     }
     // клик по аватарке — посмотреть полку того, кто добавляется, прежде чем решать
