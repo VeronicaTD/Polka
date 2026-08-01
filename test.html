@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="249" />
+<meta name="app-version" content="250" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -200,8 +200,10 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .rec-note{font-style:italic;color:var(--ink-soft);background:var(--paper-2);border-radius:12px;padding:11px 14px;margin:12px 0 4px;line-height:1.5;font-size:14px}
 .rec-acts{display:flex;gap:10px;margin-top:16px}
 .rec-acts .btn{flex:1;justify-content:center;display:flex;min-width:0}
-.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;overflow-wrap:anywhere;word-break:break-word}
+.pname-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+.profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;flex:1 1 auto;min-width:0;overflow-wrap:anywhere;word-break:break-word}
 .pname-row .edit-profile{flex:0 0 auto}
+.pname-row .fav-pill{flex:0 0 auto}
 .friend-pills{display:flex;gap:8px;margin-top:12px}
 .friend-pills .fav-pill{flex:1 1 0;min-width:0;text-align:center;padding:8px 10px}
 .edit-profile{border:1px solid var(--line);background:transparent;width:32px;height:32px;border-radius:50%;
@@ -846,20 +848,7 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v249 (ТЕСТ): ПОСОВЕТОВАТЬ ДРУГУ. Кнопка «💌 посоветовать другу» на странице книги (#bpRecommend) и в карточке (#infoRecommend) — видна если есть друзья (canRecommend). Флоу: #recSendModal (список друзей rec-friend → выбор → записка #recNote до 200 → отправить). Таблица recs + RPC (recs_rpc.sql, отдана Веро): rec_send/rec_incoming(мне советуют, status new)/rec_outgoing(ответы на мои советы)/rec_act(wishlist|thank)/rec_delete. Получателю в колокольчик «X советует тебе Y» → #recCardModal (обложка, автор, записка, «📌 в хотелки» addToMyWish + «🤍 спасибо», отказа нет). Статусы new/wishlisted/thanked. Отправителю в колокольчик «Ольга добавила Y в хотелки🤍»/«поблагодарила за совет🤍» → «Ок» (recSeen localStorage + rec_delete). Коды не светятся (видно только имена). Проверено end-to-end. Прод остаётся v240. -->
-<!-- v248 (ТЕСТ): мэтч — доводка. Профиль: число процента теперь идентично цифрам «прочитано/любимых» (26px, вес 700, цвет var(--ink) из темы — убрал фикс-фиолетовый, чтобы не выбивался в «Кофе»); блок по нижнему краю полароида + margin-left 12px (не наезжает на стикер). Картинка: холст 1080×920 (было 1350 — полка занимала 2/3); полка компактная (высота по корешкам + тонкая планка), светлое дерево #e4d1b5→#cbb28f (не тёмное пятно); корешки шире/ниже (bw120×bh210); подпись «N общих книг» без «и ещё» в строке — «и ещё M» мелко ПОД полкой; процент на картинке тоже var(--ink). Прод остаётся v240. -->
-<!-- v247 (ТЕСТ): мэтч — правки. (1) убрал кружок-бейдж с полароида → отдельный стат-блок #matchStat справа от фото (align-self:flex-end, крупное число #matchPct + подпись «мэтч 💫» в стиле счётчиков), тап→разбор. (2) картинка-шаринг переделана: имена в подписи полароида (не поверх фото), блок книг сразу под фото (убрана пустота), новый drawTallSpine — узкие высокие корешки с текстом ВДОЛЬ корешка (rotate -90°, а не по буквам в столбик), подпись «N общих книг · и ещё M» над полкой, внизу только логотип Polka (дубль имён убран). Прод остаётся v240. -->
-<!-- v246 (ТЕСТ): МЭТЧ ПО ПРОЦЕНТАМ. matchStats(f): общие книги (по normTitle — по названию, автор не важен) ÷ min(размер моей полки, её) = %; порога нет. Бейдж #matchBadge у фото друга (крупно %, .match-badge, тап→разбор); у себя скрыт. Окно #matchModal: «💫 Вы совпали на N%», блок «N общих книг» (до 3 названий + «и ещё M»), «📌 K книг с её полки в твоих хотелках», «🎁 L книг из её хотелок ты читала» — блоки без пересечений просто не показываются. «✨ поделиться» → shareMatchCard: canvas 1080×1350, две аватарки + % между + общие корешки на полке + Polka (переиспользует drawBookSpine/drawSpark/loadImg от shareShelf; toBlob→share/download). NB: в headless-превью toBlob не срабатывает (toDataURL ок) — картинку проверить на реальном устройстве; отрисовка проходит без ошибок. Прод остаётся v240. -->
-<!-- v245 (ТЕСТ): стрик — (1) окно отметки: заголовок по состоянию — не отмечено «Читала сегодня?» (кнопка + нечитун), уже отмечено «На сегодня отмечено» + низ «Увидимся завтра 🤍», ссылка нечитун СКРЫТА. (2) гостевое окно-просмотр компактнее (mk-compact: .mk-sub margin-bottom:-12px, .mk-emoji margin-top:-2px — через отрицательные отступы детей, т.к. в headless-превью padding модалки с transform не перебивался даже inline!important — но дети рендерятся ок; в реальном браузере тоже корректно). Прод остаётся v240. --> 14 («Две недели. Втянулась 🤍»), 50 («Полсотни дней подряд ✨»), 365 («Год. Целый год с книгой 🤍»). Проверено, что «вечер» в живом тексте стрика не осталось (остатки — только аннотации книг + комментарий версии). Прод остаётся v240. -->
-<!-- v243 (ТЕСТ): стрик, ещё правки — (3) счётчик в гостях кликабельный → окно ТОЛЬКО просмотр (без кнопок): актив «🕯 Имя / N дней подряд / всего M дней с книгой», пауза «🌙 У {имя-родит.падеж} сейчас пауза / всего M дней с книгой» (openFriendStreakView, genitiveName для -а/-я). (4) везде «вечеров с книгой»→«дней с книгой». (5) новый список фраз (Хорошо идёшь/Так держать/Ещё один день с книгой/Не сбавляй/И снова с книгой/Один день — один шаг). Пункты 1-2 (пауза у друзей, «всего» убрано из ряда) были уже в v242. Прод остаётся v240. -->
-<!-- v242 (ТЕСТ): стрик, правки пункта 3 — в ряду счётчиков только серия «🕯 N дней подряд» / «🌙 пауза», подпись «всего N» убрана (число «всего» живёт только в окне отметки). Нечитун/пауза теперь показывается И в гостях (у друга «🌙 пауза» так же, как у себя) — friendObj хранит весь st={s,t,l,p}, пауза считается f.st.p || lapsed(f.st.l). Прод остаётся v240. -->
-<!-- v241 (ТЕСТ): СЧЁТЧИК ДНЕЙ С КНИГОЙ (стрик). Данные в блобе индекс 11: st={s:streak,t:total,l:lastMark,p:pause} (encodeCode/decodeCode обновлены — блоб это МАССИВ, не объект!); load в 3 точках через loadStreakFrom. Логика: 1 отметка/день, total+1, пропущено 0-1 дн→streak+1, 2+→streak=1 (daysBetween>=3), total не падает, задним числом нельзя, нечитун (pause) авто-снимается при отметке. Счётчик вместо «мэтч» (#streakStat): «🕯 N дней подряд · всего M», в паузе/обрыве «🌙 пауза»; у себя кликабелен, в гостях только цифры (пауза не видна — личное). Окно #markModal: «Читала сегодня?» → «да, читала» (анимация 📖 pop, автозакрытие ~1.6с, «🕯 N дней подряд»+фраза, круглые 7/30/100 особые) / «нечитун» → «Отдыхай…». Возврат после обрыва → «С возвращением / N всего / Начинаем новую серию» (про потерю ни слова). Прод остаётся v240. -->
-<!-- v240 (ТЕСТ): фикс обрезки имени — заголовок полноэкранного окна .fp-head h3 (напр. «Совместные чтения · Elisabeth») резался в «…Elisa…» (white-space:nowrap+text-overflow:ellipsis). Теперь переносится целиком (overflow-wrap:anywhere, снят nowrap/ellipsis). Профиль-имя #pName и так не резалось (правка v234). Прод остаётся v223. -->
-<!-- v239 (ТЕСТ): ДРУЖБА БЕЗ КОДА (на безопасном фундаменте req_*). На полке не-друга вместо «в любимки» — «＋ добавить в друзья» (#addFriendBtn, .add-pill); отправляет запрос через req_send, кнопка → «⏳ ожидание» (myOutgoingPending из req_outgoing). Получателю в колокольчик «X хочет добавить вас в друзья» + кликабельная аватарка (.req-face-btn → viewGuestByCode, зайти посмотреть без добавления) + Принять/Отклонить. Принял → req_resolve('accepted') + addFriendByCode(noNotify); инициатор при опросе видит accepted → addFriendByCode(silent, noNotify) + чистит → у обоих в друзьях, кнопка → «в любимки». Отклонил → req_resolve('declined') → инициатор чистит, кнопка тихо возвращается к «＋ добавить», без сообщения; полка всё равно видна. addFriendByCode получил опции {silent,noNotify}. Прод остаётся v223 (только безопасность). -->
-<!-- v238 (ТЕСТ, безопасность): канал requests переведён на защищённые серверные функции (sbInsertRequest→req_send, sbFetchRequests→req_incoming, sbDeleteRequest→req_delete) + добавлены обёртки sbFetchOutgoing/sbResolveRequest для будущей «дружбы без кода». Подготовка к включению RLS на requests (чтобы нельзя было слить коды дампом таблицы). Прод отдельно поднят до v223 с той же защитой (без остальных тест-фич). -->
-<!-- v237 (ТЕСТ): (1) подтверждения совместного чтения — понятные кнопки вместо «Да, удалить»: «завершить»→«Завершить», «прекратить»→«Прекратить», «отменить приглашение»→«Отменить» (askConfirm 2-й арг yesLabel). (2) в истории «Прочитали вместе» партнёр теперь кликабельный чип: аватарка (кружок с буквой) + ник → тап открывает полку этого человека (crOpenShelfByName: своё имя→«me», сохранённый друг→его полка, незнакомый→toast «добавь по коду»). БЕЗОПАСНОСТЬ: coread_public по-прежнему НЕ отдаёт коды (=логины); переход работает только для тех, чей код уже есть локально. Прод остаётся v222. -->
-<!-- v236 (ТЕСТ): на СВОЕЙ полке кнопка «📖 совместное» больше не растягивается на всю ширину — обычная пилюля справа от ника (переносится в #pnameRow, класс .co-inline, нижняя строка #friendPills скрыта). На ЧУЖОЙ полке — как было: строкой ниже, поровну с «в любимки» (reparent обратно в #friendPills). Прод остаётся v222. -->
-<!-- v235 (ТЕСТ): СОВМЕСТНОЕ ЧТЕНИЕ стало ПУБЛИЧНЫМ профилем активности. Кнопка «📖 совместное» теперь у КАЖДОГО профиля (своя полка / друг / гость), не только у сохранённых друзей (renderProfile: coreadBtn виден если есть code; на своей полке скрыт «в любимки»). Экран (openCoread→crTarget = просматриваемый профиль): показывает ПУБЛИЧНУЮ активность этого человека — «Сейчас читают вместе» (активные, имена обоих + прогресс) и «Прочитали вместе» (история: с кем + дата + счётчик). Данные из НОВОЙ RPC coread_public(p_code) — нормализовано «от лица владельца», коды-логины НЕ отдаёт. Своё чтение в списке помечено и открывается (детали через crList по id); чужое — только просмотр. Предложить книгу можно на чужой полке (у себя скрыто). ВАЖНО: coread_public надо один раз добавить в Supabase (book-site/coread_public.sql) — до этого списки пустые. Прод остаётся v222. --></div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙</div></footer>
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1323,7 +1312,8 @@ main,footer{position:relative;z-index:1}
   async function sbRpc(name, params){
     const r = await fetch(SUPABASE_URL+"/rest/v1/rpc/"+name,{method:"POST",headers:SB_H(),body:JSON.stringify(params||{})});
     if(!r.ok){ const t=await r.text().catch(()=>""); throw new Error("HTTP "+r.status+" "+t.slice(0,120)); }
-    return r.json();
+    const t = await r.text();   // void-функции отдают пустое тело — не падаем на JSON.parse
+    return t ? JSON.parse(t) : null;
   }
   async function sbUpsert(row){
     // запись полки через серверную функцию (upsert в обход RLS; знать код всё равно нужно)
@@ -1395,12 +1385,17 @@ main,footer{position:relative;z-index:1}
     const cover = recCover(rec.title, rec.author, rec.cover);
     $("#recCardBody").innerHTML =
       `<div class="mp" style="text-align:center;font-size:15px">💌 <b>${esc(rec.from_name||"Друг")}</b> советует</div>`+
-      `<div class="rec-cov"${cover?` style="background-image:url(${cover})"`:''}>${cover?'':'📖'}</div>`+
+      `<div class="rec-cov" id="recCov"${cover?` style="background-image:url(${cover})"`:''}>${cover?'':'📖'}</div>`+
       `<h3 style="text-align:center;margin:8px 0 2px">${esc(rec.title)}</h3>`+
       (rec.author?`<div class="mp" style="text-align:center">${esc(rec.author)}</div>`:'')+
       (rec.note?`<div class="rec-note">«${esc(rec.note)}»</div>`:'')+
       `<div class="rec-acts"><button class="btn" id="recWishBtn" data-id="${esc(rec.id)}">📌 в хотелки</button><button class="btn ghost" id="recThankBtn" data-id="${esc(rec.id)}">🤍 спасибо</button></div>`;
     overlay.classList.add("open"); $("#recCardModal").classList.add("open");
+    if(!cover && typeof fetchBookInfo==="function"){   // обложки нет в советe — подтянуть из Google Books
+      fetchBookInfo(rec.title, rec.author).then(info=>{
+        if(info && info.img){ const el=$("#recCov"); if(el){ el.style.backgroundImage=`url(${String(info.img).replace(/^http:/,"https:")})`; el.textContent=""; } }
+      }).catch(()=>{});
+    }
   }
   { const cb=$("#recCardBody"); if(cb) cb.addEventListener("click", async e=>{
       const w=e.target.closest("#recWishBtn"), t=e.target.closest("#recThankBtn"); if(!w && !t) return;
