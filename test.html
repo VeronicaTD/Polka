@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="248" />
+<meta name="app-version" content="249" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -191,6 +191,15 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 #matchModal .mm-h{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:5px}
 #matchModal .mm-list{font-size:13px;color:var(--ink-soft);line-height:1.5}
 .mm-share{width:100%;justify-content:center;display:flex;margin-top:20px}
+/* посоветовать другу */
+.rec-friend{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-top:8px;cursor:pointer;font:inherit;color:var(--ink)}
+.rec-friend:hover{border-color:var(--accent)}
+.rec-friend.sel{border-color:var(--accent);background:rgba(184,137,74,.08)}
+#recCardModal{text-align:center}
+.rec-cov{width:120px;height:176px;margin:12px auto 0;border-radius:3px 6px 6px 3px;background:var(--paper-2);background-size:cover;background-position:center;box-shadow:2px 3px 12px -3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:38px}
+.rec-note{font-style:italic;color:var(--ink-soft);background:var(--paper-2);border-radius:12px;padding:11px 14px;margin:12px 0 4px;line-height:1.5;font-size:14px}
+.rec-acts{display:flex;gap:10px;margin-top:16px}
+.rec-acts .btn{flex:1;justify-content:center;display:flex;min-width:0}
 .profile h1{font-family:var(--display);font-weight:400;letter-spacing:0;font-size:clamp(28px,4.5vw,40px);margin:0;overflow-wrap:anywhere;word-break:break-word}
 .pname-row .edit-profile{flex:0 0 auto}
 .friend-pills{display:flex;gap:8px;margin-top:12px}
@@ -837,7 +846,8 @@ main,footer{position:relative;z-index:1}
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v248 (ТЕСТ): мэтч — доводка. Профиль: число процента теперь идентично цифрам «прочитано/любимых» (26px, вес 700, цвет var(--ink) из темы — убрал фикс-фиолетовый, чтобы не выбивался в «Кофе»); блок по нижнему краю полароида + margin-left 12px (не наезжает на стикер). Картинка: холст 1080×920 (было 1350 — полка занимала 2/3); полка компактная (высота по корешкам + тонкая планка), светлое дерево #e4d1b5→#cbb28f (не тёмное пятно); корешки шире/ниже (bw120×bh210); подпись «N общих книг» без «и ещё» в строке — «и ещё M» мелко ПОД полкой; процент на картинке тоже var(--ink). Прод остаётся v240. -->
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙<!-- v249 (ТЕСТ): ПОСОВЕТОВАТЬ ДРУГУ. Кнопка «💌 посоветовать другу» на странице книги (#bpRecommend) и в карточке (#infoRecommend) — видна если есть друзья (canRecommend). Флоу: #recSendModal (список друзей rec-friend → выбор → записка #recNote до 200 → отправить). Таблица recs + RPC (recs_rpc.sql, отдана Веро): rec_send/rec_incoming(мне советуют, status new)/rec_outgoing(ответы на мои советы)/rec_act(wishlist|thank)/rec_delete. Получателю в колокольчик «X советует тебе Y» → #recCardModal (обложка, автор, записка, «📌 в хотелки» addToMyWish + «🤍 спасибо», отказа нет). Статусы new/wishlisted/thanked. Отправителю в колокольчик «Ольга добавила Y в хотелки🤍»/«поблагодарила за совет🤍» → «Ок» (recSeen localStorage + rec_delete). Коды не светятся (видно только имена). Проверено end-to-end. Прод остаётся v240. -->
+<!-- v248 (ТЕСТ): мэтч — доводка. Профиль: число процента теперь идентично цифрам «прочитано/любимых» (26px, вес 700, цвет var(--ink) из темы — убрал фикс-фиолетовый, чтобы не выбивался в «Кофе»); блок по нижнему краю полароида + margin-left 12px (не наезжает на стикер). Картинка: холст 1080×920 (было 1350 — полка занимала 2/3); полка компактная (высота по корешкам + тонкая планка), светлое дерево #e4d1b5→#cbb28f (не тёмное пятно); корешки шире/ниже (bw120×bh210); подпись «N общих книг» без «и ещё» в строке — «и ещё M» мелко ПОД полкой; процент на картинке тоже var(--ink). Прод остаётся v240. -->
 <!-- v247 (ТЕСТ): мэтч — правки. (1) убрал кружок-бейдж с полароида → отдельный стат-блок #matchStat справа от фото (align-self:flex-end, крупное число #matchPct + подпись «мэтч 💫» в стиле счётчиков), тап→разбор. (2) картинка-шаринг переделана: имена в подписи полароида (не поверх фото), блок книг сразу под фото (убрана пустота), новый drawTallSpine — узкие высокие корешки с текстом ВДОЛЬ корешка (rotate -90°, а не по буквам в столбик), подпись «N общих книг · и ещё M» над полкой, внизу только логотип Polka (дубль имён убран). Прод остаётся v240. -->
 <!-- v246 (ТЕСТ): МЭТЧ ПО ПРОЦЕНТАМ. matchStats(f): общие книги (по normTitle — по названию, автор не важен) ÷ min(размер моей полки, её) = %; порога нет. Бейдж #matchBadge у фото друга (крупно %, .match-badge, тап→разбор); у себя скрыт. Окно #matchModal: «💫 Вы совпали на N%», блок «N общих книг» (до 3 названий + «и ещё M»), «📌 K книг с её полки в твоих хотелках», «🎁 L книг из её хотелок ты читала» — блоки без пересечений просто не показываются. «✨ поделиться» → shareMatchCard: canvas 1080×1350, две аватарки + % между + общие корешки на полке + Polka (переиспользует drawBookSpine/drawSpark/loadImg от shareShelf; toBlob→share/download). NB: в headless-превью toBlob не срабатывает (toDataURL ок) — картинку проверить на реальном устройстве; отрисовка проходит без ошибок. Прод остаётся v240. -->
 <!-- v245 (ТЕСТ): стрик — (1) окно отметки: заголовок по состоянию — не отмечено «Читала сегодня?» (кнопка + нечитун), уже отмечено «На сегодня отмечено» + низ «Увидимся завтра 🤍», ссылка нечитун СКРЫТА. (2) гостевое окно-просмотр компактнее (mk-compact: .mk-sub margin-bottom:-12px, .mk-emoji margin-top:-2px — через отрицательные отступы детей, т.к. в headless-превью padding модалки с transform не перебивался даже inline!important — но дети рендерятся ок; в реальном браузере тоже корректно). Прод остаётся v240. --> 14 («Две недели. Втянулась 🤍»), 50 («Полсотни дней подряд ✨»), 365 («Год. Целый год с книгой 🤍»). Проверено, что «вечер» в живом тексте стрика не осталось (остатки — только аннотации книг + комментарий версии). Прод остаётся v240. -->
@@ -882,7 +892,7 @@ main,footer{position:relative;z-index:1}
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><a id="readLitres" class="read-link" target="_blank" rel="noopener">Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button></div>
+      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><a id="readLitres" class="read-link" target="_blank" rel="noopener">Литрес</a><a id="readBookmate" class="read-link" target="_blank" rel="noopener">📗 Букмейт</a><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button><button id="infoRecommend" class="read-link" type="button" style="display:none">💌 посоветовать другу</button></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -999,6 +1009,24 @@ main,footer{position:relative;z-index:1}
 <div class="modal" id="matchModal" role="dialog" aria-modal="true" aria-label="Совпадение">
   <button class="close" data-close>×</button>
   <div id="matchBody"></div>
+</div>
+
+<!-- посоветовать другу: выбор друга + записка -->
+<div class="modal" id="recSendModal" role="dialog" aria-modal="true" aria-label="Посоветовать другу">
+  <button class="close" data-close>×</button>
+  <h3 style="margin:0 0 4px">💌 Посоветовать другу</h3>
+  <div class="mp" id="recSendBook" style="margin-bottom:10px"></div>
+  <div id="recFriendList"></div>
+  <div id="recNoteWrap" style="display:none;margin-top:12px">
+    <textarea id="recNote" maxlength="200" placeholder="почему советуешь? (необязательно, до 200 символов)" style="width:100%;box-sizing:border-box;min-height:80px"></textarea>
+    <button class="btn" id="recSendGo" style="width:100%;justify-content:center;display:flex;margin-top:10px">📨 отправить совет</button>
+  </div>
+</div>
+
+<!-- карточка совета у получателя -->
+<div class="modal" id="recCardModal" role="dialog" aria-modal="true" aria-label="Совет от друга">
+  <button class="close" data-close>×</button>
+  <div id="recCardBody"></div>
 </div>
 
 <!-- СОВМЕСТНОЕ ЧТЕНИЕ: экран -->
@@ -1195,6 +1223,7 @@ main,footer{position:relative;z-index:1}
       <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
       <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Букмейт</a>
       <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
+      <button class="read-link" id="bpRecommend" type="button" style="display:none">💌 посоветовать другу</button>
     </div>
     <div id="bpQuotes" class="bp-section" style="display:none"></div>
     <div id="bpReviews" class="bp-section"></div>
@@ -1327,6 +1356,59 @@ main,footer{position:relative;z-index:1}
   async function crAddQuote(id, text, page){ try{ return (await sbRpc("coread_add_quote",{p_id:id, p_code:myCode, p_text:String(text||"").slice(0,600), p_page:page|0}))===true; }catch(e){ return false; } }
   async function crCancel(id){ try{ return (await sbRpc("coread_cancel",{p_id:id, p_code:myCode}))===true; }catch(e){ return false; } }
   async function crPublic(code){ if(!CLOUD()||!code) return []; try{ const v=await sbRpc("coread_public",{p_code:code}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+  /* ===== «Посоветовать другу» (recs) ===== */
+  async function recSend(toCode,toName,title,author,cover,note){ if(!CLOUD()||!myCode) return false; try{ await sbRpc("rec_send",{p_from_code:myCode,p_from_name:myName,p_to_code:toCode,p_to_name:toName||"",p_title:title||"",p_author:author||"",p_cover:cover||"",p_note:(note||"").slice(0,200)}); return true; }catch(e){ return false; } }
+  async function recIncoming(){ if(!CLOUD()||!myCode) return []; try{ const v=await sbRpc("rec_incoming",{p_code:myCode}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+  async function recOutgoing(){ if(!CLOUD()||!myCode) return []; try{ const v=await sbRpc("rec_outgoing",{p_code:myCode}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+  async function recAct(id,action){ try{ return (await sbRpc("rec_act",{p_id:id,p_code:myCode,p_action:action}))===true; }catch(e){ return false; } }
+  async function recDelete(id){ try{ await sbRpc("rec_delete",{p_id:id,p_code:myCode}); }catch(e){} }
+  let recSeen; try{ recSeen=new Set(JSON.parse(localStorage.getItem("polka_rec_seen")||"[]")); }catch(e){ recSeen=new Set(); }
+  function recSaveSeen(){ try{ localStorage.setItem("polka_rec_seen", JSON.stringify([...recSeen])); }catch(e){} }
+  let recBook=null, recTo=null;   // bpBook уже объявлен ниже (страница книги)
+  function canRecommend(){ return CLOUD() && myCode && savedFriends.some(f=>f.code); }
+  function recCover(t,a,c){ return c || (typeof coverUrl==="function" ? coverUrl(t,a) : ""); }
+  function openRecommendPicker(book){
+    if(!book || !book.t) return;
+    if(!canRecommend()){ toast("Сначала добавь друга по коду 🙂"); return; }
+    recBook={t:book.t, a:book.a||"", cover:recCover(book.t,book.a,book.cover)}; recTo=null;
+    $("#recSendBook").textContent = "«"+book.t+"»"+(book.a?" · "+book.a:"");
+    const friends = savedFriends.filter(f=>f.code);
+    $("#recFriendList").innerHTML = `<div class="cat-genre">Кому посоветовать?</div>` + friends.map(f=>`<button type="button" class="rec-friend" data-code="${esc(f.code)}" data-name="${esc(f.name||"друг")}">${faceFor(f.name,f.photo,f.color||'#7B5B4B')}<span class="req-who">${esc(f.name||"друг")}</span></button>`).join("");
+    $("#recNoteWrap").style.display="none"; $("#recNote").value="";
+    overlay.classList.add("open"); $("#recSendModal").classList.add("open");
+  }
+  { const fl=$("#recFriendList"); if(fl) fl.addEventListener("click", e=>{ const b=e.target.closest(".rec-friend"); if(!b) return;
+      recTo={code:b.dataset.code, name:b.dataset.name};
+      [...document.querySelectorAll("#recFriendList .rec-friend")].forEach(x=>x.classList.toggle("sel", x===b));
+      $("#recNoteWrap").style.display=""; setTimeout(()=>{ const n=$("#recNote"); if(n) n.focus(); },60);
+    }); }
+  { const g=$("#recSendGo"); if(g) g.addEventListener("click", async ()=>{
+      if(!recBook || !recTo) return;
+      const ok = await recSend(recTo.code, recTo.name, recBook.t, recBook.a, recBook.cover, $("#recNote").value.trim());
+      closeModals();
+      toast(ok ? ("Совет отправлен · "+(recTo.name||"другу")+" 💌") : "Не получилось отправить 😔");
+    }); }
+  { const b=$("#infoRecommend"); if(b) b.addEventListener("click", ()=>{ if(typeof infoBook!=="undefined" && infoBook) openRecommendPicker({t:infoBook.t,a:infoBook.a,cover:infoBook.cover||""}); }); }
+  { const b=$("#bpRecommend"); if(b) b.addEventListener("click", ()=>{ if(bpBook) openRecommendPicker(bpBook); }); }
+  // карточка совета у получателя
+  function openRecCard(rec){
+    const cover = recCover(rec.title, rec.author, rec.cover);
+    $("#recCardBody").innerHTML =
+      `<div class="mp" style="text-align:center;font-size:15px">💌 <b>${esc(rec.from_name||"Друг")}</b> советует</div>`+
+      `<div class="rec-cov"${cover?` style="background-image:url(${cover})"`:''}>${cover?'':'📖'}</div>`+
+      `<h3 style="text-align:center;margin:8px 0 2px">${esc(rec.title)}</h3>`+
+      (rec.author?`<div class="mp" style="text-align:center">${esc(rec.author)}</div>`:'')+
+      (rec.note?`<div class="rec-note">«${esc(rec.note)}»</div>`:'')+
+      `<div class="rec-acts"><button class="btn" id="recWishBtn" data-id="${esc(rec.id)}">📌 в хотелки</button><button class="btn ghost" id="recThankBtn" data-id="${esc(rec.id)}">🤍 спасибо</button></div>`;
+    overlay.classList.add("open"); $("#recCardModal").classList.add("open");
+  }
+  { const cb=$("#recCardBody"); if(cb) cb.addEventListener("click", async e=>{
+      const w=e.target.closest("#recWishBtn"), t=e.target.closest("#recThankBtn"); if(!w && !t) return;
+      const id=(w||t).dataset.id, rec=recsIncoming.find(r=>String(r.id)===String(id));
+      if(w){ const ok=await recAct(id,'wishlist'); if(ok && rec) addToMyWish(rec.title, rec.author); closeModals(); toast(ok?"Добавила в хотелки 🤍":"Не получилось 😔"); }
+      else { const ok=await recAct(id,'thank'); closeModals(); toast(ok?"Спасибо отправлено 🤍":"Не получилось 😔"); }
+      recsIncoming = recsIncoming.filter(r=>String(r.id)!==String(id)); updateReqBadge();
+    }); }
   // «виденные» реакции партнёра (чтобы пинговать в колокольчик только новые)
   let crSeenReact = {}; try{ crSeenReact = JSON.parse(localStorage.getItem("polka_cr_seen")||"{}"); }catch(e){ crSeenReact={}; }
   function crSaveSeen(){ try{ localStorage.setItem("polka_cr_seen", JSON.stringify(crSeenReact)); }catch(e){} }
@@ -2888,6 +2970,7 @@ main,footer{position:relative;z-index:1}
     if($("#bpQuotes")){ $("#bpQuotes").style.display="none"; $("#bpQuotes").innerHTML=""; }
     if($("#bpReviews")) $("#bpReviews").innerHTML = loaderBox("Смотрю, что пишут читатели…");
     setBpWishState();                                    // «в хотелки» / «в хотелках» / скрыть, если уже на полке
+    { const br=$("#bpRecommend"); if(br) br.style.display = canRecommend() ? "inline-flex" : "none"; }   // 💌 посоветовать другу
     openPage("bookPage");
     loadBookExtras(t, a, seedQuotes);                    // рецензии людей + их цитаты
   }
@@ -3394,6 +3477,7 @@ main,footer{position:relative;z-index:1}
     // «в хотелки» — только для книги с полки друга, которой ещё нет у меня (не метч, не своя)
     const onMyShelf = myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a));
     $("#readWish").style.display = (!fromReading && !isMe() && !onMyShelf) ? "inline-flex" : "none";
+    { const ir=$("#infoRecommend"); if(ir) ir.style.display = canRecommend() ? "inline-flex" : "none"; }   // 💌 посоветовать другу
     const editable = fromReading || isMe();
     { const rf=document.querySelector("#infoModal .review-field"); if(rf) rf.style.display = (editable && !fromReading) ? "" : "none"; }   // рецензия — только для книги с полки
     { const ts=$("#infoToShelf"); if(ts) ts.style.display = fromReading ? "" : "none"; }                                                 // «Прочитал» — только у читаемой книги
@@ -4012,10 +4096,10 @@ main,footer{position:relative;z-index:1}
     return photo ? `<div class="req-face" style="background-image:url(${photo})"></div>`
                  : `<div class="req-face" style="background:${color||'#7B5B4B'}">${ini}</div>`;
   }
-  let pendingReqs = [], crInvites = [], crReactNotifs = [], myOutgoingPending = new Set();
-  function updateReqBadge(){ const b=$("#reqCount"); const n=pendingReqs.length+crInvites.length+crReactNotifs.length; if(n){ b.textContent=n; b.style.display=""; } else b.style.display="none"; }
+  let pendingReqs = [], crInvites = [], crReactNotifs = [], myOutgoingPending = new Set(), recsIncoming = [], recsActed = [];
+  function updateReqBadge(){ const b=$("#reqCount"); const n=pendingReqs.length+crInvites.length+crReactNotifs.length+recsIncoming.length+recsActed.length; if(n){ b.textContent=n; b.style.display=""; } else b.style.display="none"; }
   async function refreshReqBadge(){
-    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; crReactNotifs=[]; myOutgoingPending=new Set(); updateReqBadge(); return; }
+    if(!CLOUD() || !myCode){ pendingReqs=[]; crInvites=[]; crReactNotifs=[]; myOutgoingPending=new Set(); recsIncoming=[]; recsActed=[]; updateReqBadge(); return; }
     try{ pendingReqs = await sbFetchRequests(myCode) || []; }catch(e){ pendingReqs=[]; }
     // мои исходящие запросы в друзья: приняли → тихо добавляем; отклонили → чистим; ждут → «⏳ ожидание»
     try{
@@ -4033,10 +4117,13 @@ main,footer{position:relative;z-index:1}
       crInvites = all.filter(c=>!c.is_initiator && c.status==="invite");   // приглашения на совместное чтение
       crReactNotifs = all.filter(c=>c.status==="active" && c.partner_reaction && crSeenReact[c.id]!==c.partner_reaction);   // новые реакции партнёра
     }catch(e){ crInvites=[]; crReactNotifs=[]; }
+    // советы книг: входящие (мне советуют) + ответы на мои советы
+    try{ recsIncoming = await recIncoming() || []; }catch(e){ recsIncoming=[]; }
+    try{ const rout = await recOutgoing() || []; recsActed = rout.filter(r=>!recSeen.has(String(r.id))); }catch(e){ recsActed=[]; }
     updateReqBadge();
   }
   function showRequests(){
-    if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length){
+    if(!pendingReqs.length && !crInvites.length && !crReactNotifs.length && !recsIncoming.length && !recsActed.length){
       { const t=$("#reqTitle"); if(t) t.textContent="Уведомления 🔔"; }
       $("#reqList").innerHTML=`<p class="mp" style="text-align:center;margin:10px 0">Уведомлений пока нет 🌙</p>`;
       overlay.classList.add("open"); reqModal.classList.add("open");
@@ -4067,10 +4154,26 @@ main,footer{position:relative;z-index:1}
         <button class="btn cr-react-open">Открыть</button>
       </div>`).join("");
     }
+    if(recsIncoming.length){
+      h += `<div class="cat-genre"${h?' style="margin-top:14px"':''}>💌 Советуют книгу</div>`;
+      h += recsIncoming.map(r=>`<div class="req-item rec-incoming" data-recid="${esc(r.id)}">
+        <span class="req-who"><b>${esc(r.from_name||'Друг')}</b> советует тебе «${esc(r.title)}»</span>
+        <button class="btn rec-open">Открыть</button>
+      </div>`).join("");
+    }
+    if(recsActed.length){
+      h += `<div class="cat-genre"${h?' style="margin-top:14px"':''}>💌 Ответили на совет</div>`;
+      h += recsActed.map(r=>`<div class="req-item rec-acted" data-recid="${esc(r.id)}">
+        <span class="req-who"><b>${esc(r.to_name||'Друг')}</b> ${r.status==='wishlisted'?('добавил'+"а"+' «'+esc(r.title)+'» в хотелки 🤍'):'поблагодарил'+"а"+' за совет 🤍'}</span>
+        <button class="btn ghost rec-ack">Ок</button>
+      </div>`).join("");
+    }
     // заголовок окна — по содержимому: только друзья → «Вас добавили»; только co-read → «Совместное чтение»; вперемешку → «Уведомления»
-    const onlyFriends = pendingReqs.length && !crInvites.length && !crReactNotifs.length;
-    const onlyCoread = !pendingReqs.length && (crInvites.length || crReactNotifs.length);
-    { const t=$("#reqTitle"); if(t) t.textContent = onlyFriends ? "Вас добавили 👋" : onlyCoread ? "Совместное чтение 📖" : "Уведомления 🔔"; }
+    const noRecs = !recsIncoming.length && !recsActed.length;
+    const onlyFriends = pendingReqs.length && !crInvites.length && !crReactNotifs.length && noRecs;
+    const onlyCoread = !pendingReqs.length && (crInvites.length || crReactNotifs.length) && noRecs;
+    const onlyRecs = !pendingReqs.length && !crInvites.length && !crReactNotifs.length && !noRecs;
+    { const t=$("#reqTitle"); if(t) t.textContent = onlyFriends ? "Вас добавили 👋" : onlyCoread ? "Совместное чтение 📖" : onlyRecs ? "Советы книг 💌" : "Уведомления 🔔"; }
     $("#reqList").innerHTML = h;
     overlay.classList.add("open"); reqModal.classList.add("open");
   }
@@ -4092,6 +4195,20 @@ main,footer{position:relative;z-index:1}
       crReactNotifs=crReactNotifs.filter(x=>x.id!==cid); rn.remove(); if(c) crMarkReactSeen(c); updateReqBadge();
       if(!$("#reqList").children.length) closeModals();
       if(c) openCoreadDetail(c);
+      return;
+    }
+    const ri = e.target.closest(".rec-incoming");   // мне советуют книгу → открыть карточку
+    if(ri){
+      const rid=ri.dataset.recid; const rec=recsIncoming.find(x=>String(x.id)===String(rid));
+      closeModals(); if(rec) openRecCard(rec);
+      return;
+    }
+    const ra = e.target.closest(".rec-acted");   // ответили на мой совет → «Ок» (пометить виденным + удалить)
+    if(ra){
+      const rid=ra.dataset.recid;
+      recSeen.add(String(rid)); recSaveSeen(); recDelete(rid);
+      recsActed=recsActed.filter(x=>String(x.id)!==String(rid)); ra.remove(); updateReqBadge();
+      if(!$("#reqList").children.length) closeModals();
       return;
     }
     // клик по аватарке — посмотреть полку того, кто добавляется, прежде чем решать
