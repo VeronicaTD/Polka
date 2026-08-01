@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="251" />
+<meta name="app-version" content="252" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -884,12 +884,14 @@ main,footer{position:relative;z-index:1}
   <div class="row">
     <div class="info-spine-col">
       <div class="big-spine" id="infoSpine"></div>
-      <div class="store-links"><a id="readLitres" class="store-link" target="_blank" rel="noopener">📖 Литрес</a><a id="readBookmate" class="store-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
+      <div class="store-links"><a id="readLitres" class="store-link" target="_blank" rel="noopener">📗 Литрес</a><a id="readBookmate" class="store-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
     </div>
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
       <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button><button id="infoRecommend" class="read-link" type="button" style="display:none">💌 посоветовать другу</button></div>
+    </div>
+  </div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -911,8 +913,6 @@ main,footer{position:relative;z-index:1}
         <div id="infoQuotes"></div>
         <div id="infoReview" style="display:none;margin-top:10px"></div>
       </div>
-    </div>
-  </div>
 </div>
 
 <!-- редактировать профиль -->
@@ -1122,7 +1122,7 @@ main,footer{position:relative;z-index:1}
   <button class="btn ghost" id="waShelf" style="width:100%;justify-content:center;display:flex;margin-top:6px">📚 Поставить на полку</button>
   <button class="btn" id="waAddWish" style="width:100%;justify-content:center;display:none;margin-top:6px">📌 Добавить в свои хотелки</button>
   <p class="mp" style="margin:16px 0 6px">Хочешь почитать сейчас?</p>
-  <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📖 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
+  <div class="read-row"><a id="waLitres" class="read-link" target="_blank" rel="noopener">📗 Литрес</a><a id="waBookmate" class="read-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
 </div>
 
 <!-- подборки книг (полный экран) -->
@@ -1217,7 +1217,7 @@ main,footer{position:relative;z-index:1}
     </div>
     <div id="bpAnno"></div>
     <div class="read-row bp-actions">
-      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📖 Литрес</a>
+      <a class="read-link" id="bpLitres" target="_blank" rel="noopener">📗 Литрес</a>
       <a class="read-link" id="bpBookmate" target="_blank" rel="noopener">📗 Яндекс Книги</a>
       <button class="read-link" id="bpWish" type="button">📌 в хотелки</button>
       <button class="read-link" id="bpRecommend" type="button" style="display:none">💌 посоветовать другу</button>
