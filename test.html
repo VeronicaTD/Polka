@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="256" />
+<meta name="app-version" content="257" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -407,6 +407,7 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .q-edit textarea{flex:1;margin:0}
 .q-del{flex:none;width:30px;height:30px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);border-radius:50%;font-size:18px;line-height:1;cursor:pointer;margin-top:4px}
 .add-quote{display:inline-block;margin-top:8px}
+.quote-hint{display:block;font-size:12px;color:var(--ink-soft);line-height:1.45;margin-top:8px}
 .wa-back{display:none;position:fixed;inset:0;z-index:150;background:rgba(20,10,5,.45)}
 .wa-back.open{display:block}
 .modal.wa-modal{z-index:160}
@@ -872,7 +873,7 @@ main,footer{position:relative;z-index:1}
   </div>
   <div class="field"><label>Цвет обложки</label><div class="swatches" id="fColors"></div></div>
   <div class="field"><label>Оценка</label><div class="rate" id="fRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
-  <div class="field"><label>Любимые цитаты из книги</label><div id="fQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="fAddQuote">+ ещё цитата</button></div>
+  <div class="field"><label>Любимые цитаты из книги</label><div id="fQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="fAddQuote">+ ещё цитата</button><div class="quote-hint">📷 Не хочется набирать? Задержи палец на поле → «Отсканировать текст» — камера сама распознает страницу</div></div>
   <div class="field"><button class="fav-toggle" id="fFav" type="button"><span class="hh">♡</span><span id="fFavLabel">Добавить в любимые</span></button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveBook">Поставить на полку</button></div>
 </div>
@@ -899,7 +900,7 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Цвет обложки</label><div class="swatches" id="iColors"></div></div>
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
-        <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button></div>
+        <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button><div class="quote-hint">📷 Не хочется набирать? Задержи палец на поле → «Отсканировать текст» — камера сама распознает страницу</div></div>
         <div class="field review-field"><label>📢 Рецензия</label><button class="read-link" id="openReviewBtn" type="button" style="width:100%;justify-content:center;display:flex;padding:12px;font-size:14px;cursor:pointer">✍️ Написать рецензию</button></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="infoToShelf" style="display:none;min-width:0">Прочитал</button><button class="btn" id="saveInfo">Сохранить</button></div>
       </div>
