@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="260" />
+<meta name="app-version" content="261" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -791,6 +791,7 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
   <button class="menu-item" id="mTheme">🎨 Тема оформления</button>
+  <button class="menu-item" id="mPassword">🔒 Пароль полки</button>
   <button class="menu-item" id="mAccess" style="display:none;color:#c98a2b;font-weight:700">🔓 Подключить полный доступ</button>
 </nav>
 
@@ -1249,13 +1250,15 @@ main,footer{position:relative;z-index:1}
     <p class="mp" id="welAccessNote" style="display:none;background:#fbf1e3;border-radius:12px;padding:11px 13px;line-height:1.45">🔑 Это <b>код доступа</b>, а не код полки — ничего страшного! Сначала создадим твою полку, а полный доступ применится сам.</p>
     <p class="mp">Как вас зовут? Имя будет на вашем профиле (потом можно поменять).</p>
     <div class="field"><input id="welName" placeholder="ваше имя" maxlength="40" /></div>
+    <div class="field"><input id="welPass" type="password" placeholder="пароль полки (от 4 символов)" maxlength="60" autocomplete="new-password" /></div>
+    <p class="mp" style="font-size:12px;color:var(--ink-soft);margin-top:-4px">🔒 Понадобится, чтобы зайти с другого телефона. Восстановить можно только через автора.</p>
     <div class="modal-foot"><button class="btn ghost" id="welBack1" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welGo" style="justify-content:center;display:flex">Создать полку</button></div>
   </div>
   <div id="welStep2" style="display:none">
     <p class="mp">Готово! Вот код вашей полки. Сохраните его и делитесь с друзьями — по нему откроется ваша полка.</p>
     <textarea class="codebox" id="welCode" readonly></textarea>
     <button class="linklike" id="welCopy" type="button">📋 Скопировать код</button>
-    <p class="mp" style="margin-top:14px">🔑 А это ваша ссылка для входа — <b>обязательно сохраните</b> (по ней вы вернётесь в свою полку даже на новом телефоне, и код помнить не нужно):</p>
+    <p class="mp" style="margin-top:14px">🔑 А это ваша ссылка для входа — <b>обязательно сохраните</b> (по ней вы вернётесь в свою полку на новом телефоне; там ещё спросит ваш пароль 🔒):</p>
     <textarea class="codebox" id="welLink" readonly></textarea>
     <button class="linklike" id="welLinkCopy" type="button">📋 Скопировать ссылку для входа</button>
     <div class="modal-foot"><button class="btn" id="welDone" style="width:100%;display:flex;justify-content:center">Открыть мою полку</button></div>
@@ -1263,6 +1266,7 @@ main,footer{position:relative;z-index:1}
   <div id="welLogin" style="display:none">
     <p class="mp">Введите код вашей полки, чтобы войти в свой профиль.</p>
     <textarea class="codebox" id="welLoginInput" placeholder="ваш код"></textarea>
+    <div class="field" style="margin-top:8px"><input id="welLoginPass" type="password" placeholder="пароль (если задан)" maxlength="60" autocomplete="current-password" /></div>
     <div class="modal-foot"><button class="btn ghost" id="welBack2" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welLoginGo" style="justify-content:center;display:flex">Войти</button></div>
   </div>
   <div id="welAccess" style="display:none">
@@ -1271,6 +1275,16 @@ main,footer{position:relative;z-index:1}
     <div class="field" style="margin-top:14px"><input id="welAccessCode" placeholder="код доступа" /></div>
     <div class="modal-foot"><button class="btn ghost" id="welAccessBack" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welAccessGo" style="justify-content:center;display:flex">Активировать</button></div>
   </div>
+</div>
+
+<!-- пароль полки: задать (существующим), сменить, или ввести заново на другом устройстве -->
+<div class="modal" id="pwSetModal" role="dialog" aria-modal="true" aria-label="Пароль полки">
+  <button class="close" id="pwClose">×</button>
+  <h3 id="pwTitle">Пароль полки 🔒</h3>
+  <p class="mp" id="pwDesc"></p>
+  <div class="field"><input id="pwInput" type="password" placeholder="пароль (от 4 символов)" maxlength="60" autocomplete="off" /></div>
+  <p class="mp" style="font-size:12px;color:var(--ink-soft)">🔒 Понадобится, чтобы зайти с другого телефона. Восстановить можно только через автора.</p>
+  <div class="modal-foot"><button class="btn ghost" id="pwSkip" style="justify-content:center;display:flex">Позже</button><button class="btn" id="pwSave" style="justify-content:center;display:flex">Сохранить</button></div>
 </div>
 
 <script>
@@ -1322,8 +1336,21 @@ main,footer{position:relative;z-index:1}
     return t ? JSON.parse(t) : null;
   }
   async function sbUpsert(row){
-    // запись полки через серверную функцию (upsert в обход RLS; знать код всё равно нужно)
-    await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||"")});
+    // запись полки через ЗАЩИЩЁННУЮ обёртку: полка с паролем пишется только с верным паролем.
+    try{
+      await sbRpc("save_shelf_secure", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||""), p_password:(myPass||"")});
+    }catch(e){
+      const m=String((e&&e.message)||"");
+      if(/bad password/i.test(m)) throw e;   // неверный пароль → НЕ откатываемся на незащищённую запись
+      // функции ещё нет (до запуска SQL) или иная причина → мягкий откат на старую save_shelf, чтобы сохранение не ломалось
+      await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||"")});
+    }
+  }
+  async function sbSetPassword(code, newPass, oldPass){
+    try{ return (await sbRpc("set_password", {p_code:code, p_new:newPass, p_old:oldPass||null}))===true; }catch(e){ return false; }
+  }
+  async function sbLoginCheck(code, pass){   // null = функции ещё нет (до SQL) → мягкий откат к «пускать по коду»
+    try{ const a=await sbRpc("login_check", {p_code:code, p_pass:pass||""}); const r=Array.isArray(a)?a[0]:a; return r||{found:false,has_password:false,ok:false}; }catch(e){ return null; }
   }
   async function sbFetch(code){
     const a = await sbRpc("get_shelf", {p_code:code});   // одна полка по точному коду (не «все полки»)
@@ -1829,6 +1856,7 @@ main,footer{position:relative;z-index:1}
   let myStickers = [];
   try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || []; } catch(e){ myStickers = []; }
   let myCode = localStorage.getItem("polka_code") || "";
+  let myPass = localStorage.getItem("polka_pass") || "";   // пароль полки — ХРАНИТСЯ ЛОКАЛЬНО на устройстве для автовхода/записи; на сервере только bcrypt-хеш
   /* свои загруженные стикеры (картинки) */
   let customStickers = [];
   try { customStickers = JSON.parse(localStorage.getItem("polka_custom") || "[]"); } catch(e){ customStickers = []; }
@@ -3368,6 +3396,7 @@ main,footer{position:relative;z-index:1}
   $("#mReviews").addEventListener("click", ()=>{ menuGo(()=>openReviewsFeed()); });
   $("#mYear").addEventListener("click", ()=>{ menuGo(()=>$("#yearBtn").click()); });
   $("#mTheme").addEventListener("click", ()=>{ menuGo(()=>openThemes()); });
+  { const _mp=$("#mPassword"); if(_mp) _mp.addEventListener("click", ()=>{ closeMenu(); if(!CLOUD()||!myCode){ toast("Пароль доступен для облачной полки"); return; } promptSetPassword(myPass?"change":"offer"); }); }
 
   /* свайп */
   let sx=null;
@@ -3709,7 +3738,7 @@ main,footer{position:relative;z-index:1}
   $("#editProfile").addEventListener("click", openProfile);
   $("#logoutBtn").addEventListener("click", ()=>{
     if(!confirm("Выйти из профиля? Ваша полка останется в облаке — вернётесь по своему коду.")) return;
-    ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
   // тап по всему блоку «читаю» → окошко: список (+ добавить/убрать), тап по книге → её мини-страница (цвет / на полку / страница книги)
@@ -3962,7 +3991,7 @@ main,footer{position:relative;z-index:1}
     setTimeout(()=>$("#welName").focus(),60);
   }
   $("#welNew").addEventListener("click", ()=>{ wantCodeAfter=false; pendingAccessCode=""; hideAccessNote(); welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
-  $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
+  $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; { const lp=$("#welLoginPass"); if(lp) lp.value=""; } setTimeout(()=>$("#welLoginInput").focus(),60); });
   { const _wf=$("#welWantFull"); if(_wf) _wf.addEventListener("click", (e)=>{ e.preventDefault(); wantCodeAfter=false; pendingAccessCode=""; hideAccessNote(); if($("#welBuyBtn")) $("#welBuyBtn").href = BUY_URL || "#"; $("#welAccessCode").value=""; welShow("welAccess"); }); }
   $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
   $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
@@ -3975,7 +4004,7 @@ main,footer{position:relative;z-index:1}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
     view = "me";
-    myCode = CLOUD() ? genCode() : "";
+    myCode = CLOUD() ? genCode() : ""; myPass="";
     bootLoaded = true;   // это свежесозданный уникальный код — в облаке его ещё нет, перезаписывать нечего, поэтому запись в облако разрешена (иначе новая полка не сохранится и при перезагрузке сотрётся)
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote","");
@@ -3984,6 +4013,7 @@ main,footer{position:relative;z-index:1}
       localStorage.setItem("polka_friends","[]"); localStorage.setItem("polka_favfriends","[]");
       localStorage.setItem("polka_registered","1");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
+      localStorage.removeItem("polka_pass");   // пароль задастся в welGo через set_password
     }catch(e){}
     setPaidCache(false);   // новая полка бесплатная; оплату проставит сервер при активации кода (paid в колонке)
     syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
@@ -3994,8 +4024,14 @@ main,footer{position:relative;z-index:1}
   }
   $("#welGo").addEventListener("click", async ()=>{
     const name = $("#welName").value.trim() || "Моя полка";
+    const pass = ($("#welPass").value||"").trim();
+    if(CLOUD() && pass.length<4){ toast("Придумай пароль — от 4 символов 🔒"); $("#welPass").focus(); return; }
     createShelf(name);              // сначала создаём полку — строка появляется в облаке (paid=false), без стены оплаты
     await syncUp();                 // гарантируем, что полка в облаке, прежде чем сервер проставит ей paid
+    if(CLOUD() && pass.length>=4){  // задать пароль на свежесозданную полку (хеш на сервере, пароль локально)
+      const okp=await sbSetPassword(myCode, pass, null);
+      if(okp){ myPass=pass; try{ localStorage.setItem("polka_pass", pass); }catch(e){} }
+    }
     if(FREE_MODE && !isPaid()){     // промо ?free — берём бесплатный код и применяем к ЭТОЙ полке
       const fc = await sbFetchFreeCode();
       if(fc){ const okc = await sbRedeem(fc); if(okc) setPaidCache(true); }
@@ -4019,10 +4055,10 @@ main,footer{position:relative;z-index:1}
   $("#welLinkCopy").addEventListener("click", ()=>{ const v=$("#welLink").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#welLink").select()); else $("#welLink").select(); });
   $("#welDone").addEventListener("click", ()=>{ closeModals(); if(wantCodeAfter){ wantCodeAfter=false; openAccess("welcome"); } });
-  $("#welLoginGo").addEventListener("click", ()=>withBtn($("#welLoginGo"),"Вхожу…", ()=>doLogin($("#welLoginInput").value)));
-  async function doLogin(code){
+  $("#welLoginGo").addEventListener("click", ()=>withBtn($("#welLoginGo"),"Вхожу…", ()=>doLogin($("#welLoginInput").value, $("#welLoginPass").value)));
+  async function doLogin(code, pass){
     code=(code||"").trim(); if(!code) return;
-    let p=null, used="", row=null;
+    let p=null, used="", row=null, offerPw=false;
     if(/^PLK/i.test(code)){ try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); } }
     else if(CLOUD()){
       try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Облако: "+(e.message||e)); }
@@ -4031,6 +4067,17 @@ main,footer{position:relative;z-index:1}
         if(await looksLikeAccessCode(code)){ startAccessCodeFlow(code.toUpperCase()); return; }
         return toast("Полка с таким кодом не найдена");
       }
+      const lc=await sbLoginCheck(code.toUpperCase(), pass||"");   // проверка пароля ДО входа (хеш только на сервере)
+      if(lc && lc.has_password && !lc.ok){
+        if(!(pass&&pass.trim())){   // пароль не введён (напр. вход по сохранённой ссылке) → показать форму ввода пароля
+          welShow("welLogin"); $("#welLoginInput").value=code.toUpperCase(); $("#welLoginPass").value="";
+          overlay.classList.add("open"); welModal.classList.add("open"); hideSplash(); setTimeout(()=>$("#welLoginPass").focus(),80);
+          toast("Введи пароль от полки 🔒"); return;
+        }
+        toast("Неверный пароль 🔒"); return;
+      }
+      myPass = (lc && lc.has_password && lc.ok) ? (pass||"") : "";
+      offerPw = !!(lc && !lc.has_password);   // у полки нет пароля → после входа мягко предложим задать
       try{ p=decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
       used=code.toUpperCase();
     } else { return toast("Короткие коды работают только с облаком"); }
@@ -4048,12 +4095,51 @@ main,footer{position:relative;z-index:1}
       if(row){ setPaidCache(!!row.paid); } else { setPaidCache(!!(p && p.pd)); }   // облако — источник истины по оплате; PLK-код офлайн — из blob
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
+      if(myPass) localStorage.setItem("polka_pass",myPass); else localStorage.removeItem("polka_pass");
     }catch(e){}
     bootLoaded=true;   // явный вход в аккаунт — данные загружены, запись разрешена
     setUrlLogin();
     view="me"; closeModals(); renderAll(); hideSplash(); toast("С возвращением, "+myName.split(" ")[0]+"!");
     loadFriends((p && Array.isArray(p.fr)) ? p.fr : []);
+    if(offerPw) setTimeout(()=>promptSetPassword("offer"), 900);   // у полки нет пароля → предложить задать (не заставляя)
   }
+  // ---- пароль полки: задать (существующим) / сменить / ввести заново на другом устройстве ----
+  let pwMode="offer";   // offer | change | reauth
+  function promptSetPassword(mode){
+    if(!CLOUD() || !myCode) return;
+    pwMode = mode || "offer";
+    if(pwMode!=="reauth" && myPass) pwMode="change";   // пароль уже есть локально → это смена
+    if(pwMode==="reauth"){
+      $("#pwTitle").textContent="Введите пароль полки 🔒";
+      $("#pwDesc").textContent="Чтобы редактировать полку с этого устройства.";
+      $("#pwInput").placeholder="пароль полки"; $("#pwSkip").textContent="Только смотреть";
+    } else if(pwMode==="change"){
+      $("#pwTitle").textContent="Сменить пароль 🔒";
+      $("#pwDesc").textContent="Придумай новый пароль (от 4 символов).";
+      $("#pwInput").placeholder="новый пароль"; $("#pwSkip").textContent="Отмена";
+    } else {
+      $("#pwTitle").textContent="Защити свою полку 🔒";
+      $("#pwDesc").textContent="Сейчас войти можно по одному коду. Задай пароль — и никто не зайдёт под твоим кодом с чужого устройства.";
+      $("#pwInput").placeholder="пароль (от 4 символов)"; $("#pwSkip").textContent="Позже";
+    }
+    $("#pwInput").value=""; overlay.classList.add("open"); $("#pwSetModal").classList.add("open");
+    setTimeout(()=>$("#pwInput").focus(), 60);
+  }
+  { const c=$("#pwClose"); if(c) c.addEventListener("click", closeModals); }
+  { const s=$("#pwSkip"); if(s) s.addEventListener("click", closeModals); }
+  { const b=$("#pwSave"); if(b) b.addEventListener("click", ()=>withBtn($("#pwSave"),"…", async ()=>{
+      const val=($("#pwInput").value||"").trim();
+      if(pwMode==="reauth"){
+        const lc=await sbLoginCheck(myCode, val);
+        if(lc && lc.ok){ myPass=val; try{ localStorage.setItem("polka_pass", val); }catch(e){} toast("Готово, доступ открыт 🔒"); closeModals(); }
+        else toast("Неверный пароль");
+        return;
+      }
+      if(val.length<4){ toast("Пароль — от 4 символов"); return; }
+      const ok=await sbSetPassword(myCode, val, myPass||null);
+      if(ok){ myPass=val; try{ localStorage.setItem("polka_pass", val); }catch(e){} toast(pwMode==="change"?"Пароль изменён 🔒":"Пароль установлен 🔒"); closeModals(); }
+      else toast(pwMode==="change"?"Не вышло — проверь старый пароль":"Не получилось задать пароль");
+    })); }
   /* при загрузке: проверяем, существует ли полка в облаке; если удалена — сбрасываем устройство */
   async function bootCloud(){
     if(!CLOUD() || !localStorage.getItem("polka_registered")) return;
@@ -4063,7 +4149,7 @@ main,footer{position:relative;z-index:1}
       try{ row = await sbFetch(myCode); }catch(e){ fetched=false; }   // сеть недоступна — не трогаем
       if(fetched && !row){
         // полку удалили в облаке → стираем профиль на устройстве
-        ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+        ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
         toast("Эта полка была удалена");
         setTimeout(()=>location.reload(), 1300);
         return;
@@ -4092,6 +4178,14 @@ main,footer{position:relative;z-index:1}
     setUrlLogin();
     refreshReqBadge();
     loadFriends(cloudFr || savedFriends.map(f=>f.code));
+    // пароль полки: если на этом устройстве он не сохранён — мягко разобраться
+    if(CLOUD() && myCode && !myPass){
+      const lc = await sbLoginCheck(myCode, "");
+      if(lc){
+        if(lc.has_password){ setTimeout(()=>promptSetPassword("reauth"), 900); }                        // задан на другом устройстве → ввести здесь (иначе не сохранить)
+        else if(!sessionStorage.getItem("pk_pwoffer")){ sessionStorage.setItem("pk_pwoffer","1"); setTimeout(()=>promptSetPassword("offer"), 1400); }   // пароля ещё нет → предложить (1 раз за сессию)
+      }
+    }
   }
   const restoreMode = /[?&#]restore(\b|=)/.test(location.href);
   const loginMatch = location.href.match(/[?#]login=([^&#]+)/);
