@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="258" />
+<meta name="app-version" content="262" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -791,6 +791,7 @@ main,footer{position:relative;z-index:1}
   <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
   <button class="menu-item" id="mTheme">🎨 Тема оформления</button>
+  <button class="menu-item" id="mPassword">🔒 Пароль полки</button>
   <button class="menu-item" id="mAccess" style="display:none;color:#c98a2b;font-weight:700">🔓 Подключить полный доступ</button>
 </nav>
 
@@ -1249,13 +1250,15 @@ main,footer{position:relative;z-index:1}
     <p class="mp" id="welAccessNote" style="display:none;background:#fbf1e3;border-radius:12px;padding:11px 13px;line-height:1.45">🔑 Это <b>код доступа</b>, а не код полки — ничего страшного! Сначала создадим твою полку, а полный доступ применится сам.</p>
     <p class="mp">Как вас зовут? Имя будет на вашем профиле (потом можно поменять).</p>
     <div class="field"><input id="welName" placeholder="ваше имя" maxlength="40" /></div>
+    <div class="field"><input id="welPass" type="password" placeholder="пароль полки (от 4 символов)" maxlength="60" autocomplete="new-password" /></div>
+    <p class="mp" style="font-size:12px;color:var(--ink-soft);margin-top:-4px">🔒 Понадобится, чтобы зайти с другого телефона. Восстановить можно только через автора.</p>
     <div class="modal-foot"><button class="btn ghost" id="welBack1" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welGo" style="justify-content:center;display:flex">Создать полку</button></div>
   </div>
   <div id="welStep2" style="display:none">
     <p class="mp">Готово! Вот код вашей полки. Сохраните его и делитесь с друзьями — по нему откроется ваша полка.</p>
     <textarea class="codebox" id="welCode" readonly></textarea>
     <button class="linklike" id="welCopy" type="button">📋 Скопировать код</button>
-    <p class="mp" style="margin-top:14px">🔑 А это ваша ссылка для входа — <b>обязательно сохраните</b> (по ней вы вернётесь в свою полку даже на новом телефоне, и код помнить не нужно):</p>
+    <p class="mp" style="margin-top:14px">🔑 А это ваша ссылка для входа — <b>обязательно сохраните</b> (по ней вы вернётесь в свою полку на новом телефоне; там ещё спросит ваш пароль 🔒):</p>
     <textarea class="codebox" id="welLink" readonly></textarea>
     <button class="linklike" id="welLinkCopy" type="button">📋 Скопировать ссылку для входа</button>
     <div class="modal-foot"><button class="btn" id="welDone" style="width:100%;display:flex;justify-content:center">Открыть мою полку</button></div>
@@ -1263,6 +1266,7 @@ main,footer{position:relative;z-index:1}
   <div id="welLogin" style="display:none">
     <p class="mp">Введите код вашей полки, чтобы войти в свой профиль.</p>
     <textarea class="codebox" id="welLoginInput" placeholder="ваш код"></textarea>
+    <div class="field" style="margin-top:8px"><input id="welLoginPass" type="password" placeholder="пароль (если задан)" maxlength="60" autocomplete="current-password" /></div>
     <div class="modal-foot"><button class="btn ghost" id="welBack2" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welLoginGo" style="justify-content:center;display:flex">Войти</button></div>
   </div>
   <div id="welAccess" style="display:none">
@@ -1271,6 +1275,16 @@ main,footer{position:relative;z-index:1}
     <div class="field" style="margin-top:14px"><input id="welAccessCode" placeholder="код доступа" /></div>
     <div class="modal-foot"><button class="btn ghost" id="welAccessBack" style="justify-content:center;display:flex">Назад</button><button class="btn" id="welAccessGo" style="justify-content:center;display:flex">Активировать</button></div>
   </div>
+</div>
+
+<!-- пароль полки: задать (существующим), сменить, или ввести заново на другом устройстве -->
+<div class="modal" id="pwSetModal" role="dialog" aria-modal="true" aria-label="Пароль полки">
+  <button class="close" id="pwClose">×</button>
+  <h3 id="pwTitle">Пароль полки 🔒</h3>
+  <p class="mp" id="pwDesc"></p>
+  <div class="field"><input id="pwInput" type="password" placeholder="пароль (от 4 символов)" maxlength="60" autocomplete="off" /></div>
+  <p class="mp" style="font-size:12px;color:var(--ink-soft)">🔒 Понадобится, чтобы зайти с другого телефона. Восстановить можно только через автора.</p>
+  <div class="modal-foot"><button class="btn ghost" id="pwSkip" style="justify-content:center;display:flex">Позже</button><button class="btn" id="pwSave" style="justify-content:center;display:flex">Сохранить</button></div>
 </div>
 
 <script>
@@ -1322,8 +1336,21 @@ main,footer{position:relative;z-index:1}
     return t ? JSON.parse(t) : null;
   }
   async function sbUpsert(row){
-    // запись полки через серверную функцию (upsert в обход RLS; знать код всё равно нужно)
-    await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||"")});
+    // запись полки через ЗАЩИЩЁННУЮ обёртку: полка с паролем пишется только с верным паролем.
+    try{
+      await sbRpc("save_shelf_secure", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||""), p_password:(myPass||"")});
+    }catch(e){
+      const m=String((e&&e.message)||"");
+      if(/bad password/i.test(m)) throw e;   // неверный пароль → НЕ откатываемся на незащищённую запись
+      // функции ещё нет (до запуска SQL) или иная причина → мягкий откат на старую save_shelf, чтобы сохранение не ломалось
+      await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||"")});
+    }
+  }
+  async function sbSetPassword(code, newPass, oldPass){
+    try{ return (await sbRpc("set_password", {p_code:code, p_new:newPass, p_old:oldPass||null}))===true; }catch(e){ return false; }
+  }
+  async function sbLoginCheck(code, pass){   // null = функции ещё нет (до SQL) → мягкий откат к «пускать по коду»
+    try{ const a=await sbRpc("login_check", {p_code:code, p_pass:pass||""}); const r=Array.isArray(a)?a[0]:a; return r||{found:false,has_password:false,ok:false}; }catch(e){ return null; }
   }
   async function sbFetch(code){
     const a = await sbRpc("get_shelf", {p_code:code});   // одна полка по точному коду (не «все полки»)
@@ -1829,6 +1856,7 @@ main,footer{position:relative;z-index:1}
   let myStickers = [];
   try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || []; } catch(e){ myStickers = []; }
   let myCode = localStorage.getItem("polka_code") || "";
+  let myPass = localStorage.getItem("polka_pass") || "";   // пароль полки — ХРАНИТСЯ ЛОКАЛЬНО на устройстве для автовхода/записи; на сервере только bcrypt-хеш
   /* свои загруженные стикеры (картинки) */
   let customStickers = [];
   try { customStickers = JSON.parse(localStorage.getItem("polka_custom") || "[]"); } catch(e){ customStickers = []; }
@@ -2646,7 +2674,7 @@ main,footer{position:relative;z-index:1}
     // дизайнерская обложка-заглушка: показывается сразу; поверх подгружается настоящая обложка, если найдётся
     return `<div class="cat-cover" data-open data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}" style="background:${bg};color:${pickFg(bg)}">
       <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
-      <div class="cc-title">${esc(b.t)}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
+      <div class="cc-title">${esc(capTitle(b.t))}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
   }
   // мини-полка «читаю»: до 3 вертикальных корешков без текста (тап → тултип с названием)
   function miniShelfHTML(arr){
@@ -2860,10 +2888,26 @@ main,footer{position:relative;z-index:1}
     img.onload=()=>img.classList.add("loaded"); img.onerror=()=>img.remove();
     img.src=String(src).replace(/^http:/,"https:"); el.appendChild(img);
   }
+  function normalizeCard(el, t, a){   // каноничные название/автор/обложку — из общего справочника (по normTitle)
+    if(!el || typeof catalogGet!=="function") return;
+    catalogGet(looseKey(t,a)).then(c=>{
+      if(!c) return;
+      const card = el.closest(".cat-book") || el.parentElement;
+      if(c.title){ const tt=capTitle(c.title);
+        const e1=el.querySelector(".cc-title"); if(e1) e1.textContent=tt;
+        const e2=card&&card.querySelector(".cat-t"); if(e2) e2.textContent=tt; }
+      if(c.author){
+        const a1=el.querySelector(".cc-author"); if(a1) a1.textContent=lastName(c.author);
+        const a2=card&&card.querySelector(".cat-a"); if(a2) a2.textContent=c.author; }
+      if(c.cover && !coverUrl(t,a) && !el.querySelector(".cc-img")) putCover(el, c.cover);   // ручной GBID приоритетен
+    }).catch(()=>{});
+  }
   function ensureCover(el,t,a){
-    if(!el || el.querySelector(".cc-img")) return;
+    if(!el) return;
+    normalizeCard(el, t, a);   // название/автор из справочника — даже если обложка уже стоит
+    if(el.querySelector(".cc-img")) return;
     const url=coverUrl(t,a);
-    if(url){ putCover(el, url); return; }                      // свой ID (книги каталога)
+    if(url){ putCover(el, url); return; }                      // свой ID (книги каталога) — приоритет
     // нет своего ID (книга читателей) — тянем обложку из Google Books (кэшируется), показываем и в карусели
     fetchBookInfo(t,a).then(info=>{ if(info && info.img) putCover(el, info.img); });
   }
@@ -2876,7 +2920,7 @@ main,footer{position:relative;z-index:1}
       books.map((b,i)=>{ const bg=COLORS[i%COLORS.length]; const bq=encodeURIComponent(b.t+" "+b.a);
         return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
           ${coverHTML(b, motif, bg)}
-          <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+          <div class="cat-t" data-open>${esc(capTitle(b.t))}</div><div class="cat-a">${esc(b.a)}</div>
           <div class="cat-acts">
             <button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button>
           </div></div>`;
@@ -2944,7 +2988,7 @@ main,footer{position:relative;z-index:1}
      <div class="cat-row">` +
      books.map((b,i)=>`<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
         ${coverHTML(b, motif, COLORS[i%COLORS.length])}
-        <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+        <div class="cat-t" data-open>${esc(capTitle(b.t))}</div><div class="cat-a">${esc(b.a)}</div>
         <div class="cat-acts"><button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button></div></div>`).join("")
      + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div></div>`;
     list.insertAdjacentHTML("beforeend", html);   // в КОНЕЦ подборок
@@ -2973,10 +3017,15 @@ main,footer{position:relative;z-index:1}
     bpBook={t,a};
     const motif="📖", bg=COLORS[(t.length)%COLORS.length];
     $("#bpCover").outerHTML = `<div id="bpCover">${coverHTML({t,a}, motif, bg)}</div>`;
-    $("#bpTitle").textContent=t; $("#bpAuthor").textContent=a||"";
+    $("#bpTitle").textContent=capTitle(t); $("#bpAuthor").textContent=capAuthor(a||"");   // регистр причёсан сразу
     const bq=encodeURIComponent(t+" "+(a||""));
     $("#bpLitres").href="https://www.litres.ru/search/?q="+bq;
     $("#bpBookmate").href="https://books.yandex.ru/search?query="+bq;
+    if(typeof catalogGet==="function") catalogGet(looseKey(t,a)).then(c=>{   // каноничные название/автор из общего справочника
+      if(!c || !stillOn(t,a)) return;
+      if(c.title) $("#bpTitle").textContent=capTitle(c.title);
+      if(c.author) $("#bpAuthor").textContent=c.author;
+    }).catch(()=>{});
     ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки (если есть свой ID)
     const anno = annoFor(t,a);                           // авторская аннотация (по названию, при любом написании автора)
     if(anno){ $("#bpAnno").innerHTML = renderAnno(anno); }
@@ -3027,16 +3076,44 @@ main,footer{position:relative;z-index:1}
     const startsWithTitle = normTitle(ex.slice(0, (title||"").length+10)).includes(normTitle(title));
     return startsWithTitle && BOOK_WORDS.test(ex.slice(0,220));         // иначе — статья начинается с названия и в начале есть книжное слово
   }
+  // ---- общий серверный справочник книг (обложка/автор/описание по normTitle) ----
+  // первое добавление книги сохраняет подобранные данные; последующие берут их отсюда → одинаково у всех.
+  // Работает мягко: если таблицы/сети нет — просто откат к Google (клиент можно катить до SQL).
+  let catalogCache={}; try{ catalogCache=JSON.parse(localStorage.getItem("polka_catalog")||"{}"); }catch(e){ catalogCache={}; }
+  const catalogNull=new Set();   // ключи, которых нет в справочнике (в памяти, чтобы не дёргать сервер повторно за сессию)
+  async function catalogGet(norm){
+    if(!norm) return null;
+    if(catalogCache[norm]) return catalogCache[norm];
+    if(catalogNull.has(norm) || typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return null;
+    try{ const rows=await sbRpc("catalog_get",{p_norm:norm}); const row=Array.isArray(rows)?rows[0]:rows;
+      if(row){ const v={title:row.title||"", author:row.author||"", cover:row.cover||"", desc:row.description||""}; catalogCache[norm]=v; try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} return v; }
+      catalogNull.add(norm); return null;
+    }catch(e){ return null; }
+  }
+  function catalogPut(norm, o){
+    if(!norm || !o || !(o.cover||o.desc||o.author)) return;
+    if(typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return;
+    const ttl=o.title?capTitle(o.title):"", aut=o.author?capAuthor(o.author):"";   // в справочник — сразу опрятно (заглавные)
+    try{ sbRpc("catalog_put",{p_norm:norm, p_title:ttl, p_author:aut, p_cover:o.cover||"", p_desc:o.desc||""}).catch(()=>{});
+      const prev=catalogCache[norm]||{title:"",author:"",cover:"",desc:""};
+      catalogCache[norm]={title:prev.title||ttl, author:prev.author||aut, cover:prev.cover||o.cover||"", desc:prev.desc||o.desc||""};
+      catalogNull.delete(norm); try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){}
+    }catch(e){}
+  }
   async function fetchBookInfo(t,a){
     const key=looseKey(t,a);   // ключ по нормализованному названию — одна книга при любом написании автора
     if(bookInfoCache[key]) return bookInfoCache[key];
-    const info={desc:"", img:""};
+    const info={desc:"", img:"", author:"", title:""};
+    // 0) общий серверный справочник — если книгу уже кто-то добавлял, берём согласованные данные (не ходим лишний раз в Google)
+    try{ const c=await catalogGet(key); if(c){ info.desc=c.desc||info.desc; info.img=c.cover||info.img; info.author=c.author||info.author; info.title=c.title||info.title;
+      if(info.desc && info.img){ bookInfoCache[key]=info; try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){} return info; } } }catch(e){}
     const ot=normTitle(t);
     const isRu = s => /[а-яё]/i.test(s) && !/[іїєґ]/i.test(s);   // описание русское: есть кириллица и НЕТ украинских букв (іїєґ); английское отсеется (нет кириллицы)
     // среди результатов берём только те, где НАЗВАНИЕ совпадает; описание — ТОЛЬКО русское; обложку — из любого издания
     const scan=(items)=>{ for(const it of (items||[])){ const v=it.volumeInfo; if(!v) continue;
       const rt=normTitle(v.title);
       if(!(rt && ot && (rt===ot || rt.includes(ot) || ot.includes(rt)))) continue;
+      if(!info.author && v.authors && v.authors[0]) info.author=v.authors[0];
       if(!info.desc && v.description && isRu(v.description)) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
       if(!info.img && v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"";
       if(info.desc && info.img) return true;
@@ -3060,8 +3137,10 @@ main,footer{position:relative;z-index:1}
         }
       }catch(e){}
     }
-    if(info.desc || info.img) bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
-    try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){}
+    if(info.desc || info.img){ bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
+      try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){}
+      catalogPut(key, {title:t, author:info.author||a||"", cover:info.img, desc:info.desc});   // сохраняем в общий справочник (первое добавление закрепляет данные)
+    }
     return info;
   }
   // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
@@ -3339,6 +3418,7 @@ main,footer{position:relative;z-index:1}
   $("#mReviews").addEventListener("click", ()=>{ menuGo(()=>openReviewsFeed()); });
   $("#mYear").addEventListener("click", ()=>{ menuGo(()=>$("#yearBtn").click()); });
   $("#mTheme").addEventListener("click", ()=>{ menuGo(()=>openThemes()); });
+  { const _mp=$("#mPassword"); if(_mp) _mp.addEventListener("click", ()=>{ closeMenu(); if(!CLOUD()||!myCode){ toast("Пароль доступен для облачной полки"); return; } promptSetPassword(myPass?"change":"offer"); }); }
 
   /* свайп */
   let sx=null;
@@ -3379,7 +3459,9 @@ main,footer{position:relative;z-index:1}
   }
   $("#saveBook").addEventListener("click", ()=>{
     const t=capTitle($("#fTitle").value); if(!t){ $("#fTitle").focus(); return; }
-    const nb={ t, a:capAuthor($("#fAuthor").value)||"неизвестный автор", g:$("#fGenre").value,
+    let av=$("#fAuthor").value.trim();
+    if(!av){ const sb=$("#fSuggest"); if(sb && sb._bestAuthor && sb._bestFor===normTitle(t)) av=sb._bestAuthor; }   // автор пуст → подставляем из подсказки (иначе книги не склеиваются между полками)
+    const nb={ t, a:capAuthor(av)||"неизвестный автор", g:$("#fGenre").value,
       c:selColor, fav:favNew, r:rateNew, note:"", qt:collectQuotes("fQuotes") };
     myBooks.push(nb);
     if(pendingWish!=null){ myWishlist.splice(pendingWish,1); pendingWish=null; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
@@ -3409,29 +3491,52 @@ main,footer{position:relative;z-index:1}
   const BK_JUNK=/(краткое изложение|саммари|summary|рабочая тетрадь|дневник читателя|анализ книги|обзор книги|ключевые идеи|конспект)/i;
   function bkAutocomplete(input, box, onPick){
     if(!input || !box) return;
-    let seq=0, timer=null;
+    let timer=null, curAbort=null;
     const msg=(txt)=>{ box.innerHTML=`<div class="bk-msg">${esc(txt)}</div>`; box._items=null; box.hidden=false; };
-    const render=(items)=>{
-      const seen=new Set();
-      const list=(items||[]).filter(v=>{ if(!v||!v.title||BK_JUNK.test(v.title)) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,6);
-      if(!list.length){ msg("Ничего не нашли — впиши название сам ✍️"); return; }
+    const hasShown=()=> Array.isArray(box._items) && box._items.length>0;   // на экране уже есть результаты
+    const dedup=(items)=>{ const seen=new Set(); return (items||[]).filter(v=>{ if(!v||!v.title) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }); };
+    const hasCover=v=> !!(v && v.imageLinks && (v.imageLinks.thumbnail||v.imageLinks.smallThumbnail));
+    // настоящие издания наверх: у пересказов страниц мало и часто нет обложки
+    const rank=(items)=>{ const w=items.map((v,i)=>({v,i}));
+      const score=x=>((x.v.pageCount||0)>100?2:0)+(hasCover(x.v)?1:0);
+      w.sort((a,b)=> score(b)-score(a) || a.i-b.i); return w.map(x=>x.v); };
+    const showList=(list)=>{
+      list=rank(list).slice(0,8);
+      if(!list.length){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }   // пусто и на экране ничего нет
       box._items=list;
+      { const q=normTitle(input.value); const hit=list.find(v=>normTitle(v.title)===q)||list[0]; box._bestAuthor=(hit&&hit.authors&&hit.authors[0])||""; box._bestFor=q; }   // автор лучшего совпадения — для автоподстановки при сохранении
       box.innerHTML=list.map((v,i)=>{ const au=(v.authors&&v.authors[0])||"";
         return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
       box.hidden=false;
     };
-    const search=async(q)=>{ const s=++seq; msg("Ищу…");
-      try{
-        // intitle: — ищем по названию; БЕЗ langRestrict=ru (он выбрасывал корректные книги из-за кривых языковых меток Google)
-        const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent("intitle:"+q)}&maxResults=12&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
-        if(s!==seq) return;
-        if(!r.ok){ msg("Ничего не нашли — впиши название сам ✍️"); return; }
-        const d=await r.json(); if(s!==seq) return;
-        render((d.items||[]).map(it=>it.volumeInfo));
-      }catch(e){ if(s===seq) msg("Ничего не нашли — впиши название сам ✍️"); }
+    const fetchVol=async(query, ac)=>{   // без langRestrict=ru (кривые языковые метки Google теряют книги); maxResults=30
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""), ac?{signal:ac.signal}:undefined);
+      if(!r.ok) return null; const d=await r.json(); return (d.items||[]).map(it=>it.volumeInfo);
     };
-    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 500); });
-    box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; seq++; });
+    // отмена устаревших запросов — ТОЛЬКО через AbortController. Поиск ДВУХСТУПЕНЧАТЫЙ.
+    const search=async(q)=>{
+      if(curAbort){ try{ curAbort.abort(); }catch(e){} }
+      const ac=(typeof AbortController!=="undefined")?new AbortController():null; curAbort=ac;
+      if(!hasShown()) msg("Ищу…");                     // «Ищу…» только если на экране ещё нет результатов (не мигаем)
+      try{
+        // ступень 1 — строгий intitle:
+        let raw=await fetchVol("intitle:"+q, ac);
+        if(ac && ac.signal.aborted) return;
+        let list=dedup(raw||[]).filter(v=>!BK_JUNK.test(v.title));
+        if(!list.length){
+          // ступень 2 — обычный запрос без intitle: (Google по классике так стабильнее, напр. «Отверженные»)
+          raw=await fetchVol(q, ac);
+          if(ac && ac.signal.aborted) return;
+          const all=dedup(raw||[]);
+          list=all.filter(v=>!BK_JUNK.test(v.title));
+          if(!list.length) list=all;                   // совсем ничего осмысленного → нефильтрованный (лучше пересказ, чем пустота)
+        }
+        if(!list.length){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }
+        showList(list);
+      }catch(e){ if(e && e.name==="AbortError") return; if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); }
+    };
+    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ if(curAbort){ try{ curAbort.abort(); }catch(e){} } box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 400); });
+    box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; box._items=null; if(curAbort){ try{ curAbort.abort(); }catch(e){} } });
     input.addEventListener("blur", ()=>{ setTimeout(()=>{ box.hidden=true; }, 200); });
   }
   bkAutocomplete($("#fTitle"), $("#fSuggest"), v=>{
@@ -3457,7 +3562,9 @@ main,footer{position:relative;z-index:1}
     if(addReadingBook(v.title, (v.authors&&v.authors[0])||"", genreFromBook(v))) $("#pReadingInput").value="";
   });
   // Enter / кнопка «＋» — добавить вписанное как есть (автор пустой, жанр «Проза»)
-  function pReadingManualAdd(){ const i=$("#pReadingInput"); if(!i) return; if(addReadingBook(i.value,"","Проза")) i.value=""; const s=$("#pReadingSuggest"); if(s){ s.hidden=true; s.innerHTML=""; } }
+  function pReadingManualAdd(){ const i=$("#pReadingInput"); if(!i) return;
+    let av=""; const s=$("#pReadingSuggest"); if(s && s._bestAuthor && s._bestFor===normTitle(i.value)) av=s._bestAuthor;   // автор из подсказки, если совпало название
+    if(addReadingBook(i.value,av,"Проза")) i.value=""; if(s){ s.hidden=true; s.innerHTML=""; } }
   { const _i=$("#pReadingInput"); if(_i) _i.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); pReadingManualAdd(); } }); }
   { const _b=$("#pReadingAdd"); if(_b) _b.addEventListener("click", pReadingManualAdd); }
   // рендер редактора списка «сейчас читаю» в профиле
@@ -3665,7 +3772,7 @@ main,footer{position:relative;z-index:1}
   $("#editProfile").addEventListener("click", openProfile);
   $("#logoutBtn").addEventListener("click", ()=>{
     if(!confirm("Выйти из профиля? Ваша полка останется в облаке — вернётесь по своему коду.")) return;
-    ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
   // тап по всему блоку «читаю» → окошко: список (+ добавить/убрать), тап по книге → её мини-страница (цвет / на полку / страница книги)
@@ -3918,7 +4025,7 @@ main,footer{position:relative;z-index:1}
     setTimeout(()=>$("#welName").focus(),60);
   }
   $("#welNew").addEventListener("click", ()=>{ wantCodeAfter=false; pendingAccessCode=""; hideAccessNote(); welShow("welStep1"); $("#welName").value=(myName&&myName!=="Моя полка")?myName:""; setTimeout(()=>$("#welName").focus(),60); });
-  $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; setTimeout(()=>$("#welLoginInput").focus(),60); });
+  $("#welHaveBtn").addEventListener("click", ()=>{ welShow("welLogin"); $("#welLoginInput").value=""; { const lp=$("#welLoginPass"); if(lp) lp.value=""; } setTimeout(()=>$("#welLoginInput").focus(),60); });
   { const _wf=$("#welWantFull"); if(_wf) _wf.addEventListener("click", (e)=>{ e.preventDefault(); wantCodeAfter=false; pendingAccessCode=""; hideAccessNote(); if($("#welBuyBtn")) $("#welBuyBtn").href = BUY_URL || "#"; $("#welAccessCode").value=""; welShow("welAccess"); }); }
   $("#welBack1").addEventListener("click", ()=>welShow("welChoose"));
   $("#welBack2").addEventListener("click", ()=>welShow("welChoose"));
@@ -3931,7 +4038,7 @@ main,footer{position:relative;z-index:1}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
     view = "me";
-    myCode = CLOUD() ? genCode() : "";
+    myCode = CLOUD() ? genCode() : ""; myPass="";
     bootLoaded = true;   // это свежесозданный уникальный код — в облаке его ещё нет, перезаписывать нечего, поэтому запись в облако разрешена (иначе новая полка не сохранится и при перезагрузке сотрётся)
     try{
       localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote","");
@@ -3940,6 +4047,7 @@ main,footer{position:relative;z-index:1}
       localStorage.setItem("polka_friends","[]"); localStorage.setItem("polka_favfriends","[]");
       localStorage.setItem("polka_registered","1");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
+      localStorage.removeItem("polka_pass");   // пароль задастся в welGo через set_password
     }catch(e){}
     setPaidCache(false);   // новая полка бесплатная; оплату проставит сервер при активации кода (paid в колонке)
     syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
@@ -3950,8 +4058,14 @@ main,footer{position:relative;z-index:1}
   }
   $("#welGo").addEventListener("click", async ()=>{
     const name = $("#welName").value.trim() || "Моя полка";
+    const pass = ($("#welPass").value||"").trim();
+    if(CLOUD() && pass.length<4){ toast("Придумай пароль — от 4 символов 🔒"); $("#welPass").focus(); return; }
     createShelf(name);              // сначала создаём полку — строка появляется в облаке (paid=false), без стены оплаты
     await syncUp();                 // гарантируем, что полка в облаке, прежде чем сервер проставит ей paid
+    if(CLOUD() && pass.length>=4){  // задать пароль на свежесозданную полку (хеш на сервере, пароль локально)
+      const okp=await sbSetPassword(myCode, pass, null);
+      if(okp){ myPass=pass; try{ localStorage.setItem("polka_pass", pass); }catch(e){} }
+    }
     if(FREE_MODE && !isPaid()){     // промо ?free — берём бесплатный код и применяем к ЭТОЙ полке
       const fc = await sbFetchFreeCode();
       if(fc){ const okc = await sbRedeem(fc); if(okc) setPaidCache(true); }
@@ -3975,10 +4089,10 @@ main,footer{position:relative;z-index:1}
   $("#welLinkCopy").addEventListener("click", ()=>{ const v=$("#welLink").value;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#welLink").select()); else $("#welLink").select(); });
   $("#welDone").addEventListener("click", ()=>{ closeModals(); if(wantCodeAfter){ wantCodeAfter=false; openAccess("welcome"); } });
-  $("#welLoginGo").addEventListener("click", ()=>withBtn($("#welLoginGo"),"Вхожу…", ()=>doLogin($("#welLoginInput").value)));
-  async function doLogin(code){
+  $("#welLoginGo").addEventListener("click", ()=>withBtn($("#welLoginGo"),"Вхожу…", ()=>doLogin($("#welLoginInput").value, $("#welLoginPass").value)));
+  async function doLogin(code, pass){
     code=(code||"").trim(); if(!code) return;
-    let p=null, used="", row=null;
+    let p=null, used="", row=null, offerPw=false;
     if(/^PLK/i.test(code)){ try{ p=decodeCode(code); }catch(e){ return toast("Не получилось прочитать код"); } }
     else if(CLOUD()){
       try{ row=await sbFetch(code.toUpperCase()); }catch(e){ return toast("Облако: "+(e.message||e)); }
@@ -3987,6 +4101,17 @@ main,footer{position:relative;z-index:1}
         if(await looksLikeAccessCode(code)){ startAccessCodeFlow(code.toUpperCase()); return; }
         return toast("Полка с таким кодом не найдена");
       }
+      const lc=await sbLoginCheck(code.toUpperCase(), pass||"");   // проверка пароля ДО входа (хеш только на сервере)
+      if(lc && lc.has_password && !lc.ok){
+        if(!(pass&&pass.trim())){   // пароль не введён (напр. вход по сохранённой ссылке) → показать форму ввода пароля
+          welShow("welLogin"); $("#welLoginInput").value=code.toUpperCase(); $("#welLoginPass").value="";
+          overlay.classList.add("open"); welModal.classList.add("open"); hideSplash(); setTimeout(()=>$("#welLoginPass").focus(),80);
+          toast("Введи пароль от полки 🔒"); return;
+        }
+        toast("Неверный пароль 🔒"); return;
+      }
+      myPass = (lc && lc.has_password && lc.ok) ? (pass||"") : "";
+      offerPw = !!(lc && !lc.has_password);   // у полки нет пароля → после входа мягко предложим задать
       try{ p=decodeCode(row.data); }catch(e){ return toast("Код повреждён"); }
       used=code.toUpperCase();
     } else { return toast("Короткие коды работают только с облаком"); }
@@ -4004,12 +4129,51 @@ main,footer{position:relative;z-index:1}
       if(row){ setPaidCache(!!row.paid); } else { setPaidCache(!!(p && p.pd)); }   // облако — источник истины по оплате; PLK-код офлайн — из blob
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo");
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
+      if(myPass) localStorage.setItem("polka_pass",myPass); else localStorage.removeItem("polka_pass");
     }catch(e){}
     bootLoaded=true;   // явный вход в аккаунт — данные загружены, запись разрешена
     setUrlLogin();
     view="me"; closeModals(); renderAll(); hideSplash(); toast("С возвращением, "+myName.split(" ")[0]+"!");
     loadFriends((p && Array.isArray(p.fr)) ? p.fr : []);
+    if(offerPw) setTimeout(()=>promptSetPassword("offer"), 900);   // у полки нет пароля → предложить задать (не заставляя)
   }
+  // ---- пароль полки: задать (существующим) / сменить / ввести заново на другом устройстве ----
+  let pwMode="offer";   // offer | change | reauth
+  function promptSetPassword(mode){
+    if(!CLOUD() || !myCode) return;
+    pwMode = mode || "offer";
+    if(pwMode!=="reauth" && myPass) pwMode="change";   // пароль уже есть локально → это смена
+    if(pwMode==="reauth"){
+      $("#pwTitle").textContent="Введите пароль полки 🔒";
+      $("#pwDesc").textContent="Чтобы редактировать полку с этого устройства.";
+      $("#pwInput").placeholder="пароль полки"; $("#pwSkip").textContent="Только смотреть";
+    } else if(pwMode==="change"){
+      $("#pwTitle").textContent="Сменить пароль 🔒";
+      $("#pwDesc").textContent="Придумай новый пароль (от 4 символов).";
+      $("#pwInput").placeholder="новый пароль"; $("#pwSkip").textContent="Отмена";
+    } else {
+      $("#pwTitle").textContent="Защити свою полку 🔒";
+      $("#pwDesc").textContent="Сейчас войти можно по одному коду. Задай пароль — и никто не зайдёт под твоим кодом с чужого устройства.";
+      $("#pwInput").placeholder="пароль (от 4 символов)"; $("#pwSkip").textContent="Позже";
+    }
+    $("#pwInput").value=""; overlay.classList.add("open"); $("#pwSetModal").classList.add("open");
+    setTimeout(()=>$("#pwInput").focus(), 60);
+  }
+  { const c=$("#pwClose"); if(c) c.addEventListener("click", closeModals); }
+  { const s=$("#pwSkip"); if(s) s.addEventListener("click", closeModals); }
+  { const b=$("#pwSave"); if(b) b.addEventListener("click", ()=>withBtn($("#pwSave"),"…", async ()=>{
+      const val=($("#pwInput").value||"").trim();
+      if(pwMode==="reauth"){
+        const lc=await sbLoginCheck(myCode, val);
+        if(lc && lc.ok){ myPass=val; try{ localStorage.setItem("polka_pass", val); }catch(e){} toast("Готово, доступ открыт 🔒"); closeModals(); }
+        else toast("Неверный пароль");
+        return;
+      }
+      if(val.length<4){ toast("Пароль — от 4 символов"); return; }
+      const ok=await sbSetPassword(myCode, val, myPass||null);
+      if(ok){ myPass=val; try{ localStorage.setItem("polka_pass", val); }catch(e){} toast(pwMode==="change"?"Пароль изменён 🔒":"Пароль установлен 🔒"); closeModals(); }
+      else toast(pwMode==="change"?"Не вышло — проверь старый пароль":"Не получилось задать пароль");
+    })); }
   /* при загрузке: проверяем, существует ли полка в облаке; если удалена — сбрасываем устройство */
   async function bootCloud(){
     if(!CLOUD() || !localStorage.getItem("polka_registered")) return;
@@ -4019,7 +4183,7 @@ main,footer{position:relative;z-index:1}
       try{ row = await sbFetch(myCode); }catch(e){ fetched=false; }   // сеть недоступна — не трогаем
       if(fetched && !row){
         // полку удалили в облаке → стираем профиль на устройстве
-        ["polka_registered","polka_code","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+        ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
         toast("Эта полка была удалена");
         setTimeout(()=>location.reload(), 1300);
         return;
@@ -4048,6 +4212,14 @@ main,footer{position:relative;z-index:1}
     setUrlLogin();
     refreshReqBadge();
     loadFriends(cloudFr || savedFriends.map(f=>f.code));
+    // пароль полки: если на этом устройстве он не сохранён — мягко разобраться
+    if(CLOUD() && myCode && !myPass){
+      const lc = await sbLoginCheck(myCode, "");
+      if(lc){
+        if(lc.has_password){ setTimeout(()=>promptSetPassword("reauth"), 900); }                        // задан на другом устройстве → ввести здесь (иначе не сохранить)
+        else if(!sessionStorage.getItem("pk_pwoffer")){ sessionStorage.setItem("pk_pwoffer","1"); setTimeout(()=>promptSetPassword("offer"), 1400); }   // пароля ещё нет → предложить (1 раз за сессию)
+      }
+    }
   }
   const restoreMode = /[?&#]restore(\b|=)/.test(location.href);
   const loginMatch = location.href.match(/[?#]login=([^&#]+)/);
