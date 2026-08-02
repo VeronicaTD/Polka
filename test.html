@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="258" />
+<meta name="app-version" content="259" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3027,16 +3027,43 @@ main,footer{position:relative;z-index:1}
     const startsWithTitle = normTitle(ex.slice(0, (title||"").length+10)).includes(normTitle(title));
     return startsWithTitle && BOOK_WORDS.test(ex.slice(0,220));         // иначе — статья начинается с названия и в начале есть книжное слово
   }
+  // ---- общий серверный справочник книг (обложка/автор/описание по normTitle) ----
+  // первое добавление книги сохраняет подобранные данные; последующие берут их отсюда → одинаково у всех.
+  // Работает мягко: если таблицы/сети нет — просто откат к Google (клиент можно катить до SQL).
+  let catalogCache={}; try{ catalogCache=JSON.parse(localStorage.getItem("polka_catalog")||"{}"); }catch(e){ catalogCache={}; }
+  const catalogNull=new Set();   // ключи, которых нет в справочнике (в памяти, чтобы не дёргать сервер повторно за сессию)
+  async function catalogGet(norm){
+    if(!norm) return null;
+    if(catalogCache[norm]) return catalogCache[norm];
+    if(catalogNull.has(norm) || typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return null;
+    try{ const rows=await sbRpc("catalog_get",{p_norm:norm}); const row=Array.isArray(rows)?rows[0]:rows;
+      if(row){ const v={author:row.author||"", cover:row.cover||"", desc:row.description||""}; catalogCache[norm]=v; try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} return v; }
+      catalogNull.add(norm); return null;
+    }catch(e){ return null; }
+  }
+  function catalogPut(norm, o){
+    if(!norm || !o || !(o.cover||o.desc||o.author)) return;
+    if(typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return;
+    try{ sbRpc("catalog_put",{p_norm:norm, p_title:o.title||"", p_author:o.author||"", p_cover:o.cover||"", p_desc:o.desc||""}).catch(()=>{});
+      const prev=catalogCache[norm]||{author:"",cover:"",desc:""};
+      catalogCache[norm]={author:prev.author||o.author||"", cover:prev.cover||o.cover||"", desc:prev.desc||o.desc||""};
+      catalogNull.delete(norm); try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){}
+    }catch(e){}
+  }
   async function fetchBookInfo(t,a){
     const key=looseKey(t,a);   // ключ по нормализованному названию — одна книга при любом написании автора
     if(bookInfoCache[key]) return bookInfoCache[key];
-    const info={desc:"", img:""};
+    const info={desc:"", img:"", author:""};
+    // 0) общий серверный справочник — если книгу уже кто-то добавлял, берём согласованные данные (не ходим лишний раз в Google)
+    try{ const c=await catalogGet(key); if(c){ info.desc=c.desc||info.desc; info.img=c.cover||info.img; info.author=c.author||info.author;
+      if(info.desc && info.img){ bookInfoCache[key]=info; try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){} return info; } } }catch(e){}
     const ot=normTitle(t);
     const isRu = s => /[а-яё]/i.test(s) && !/[іїєґ]/i.test(s);   // описание русское: есть кириллица и НЕТ украинских букв (іїєґ); английское отсеется (нет кириллицы)
     // среди результатов берём только те, где НАЗВАНИЕ совпадает; описание — ТОЛЬКО русское; обложку — из любого издания
     const scan=(items)=>{ for(const it of (items||[])){ const v=it.volumeInfo; if(!v) continue;
       const rt=normTitle(v.title);
       if(!(rt && ot && (rt===ot || rt.includes(ot) || ot.includes(rt)))) continue;
+      if(!info.author && v.authors && v.authors[0]) info.author=v.authors[0];
       if(!info.desc && v.description && isRu(v.description)) info.desc=String(v.description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
       if(!info.img && v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"";
       if(info.desc && info.img) return true;
@@ -3060,8 +3087,10 @@ main,footer{position:relative;z-index:1}
         }
       }catch(e){}
     }
-    if(info.desc || info.img) bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
-    try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){}
+    if(info.desc || info.img){ bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
+      try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){}
+      catalogPut(key, {title:t, author:info.author||a||"", cover:info.img, desc:info.desc});   // сохраняем в общий справочник (первое добавление закрепляет данные)
+    }
     return info;
   }
   // страница книги: подтягиваем рецензии людей + цитаты, которые они отмечают
@@ -3379,7 +3408,9 @@ main,footer{position:relative;z-index:1}
   }
   $("#saveBook").addEventListener("click", ()=>{
     const t=capTitle($("#fTitle").value); if(!t){ $("#fTitle").focus(); return; }
-    const nb={ t, a:capAuthor($("#fAuthor").value)||"неизвестный автор", g:$("#fGenre").value,
+    let av=$("#fAuthor").value.trim();
+    if(!av){ const sb=$("#fSuggest"); if(sb && sb._bestAuthor && sb._bestFor===normTitle(t)) av=sb._bestAuthor; }   // автор пуст → подставляем из подсказки (иначе книги не склеиваются между полками)
+    const nb={ t, a:capAuthor(av)||"неизвестный автор", g:$("#fGenre").value,
       c:selColor, fav:favNew, r:rateNew, note:"", qt:collectQuotes("fQuotes") };
     myBooks.push(nb);
     if(pendingWish!=null){ myWishlist.splice(pendingWish,1); pendingWish=null; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
@@ -3409,28 +3440,38 @@ main,footer{position:relative;z-index:1}
   const BK_JUNK=/(краткое изложение|саммари|summary|рабочая тетрадь|дневник читателя|анализ книги|обзор книги|ключевые идеи|конспект)/i;
   function bkAutocomplete(input, box, onPick){
     if(!input || !box) return;
-    let seq=0, timer=null;
+    let seq=0, timer=null, curAbort=null;
     const msg=(txt)=>{ box.innerHTML=`<div class="bk-msg">${esc(txt)}</div>`; box._items=null; box.hidden=false; };
-    const render=(items)=>{
-      const seen=new Set();
-      const list=(items||[]).filter(v=>{ if(!v||!v.title||BK_JUNK.test(v.title)) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,6);
+    const hasShown=()=> Array.isArray(box._items) && box._items.length>0;   // на экране уже есть результаты
+    const dedup=(items)=>{ const seen=new Set(); return (items||[]).filter(v=>{ if(!v||!v.title) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }); };
+    // настоящие книги (pageCount>100) — наверх; порядок внутри групп стабильный (пересказы обычно тонкие)
+    const rank=(items)=>{ const w=items.map((v,i)=>({v,i})); w.sort((a,b)=>{ const pa=(a.v.pageCount||0)>100?1:0, pb=(b.v.pageCount||0)>100?1:0; return pb-pa || a.i-b.i; }); return w.map(x=>x.v); };
+    const render=(raw)=>{
+      const all=dedup(raw);
+      let list=all.filter(v=>!BK_JUNK.test(v.title));
+      if(!list.length) list=all;                       // после фильтра пусто → лучше показать пересказ, чем пустоту (классика: Google по ней отдаёт в основном пересказы)
+      list=rank(list).slice(0,8);
       if(!list.length){ msg("Ничего не нашли — впиши название сам ✍️"); return; }
       box._items=list;
+      { const q=normTitle(input.value); const hit=list.find(v=>normTitle(v.title)===q)||list[0]; box._bestAuthor=(hit&&hit.authors&&hit.authors[0])||""; box._bestFor=q; }   // автор лучшего совпадения — для автоподстановки при сохранении
       box.innerHTML=list.map((v,i)=>{ const au=(v.authors&&v.authors[0])||"";
         return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
       box.hidden=false;
     };
-    const search=async(q)=>{ const s=++seq; msg("Ищу…");
+    const search=async(q)=>{ const s=++seq;
+      if(curAbort){ try{ curAbort.abort(); }catch(e){} }   // отменяем предыдущий запрос — устаревший ответ не перерисует выдачу
+      const ac=(typeof AbortController!=="undefined")?new AbortController():null; curAbort=ac;
+      if(!hasShown()) msg("Ищу…");                     // «Ищу…» только если на экране ещё нет результатов (не мигаем)
       try{
-        // intitle: — ищем по названию; БЕЗ langRestrict=ru (он выбрасывал корректные книги из-за кривых языковых меток Google)
-        const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent("intitle:"+q)}&maxResults=12&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));
+        // intitle: — по названию; БЕЗ langRestrict=ru (выбрасывал корректные книги из-за кривых языковых меток Google). maxResults=30 — чтобы после отсева пересказов осталось из чего выбрать
+        const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent("intitle:"+q)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""), ac?{signal:ac.signal}:undefined);
         if(s!==seq) return;
-        if(!r.ok){ msg("Ничего не нашли — впиши название сам ✍️"); return; }
+        if(!r.ok){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }
         const d=await r.json(); if(s!==seq) return;
         render((d.items||[]).map(it=>it.volumeInfo));
-      }catch(e){ if(s===seq) msg("Ничего не нашли — впиши название сам ✍️"); }
+      }catch(e){ if(e && e.name==="AbortError") return; if(s===seq && !hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); }
     };
-    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 500); });
+    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ if(curAbort){ try{ curAbort.abort(); }catch(e){} } box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 400); });
     box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; seq++; });
     input.addEventListener("blur", ()=>{ setTimeout(()=>{ box.hidden=true; }, 200); });
   }
@@ -3457,7 +3498,9 @@ main,footer{position:relative;z-index:1}
     if(addReadingBook(v.title, (v.authors&&v.authors[0])||"", genreFromBook(v))) $("#pReadingInput").value="";
   });
   // Enter / кнопка «＋» — добавить вписанное как есть (автор пустой, жанр «Проза»)
-  function pReadingManualAdd(){ const i=$("#pReadingInput"); if(!i) return; if(addReadingBook(i.value,"","Проза")) i.value=""; const s=$("#pReadingSuggest"); if(s){ s.hidden=true; s.innerHTML=""; } }
+  function pReadingManualAdd(){ const i=$("#pReadingInput"); if(!i) return;
+    let av=""; const s=$("#pReadingSuggest"); if(s && s._bestAuthor && s._bestFor===normTitle(i.value)) av=s._bestAuthor;   // автор из подсказки, если совпало название
+    if(addReadingBook(i.value,av,"Проза")) i.value=""; if(s){ s.hidden=true; s.innerHTML=""; } }
   { const _i=$("#pReadingInput"); if(_i) _i.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); pReadingManualAdd(); } }); }
   { const _b=$("#pReadingAdd"); if(_b) _b.addEventListener("click", pReadingManualAdd); }
   // рендер редактора списка «сейчас читаю» в профиле
