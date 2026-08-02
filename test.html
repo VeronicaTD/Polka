@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="261" />
+<meta name="app-version" content="262" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2674,7 +2674,7 @@ main,footer{position:relative;z-index:1}
     // дизайнерская обложка-заглушка: показывается сразу; поверх подгружается настоящая обложка, если найдётся
     return `<div class="cat-cover" data-open data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}" style="background:${bg};color:${pickFg(bg)}">
       <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
-      <div class="cc-title">${esc(b.t)}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
+      <div class="cc-title">${esc(capTitle(b.t))}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
   }
   // мини-полка «читаю»: до 3 вертикальных корешков без текста (тап → тултип с названием)
   function miniShelfHTML(arr){
@@ -2888,10 +2888,26 @@ main,footer{position:relative;z-index:1}
     img.onload=()=>img.classList.add("loaded"); img.onerror=()=>img.remove();
     img.src=String(src).replace(/^http:/,"https:"); el.appendChild(img);
   }
+  function normalizeCard(el, t, a){   // каноничные название/автор/обложку — из общего справочника (по normTitle)
+    if(!el || typeof catalogGet!=="function") return;
+    catalogGet(looseKey(t,a)).then(c=>{
+      if(!c) return;
+      const card = el.closest(".cat-book") || el.parentElement;
+      if(c.title){ const tt=capTitle(c.title);
+        const e1=el.querySelector(".cc-title"); if(e1) e1.textContent=tt;
+        const e2=card&&card.querySelector(".cat-t"); if(e2) e2.textContent=tt; }
+      if(c.author){
+        const a1=el.querySelector(".cc-author"); if(a1) a1.textContent=lastName(c.author);
+        const a2=card&&card.querySelector(".cat-a"); if(a2) a2.textContent=c.author; }
+      if(c.cover && !coverUrl(t,a) && !el.querySelector(".cc-img")) putCover(el, c.cover);   // ручной GBID приоритетен
+    }).catch(()=>{});
+  }
   function ensureCover(el,t,a){
-    if(!el || el.querySelector(".cc-img")) return;
+    if(!el) return;
+    normalizeCard(el, t, a);   // название/автор из справочника — даже если обложка уже стоит
+    if(el.querySelector(".cc-img")) return;
     const url=coverUrl(t,a);
-    if(url){ putCover(el, url); return; }                      // свой ID (книги каталога)
+    if(url){ putCover(el, url); return; }                      // свой ID (книги каталога) — приоритет
     // нет своего ID (книга читателей) — тянем обложку из Google Books (кэшируется), показываем и в карусели
     fetchBookInfo(t,a).then(info=>{ if(info && info.img) putCover(el, info.img); });
   }
@@ -2904,7 +2920,7 @@ main,footer{position:relative;z-index:1}
       books.map((b,i)=>{ const bg=COLORS[i%COLORS.length]; const bq=encodeURIComponent(b.t+" "+b.a);
         return `<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
           ${coverHTML(b, motif, bg)}
-          <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+          <div class="cat-t" data-open>${esc(capTitle(b.t))}</div><div class="cat-a">${esc(b.a)}</div>
           <div class="cat-acts">
             <button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button>
           </div></div>`;
@@ -2972,7 +2988,7 @@ main,footer{position:relative;z-index:1}
      <div class="cat-row">` +
      books.map((b,i)=>`<div class="cat-book" data-t="${esc(b.t)}" data-a="${esc(b.a)}">
         ${coverHTML(b, motif, COLORS[i%COLORS.length])}
-        <div class="cat-t" data-open>${esc(b.t)}</div><div class="cat-a">${esc(b.a)}</div>
+        <div class="cat-t" data-open>${esc(capTitle(b.t))}</div><div class="cat-a">${esc(b.a)}</div>
         <div class="cat-acts"><button class="cat-mini" data-wish title="в хотелки">📌 в хотелки</button></div></div>`).join("")
      + `</div><button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button></div></div>`;
     list.insertAdjacentHTML("beforeend", html);   // в КОНЕЦ подборок
@@ -3001,10 +3017,15 @@ main,footer{position:relative;z-index:1}
     bpBook={t,a};
     const motif="📖", bg=COLORS[(t.length)%COLORS.length];
     $("#bpCover").outerHTML = `<div id="bpCover">${coverHTML({t,a}, motif, bg)}</div>`;
-    $("#bpTitle").textContent=t; $("#bpAuthor").textContent=a||"";
+    $("#bpTitle").textContent=capTitle(t); $("#bpAuthor").textContent=capAuthor(a||"");   // регистр причёсан сразу
     const bq=encodeURIComponent(t+" "+(a||""));
     $("#bpLitres").href="https://www.litres.ru/search/?q="+bq;
     $("#bpBookmate").href="https://books.yandex.ru/search?query="+bq;
+    if(typeof catalogGet==="function") catalogGet(looseKey(t,a)).then(c=>{   // каноничные название/автор из общего справочника
+      if(!c || !stillOn(t,a)) return;
+      if(c.title) $("#bpTitle").textContent=capTitle(c.title);
+      if(c.author) $("#bpAuthor").textContent=c.author;
+    }).catch(()=>{});
     ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки (если есть свой ID)
     const anno = annoFor(t,a);                           // авторская аннотация (по названию, при любом написании автора)
     if(anno){ $("#bpAnno").innerHTML = renderAnno(anno); }
@@ -3065,25 +3086,26 @@ main,footer{position:relative;z-index:1}
     if(catalogCache[norm]) return catalogCache[norm];
     if(catalogNull.has(norm) || typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return null;
     try{ const rows=await sbRpc("catalog_get",{p_norm:norm}); const row=Array.isArray(rows)?rows[0]:rows;
-      if(row){ const v={author:row.author||"", cover:row.cover||"", desc:row.description||""}; catalogCache[norm]=v; try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} return v; }
+      if(row){ const v={title:row.title||"", author:row.author||"", cover:row.cover||"", desc:row.description||""}; catalogCache[norm]=v; try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} return v; }
       catalogNull.add(norm); return null;
     }catch(e){ return null; }
   }
   function catalogPut(norm, o){
     if(!norm || !o || !(o.cover||o.desc||o.author)) return;
     if(typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return;
-    try{ sbRpc("catalog_put",{p_norm:norm, p_title:o.title||"", p_author:o.author||"", p_cover:o.cover||"", p_desc:o.desc||""}).catch(()=>{});
-      const prev=catalogCache[norm]||{author:"",cover:"",desc:""};
-      catalogCache[norm]={author:prev.author||o.author||"", cover:prev.cover||o.cover||"", desc:prev.desc||o.desc||""};
+    const ttl=o.title?capTitle(o.title):"", aut=o.author?capAuthor(o.author):"";   // в справочник — сразу опрятно (заглавные)
+    try{ sbRpc("catalog_put",{p_norm:norm, p_title:ttl, p_author:aut, p_cover:o.cover||"", p_desc:o.desc||""}).catch(()=>{});
+      const prev=catalogCache[norm]||{title:"",author:"",cover:"",desc:""};
+      catalogCache[norm]={title:prev.title||ttl, author:prev.author||aut, cover:prev.cover||o.cover||"", desc:prev.desc||o.desc||""};
       catalogNull.delete(norm); try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){}
     }catch(e){}
   }
   async function fetchBookInfo(t,a){
     const key=looseKey(t,a);   // ключ по нормализованному названию — одна книга при любом написании автора
     if(bookInfoCache[key]) return bookInfoCache[key];
-    const info={desc:"", img:"", author:""};
+    const info={desc:"", img:"", author:"", title:""};
     // 0) общий серверный справочник — если книгу уже кто-то добавлял, берём согласованные данные (не ходим лишний раз в Google)
-    try{ const c=await catalogGet(key); if(c){ info.desc=c.desc||info.desc; info.img=c.cover||info.img; info.author=c.author||info.author;
+    try{ const c=await catalogGet(key); if(c){ info.desc=c.desc||info.desc; info.img=c.cover||info.img; info.author=c.author||info.author; info.title=c.title||info.title;
       if(info.desc && info.img){ bookInfoCache[key]=info; try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){} return info; } } }catch(e){}
     const ot=normTitle(t);
     const isRu = s => /[а-яё]/i.test(s) && !/[іїєґ]/i.test(s);   // описание русское: есть кириллица и НЕТ украинских букв (іїєґ); английское отсеется (нет кириллицы)
@@ -3473,32 +3495,44 @@ main,footer{position:relative;z-index:1}
     const msg=(txt)=>{ box.innerHTML=`<div class="bk-msg">${esc(txt)}</div>`; box._items=null; box.hidden=false; };
     const hasShown=()=> Array.isArray(box._items) && box._items.length>0;   // на экране уже есть результаты
     const dedup=(items)=>{ const seen=new Set(); return (items||[]).filter(v=>{ if(!v||!v.title) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }); };
-    // настоящие книги (pageCount>100) — наверх; порядок внутри групп стабильный (пересказы обычно тонкие)
-    const rank=(items)=>{ const w=items.map((v,i)=>({v,i})); w.sort((a,b)=>{ const pa=(a.v.pageCount||0)>100?1:0, pb=(b.v.pageCount||0)>100?1:0; return pb-pa || a.i-b.i; }); return w.map(x=>x.v); };
-    const render=(raw)=>{
-      const all=dedup(raw);
-      let list=all.filter(v=>!BK_JUNK.test(v.title));
-      if(!list.length) list=all;                       // после фильтра пусто → лучше показать пересказ, чем пустоту (классика: Google по ней отдаёт в основном пересказы)
+    const hasCover=v=> !!(v && v.imageLinks && (v.imageLinks.thumbnail||v.imageLinks.smallThumbnail));
+    // настоящие издания наверх: у пересказов страниц мало и часто нет обложки
+    const rank=(items)=>{ const w=items.map((v,i)=>({v,i}));
+      const score=x=>((x.v.pageCount||0)>100?2:0)+(hasCover(x.v)?1:0);
+      w.sort((a,b)=> score(b)-score(a) || a.i-b.i); return w.map(x=>x.v); };
+    const showList=(list)=>{
       list=rank(list).slice(0,8);
-      if(!list.length){ msg("Ничего не нашли — впиши название сам ✍️"); return; }
+      if(!list.length){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }   // пусто и на экране ничего нет
       box._items=list;
       { const q=normTitle(input.value); const hit=list.find(v=>normTitle(v.title)===q)||list[0]; box._bestAuthor=(hit&&hit.authors&&hit.authors[0])||""; box._bestFor=q; }   // автор лучшего совпадения — для автоподстановки при сохранении
       box.innerHTML=list.map((v,i)=>{ const au=(v.authors&&v.authors[0])||"";
         return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
       box.hidden=false;
     };
-    // отмена устаревших запросов — ТОЛЬКО через AbortController (без счётчика seq): новый ввод рвёт прошлый fetch, старый ответ выдачу не трогает
+    const fetchVol=async(query, ac)=>{   // без langRestrict=ru (кривые языковые метки Google теряют книги); maxResults=30
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""), ac?{signal:ac.signal}:undefined);
+      if(!r.ok) return null; const d=await r.json(); return (d.items||[]).map(it=>it.volumeInfo);
+    };
+    // отмена устаревших запросов — ТОЛЬКО через AbortController. Поиск ДВУХСТУПЕНЧАТЫЙ.
     const search=async(q)=>{
       if(curAbort){ try{ curAbort.abort(); }catch(e){} }
       const ac=(typeof AbortController!=="undefined")?new AbortController():null; curAbort=ac;
       if(!hasShown()) msg("Ищу…");                     // «Ищу…» только если на экране ещё нет результатов (не мигаем)
       try{
-        // intitle: — по названию; БЕЗ langRestrict=ru (выбрасывал корректные книги из-за кривых языковых меток Google). maxResults=30 — чтобы после отсева пересказов осталось из чего выбрать
-        const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent("intitle:"+q)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""), ac?{signal:ac.signal}:undefined);
+        // ступень 1 — строгий intitle:
+        let raw=await fetchVol("intitle:"+q, ac);
         if(ac && ac.signal.aborted) return;
-        if(!r.ok){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }
-        const d=await r.json(); if(ac && ac.signal.aborted) return;
-        render((d.items||[]).map(it=>it.volumeInfo));
+        let list=dedup(raw||[]).filter(v=>!BK_JUNK.test(v.title));
+        if(!list.length){
+          // ступень 2 — обычный запрос без intitle: (Google по классике так стабильнее, напр. «Отверженные»)
+          raw=await fetchVol(q, ac);
+          if(ac && ac.signal.aborted) return;
+          const all=dedup(raw||[]);
+          list=all.filter(v=>!BK_JUNK.test(v.title));
+          if(!list.length) list=all;                   // совсем ничего осмысленного → нефильтрованный (лучше пересказ, чем пустота)
+        }
+        if(!list.length){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }
+        showList(list);
       }catch(e){ if(e && e.name==="AbortError") return; if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); }
     };
     input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ if(curAbort){ try{ curAbort.abort(); }catch(e){} } box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 400); });
