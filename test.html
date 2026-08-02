@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="259" />
+<meta name="app-version" content="260" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3440,7 +3440,7 @@ main,footer{position:relative;z-index:1}
   const BK_JUNK=/(краткое изложение|саммари|summary|рабочая тетрадь|дневник читателя|анализ книги|обзор книги|ключевые идеи|конспект)/i;
   function bkAutocomplete(input, box, onPick){
     if(!input || !box) return;
-    let seq=0, timer=null, curAbort=null;
+    let timer=null, curAbort=null;
     const msg=(txt)=>{ box.innerHTML=`<div class="bk-msg">${esc(txt)}</div>`; box._items=null; box.hidden=false; };
     const hasShown=()=> Array.isArray(box._items) && box._items.length>0;   // на экране уже есть результаты
     const dedup=(items)=>{ const seen=new Set(); return (items||[]).filter(v=>{ if(!v||!v.title) return false; const k=v.title.toLowerCase().trim(); if(seen.has(k)) return false; seen.add(k); return true; }); };
@@ -3458,21 +3458,22 @@ main,footer{position:relative;z-index:1}
         return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
       box.hidden=false;
     };
-    const search=async(q)=>{ const s=++seq;
-      if(curAbort){ try{ curAbort.abort(); }catch(e){} }   // отменяем предыдущий запрос — устаревший ответ не перерисует выдачу
+    // отмена устаревших запросов — ТОЛЬКО через AbortController (без счётчика seq): новый ввод рвёт прошлый fetch, старый ответ выдачу не трогает
+    const search=async(q)=>{
+      if(curAbort){ try{ curAbort.abort(); }catch(e){} }
       const ac=(typeof AbortController!=="undefined")?new AbortController():null; curAbort=ac;
       if(!hasShown()) msg("Ищу…");                     // «Ищу…» только если на экране ещё нет результатов (не мигаем)
       try{
         // intitle: — по названию; БЕЗ langRestrict=ru (выбрасывал корректные книги из-за кривых языковых меток Google). maxResults=30 — чтобы после отсева пересказов осталось из чего выбрать
         const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent("intitle:"+q)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""), ac?{signal:ac.signal}:undefined);
-        if(s!==seq) return;
+        if(ac && ac.signal.aborted) return;
         if(!r.ok){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }
-        const d=await r.json(); if(s!==seq) return;
+        const d=await r.json(); if(ac && ac.signal.aborted) return;
         render((d.items||[]).map(it=>it.volumeInfo));
-      }catch(e){ if(e && e.name==="AbortError") return; if(s===seq && !hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); }
+      }catch(e){ if(e && e.name==="AbortError") return; if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); }
     };
     input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ if(curAbort){ try{ curAbort.abort(); }catch(e){} } box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 400); });
-    box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; seq++; });
+    box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; box._items=null; if(curAbort){ try{ curAbort.abort(); }catch(e){} } });
     input.addEventListener("blur", ()=>{ setTimeout(()=>{ box.hidden=true; }, 200); });
   }
   bkAutocomplete($("#fTitle"), $("#fSuggest"), v=>{
