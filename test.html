@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="262" />
+<meta name="app-version" content="263" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2909,7 +2909,18 @@ main,footer{position:relative;z-index:1}
     const url=coverUrl(t,a);
     if(url){ putCover(el, url); return; }                      // свой ID (книги каталога) — приоритет
     // нет своего ID (книга читателей) — тянем обложку из Google Books (кэшируется), показываем и в карусели
-    fetchBookInfo(t,a).then(info=>{ if(info && info.img) putCover(el, info.img); });
+    fetchBookInfo(t,a).then(info=>{
+      if(!info) return;
+      if(info.img) putCover(el, info.img);
+      const card = el.closest(".cat-book") || el.parentElement;
+      if(info.title){ const tt=capTitle(info.title);
+        const e1=el.querySelector(".cc-title"); if(e1) e1.textContent=tt;
+        const e2=card&&card.querySelector(".cat-t"); if(e2) e2.textContent=tt; }
+      const curA=(card&&card.querySelector(".cat-a")?.textContent)||"";
+      if(info.author && (!curA.trim() || /неизвест/i.test(curA))){   // фиксим только пустой/«неизвестен», хорошего автора не трогаем
+        const a1=el.querySelector(".cc-author"); if(a1) a1.textContent=lastName(info.author);
+        const a2=card&&card.querySelector(".cat-a"); if(a2) a2.textContent=info.author; }
+    });
   }
   function renderCatalog(){
     $("#catalogList").innerHTML = Object.entries(CATALOG).map(([genre,books])=>{
@@ -2936,7 +2947,7 @@ main,footer{position:relative;z-index:1}
   }
   // ОБЩИЙ ИНДЕКС: собираем все книги и все цитаты со ВСЕХ полок в облаке (кэшируем на сессию)
   let readersData = null, readersDataPromise = null;
-  try{ const c=JSON.parse(localStorage.getItem("polka_readers_cache")||"null"); if(c && Array.isArray(c.books)) readersData=c; }catch(e){}   // мгновенно из кэша, потом обновим в фоне
+  try{ const c=JSON.parse(localStorage.getItem("polka_readers_cache2")||"null"); if(c && Array.isArray(c.books)) readersData=c; }catch(e){}   // мгновенно из кэша, потом обновим в фоне
   async function loadReadersData(force){
     if(readersData && !force) return readersData;
     if(readersDataPromise && !force) return readersDataPromise;
@@ -2949,9 +2960,10 @@ main,footer{position:relative;z-index:1}
       const addBook=(t,a,who,qs)=>{
         if(!t) return;
         const k=looseKey(t, a||"");
-        const e=bmap.get(k)||{t, a:a||"", count:0};
+        const e=bmap.get(k)||{t, a:"", count:0};
         e.count++;
-        if((a||"").length > (e.a||"").length) e.a=a||"";   // держим самое полное написание автора
+        const clean = /неизвест/i.test(a||"") ? "" : (a||"");   // «неизвестный автор» автором НЕ считаем (иначе он побеждает как самый длинный)
+        if(clean && clean.length > (e.a||"").length) e.a=clean;   // держим самое полное РЕАЛЬНОЕ имя
         bmap.set(k,e);
         (qs||[]).forEach(q=>{ (qmap[k]||(qmap[k]=[])).push({q, who}); });
       };
@@ -2968,7 +2980,7 @@ main,footer{position:relative;z-index:1}
       readersData={ books, quotes:qmap, reviews:rmap };
       try{   // кэшируем (фото рецензий выкидываем, чтобы не раздувать localStorage)
         const slimR={}; Object.keys(rmap).forEach(k=>slimR[k]=rmap[k].map(rv=>Object.assign({},rv,{photo:""})));
-        localStorage.setItem("polka_readers_cache", JSON.stringify({books, quotes:qmap, reviews:slimR}));
+        localStorage.setItem("polka_readers_cache2", JSON.stringify({books, quotes:qmap, reviews:slimR}));
       }catch(e){}
       readersDataPromise=null;
       return readersData;
@@ -3017,7 +3029,7 @@ main,footer{position:relative;z-index:1}
     bpBook={t,a};
     const motif="📖", bg=COLORS[(t.length)%COLORS.length];
     $("#bpCover").outerHTML = `<div id="bpCover">${coverHTML({t,a}, motif, bg)}</div>`;
-    $("#bpTitle").textContent=capTitle(t); $("#bpAuthor").textContent=capAuthor(a||"");   // регистр причёсан сразу
+    $("#bpTitle").textContent=capTitle(t); $("#bpAuthor").textContent=capAuthor(/неизвест/i.test(a||"")?"":(a||""));   // регистр причёсан; «неизвестный автор» не показываем — подтянем ниже
     const bq=encodeURIComponent(t+" "+(a||""));
     $("#bpLitres").href="https://www.litres.ru/search/?q="+bq;
     $("#bpBookmate").href="https://books.yandex.ru/search?query="+bq;
@@ -3033,6 +3045,8 @@ main,footer{position:relative;z-index:1}
       $("#bpAnno").innerHTML = `<p class="mp">Загружаю описание…</p>`;
       fetchBookInfo(t,a).then(info=>{
         if(!stillOn(t,a)) return;
+        if(info.author){ const cur=$("#bpAuthor").textContent||""; if(!cur.trim()||/неизвест/i.test(cur)) $("#bpAuthor").textContent=info.author; }   // автор из справочника/Google, если пусто/«неизвестен»
+        if(info.title){ const cur=$("#bpTitle").textContent||""; if(!cur.trim()) $("#bpTitle").textContent=capTitle(info.title); }
         $("#bpAnno").innerHTML = info.desc ? renderAnno(info.desc) : `<p class="mp">Описание для этой книги не нашлось 🌱</p>`;
         if(info.img && !GBID[t+"|"+a]){       // обложка из Google Books, если своей нет
           const cov=$("#bpCover .cat-cover");
@@ -3104,6 +3118,7 @@ main,footer{position:relative;z-index:1}
     const key=looseKey(t,a);   // ключ по нормализованному названию — одна книга при любом написании автора
     if(bookInfoCache[key]) return bookInfoCache[key];
     const info={desc:"", img:"", author:"", title:""};
+    const rawA = /неизвест/i.test(a||"") ? "" : (a||"");   // «неизвестный автор» ломает поиск в Google — считаем как пусто
     // 0) общий серверный справочник — если книгу уже кто-то добавлял, берём согласованные данные (не ходим лишний раз в Google)
     try{ const c=await catalogGet(key); if(c){ info.desc=c.desc||info.desc; info.img=c.cover||info.img; info.author=c.author||info.author; info.title=c.title||info.title;
       if(info.desc && info.img){ bookInfoCache[key]=info; try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){} return info; } } }catch(e){}
@@ -3123,8 +3138,8 @@ main,footer{position:relative;z-index:1}
       if(r.ok){ const d=await r.json(); return scan(d.items); }
     }catch(e){} return false; };
     // 1) Google Books — издательская аннотация = СЮЖЕТ книги без спойлеров (то, что нужно), а не «об авторе и годе»
-    await query(`intitle:${t}`+(a?` inauthor:${a}`:""));   // точный поиск по названию+автору
-    if(!info.desc) await query(`${t} ${a||""}`.trim());     // общий поиск, если описания ещё нет
+    await query(`intitle:${t}`+(rawA?` inauthor:${rawA}`:""));   // точный поиск по названию+автору
+    if(!info.desc) await query(`${t} ${rawA||""}`.trim());     // общий поиск, если описания ещё нет
     // 2) Википедия — ТОЛЬКО запас, если у Google ничего (энциклопедично, но лучше пустоты; и только если статья реально про книгу)
     if(!info.desc || !info.img){
       try{
@@ -3139,7 +3154,7 @@ main,footer{position:relative;z-index:1}
     }
     if(info.desc || info.img){ bookInfoCache[key]=info;       // пустое не кэшируем (вдруг лимит — попробуем позже)
       try{ localStorage.setItem("polka_bookinfo2", JSON.stringify(bookInfoCache)); }catch(e){}
-      catalogPut(key, {title:t, author:info.author||a||"", cover:info.img, desc:info.desc});   // сохраняем в общий справочник (первое добавление закрепляет данные)
+      catalogPut(key, {title:t, author:info.author||rawA||"", cover:info.img, desc:info.desc});   // сохраняем в общий справочник (первое добавление закрепляет данные; «неизвестный автор» не пишем)
     }
     return info;
   }
@@ -3679,7 +3694,7 @@ main,footer{position:relative;z-index:1}
     if(infoBook && isMe()){
       if(!(await askConfirm("Удалить книгу «"+infoBook.t+"» с полки? Рецензию и цитаты тоже потеряешь."))) return;
       const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine();
-        syncUp().then(()=>{ readersData=null; try{localStorage.removeItem("polka_readers_cache");}catch(e){} loadReadersData(true); });   // обновить «Выбор читателей», чтобы удалённая книга исчезла из подборки
+        syncUp().then(()=>{ readersData=null; try{localStorage.removeItem("polka_readers_cache2");}catch(e){} loadReadersData(true); });   // обновить «Выбор читателей», чтобы удалённая книга исчезла из подборки
       } closeModals(); renderAll();
     }
   });
