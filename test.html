@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="266" />
+<meta name="app-version" content="267" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3477,7 +3477,7 @@ main,footer{position:relative;z-index:1}
       rows.forEach(row=>{ if(!row||!row.data) return; let p; try{ p=decodeCode(row.data); }catch(e){ return; }
         const bks=(p&&p.b)||[]; if(!bks.length) return;
         if(row.code && myCode && String(row.code).toUpperCase()===String(myCode).toUpperCase()) return;   // себя не показываем (по коду — надёжно)
-        readers.push({ code:row.code||"", name:(p&&p.n)||row.name||"Читатель", photo:(p&&p.ph)||"", color:"#b8493a", count:bks.length, books:bks, wishlist:(p&&Array.isArray(p.wl))?p.wl:[], quote:(p&&p.q)||"" });
+        readers.push({ code:row.code||"", name:(p&&p.n)||row.name||"Читатель", photo:(p&&p.ph)||"", color:"#b8493a", count:bks.length, books:bks, wishlist:(p&&Array.isArray(p.wl))?p.wl:[], quote:(p&&p.q)||"", blob:row.data });
       });
     } else {   // функции ещё нет (до SQL) — из общего индекса, без кода (тап = только просмотр)
       let data=await loadReadersData(); if(!data||!data.readers) data=await loadReadersData(true);
@@ -3500,7 +3500,7 @@ main,footer{position:relative;z-index:1}
   }
   { const rl=$("#readersList"); if(rl) rl.addEventListener("click", e=>{ const c=e.target.closest(".rd-card"); if(!c) return; const r=(rl._readers||[])[+c.dataset.i]; if(!r) return;
       document.querySelectorAll(".fullpage.open").forEach(m=>m.classList.remove("open"));
-      if(r.code) viewGuestByCode(r.code);   // код есть → viewGuestByCode разрулит: свой→me, друг→его профиль, чужой→гость с «добавить в друзья»
+      if(r.code) viewGuestByCode(r.code, r.blob);   // код есть → viewGuestByCode разрулит; blob уже скачан → без повторного запроса (мгновенно)
       else showGuest({name:r.name, color:r.color||"#b8493a", photo:r.photo||"", books:r.books||[], wishlist:r.wishlist||[], quote:r.quote||"", stickers:[], reading:"", code:""});   // без кода (до SQL) — только просмотр
     }); }
   $("#mReviews").addEventListener("click", ()=>{ menuGo(()=>openReviewsFeed()); });
@@ -4052,15 +4052,15 @@ main,footer{position:relative;z-index:1}
     }
   }
   // открыть чужую полку «на посмотреть» (гостём, без добавления в друзья)
-  async function viewGuestByCode(code){
+  async function viewGuestByCode(code, blob){
     if(!code || !CLOUD()) return;
     code = String(code).trim().toUpperCase();
     if(code===String(myCode).toUpperCase()){ view="me"; casePage=0; closeModals(); renderAll(); return; }
     const ex = savedFriends.find(f=>f.code===code);
     if(ex){ view=ex.id; casePage=0; closeModals(); renderAll(); return; }   // уже друг → его полка
-    let row; try{ row = await sbFetch(code); }catch(e){ return toast("Не получилось открыть полку"); }
-    if(!row || !row.data) return toast("Полка не найдена");
-    let p; try{ p = decodeCode(row.data); }catch(e){ return toast("Полка повреждена"); }
+    let data = blob;   // блоб уже скачан (тап в «Читателях») → без повторного запроса
+    if(!data){ let t=(!reduce)?setTimeout(()=>toast("Открываю полку…"),350):0; let row; try{ row = await sbFetch(code); }catch(e){ clearTimeout(t); return toast("Не получилось открыть полку"); } clearTimeout(t); if(!row || !row.data) return toast("Полка не найдена"); data = row.data; }
+    let p; try{ p = decodeCode(data); }catch(e){ return toast("Полка повреждена"); }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books)) return toast("Не похоже на полку");
     const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null};
