@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="270" />
+<meta name="app-version" content="271" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -430,6 +430,22 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .cat-cover .cc-author{font-size:9.5px;letter-spacing:.03em;opacity:.85;border-top:1px solid currentColor;padding-top:5px;width:100%}
 .cat-cover .cc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;border-radius:inherit}
 .cat-cover .cc-img.loaded{opacity:1}
+/* переключатель вида полки + сетка обложек */
+.view-toggle{display:flex;gap:4px;justify-content:center;margin:2px auto 12px;background:var(--paper-2);border-radius:20px;padding:3px;width:max-content;max-width:92%}
+.view-toggle button{border:none;background:transparent;color:var(--ink-soft);font-size:13px;font-weight:600;padding:6px 14px;border-radius:16px;cursor:pointer;white-space:nowrap;transition:background .18s,color .18s}
+.view-toggle button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.cover-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px;padding:4px 2px 12px}
+@media(min-width:560px){.cover-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:820px){.cover-grid{grid-template-columns:repeat(5,1fr)}}
+.gv-cell{cursor:pointer;text-align:center;min-width:0}
+.cover-grid .cat-cover{width:100%;height:auto;aspect-ratio:2/3;border-radius:3px 8px 8px 3px}
+.gv-heart{position:absolute;top:5px;right:6px;z-index:4;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))}
+.gv-t{font-family:"Fraunces",serif;font-weight:600;font-size:11.5px;line-height:1.2;color:var(--ink);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gv-a{font-size:10px;color:var(--ink-soft);line-height:1.2;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* обложка в карточке книги + кнопка замены */
+.spine-wrap{position:relative;flex-shrink:0}
+.spine-wrap .big-spine{background-size:cover;background-position:center}
+.cover-edit{position:absolute;right:-8px;bottom:-8px;width:30px;height:30px;border-radius:50%;border:2px solid var(--paper);background:var(--accent);color:#fff;font-size:13px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:0}
 /* страница книги */
 .bp-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:6px}
 #bpCover .cat-cover{width:130px;height:190px;cursor:default}
@@ -845,6 +861,10 @@ main,footer{position:relative;z-index:1}
       <path d="M94 30 C100 36 100 46 94 50" stroke="#ef9d92" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
     </svg>
     <span class="hand-note" id="handNote">★ моя полка ★</span>
+    <div class="view-toggle" id="viewToggle" style="display:none">
+      <button type="button" data-vw="spines">📚 Корешки</button>
+      <button type="button" data-vw="covers">🖼 Обложки</button>
+    </div>
     <button class="case-nav prev" id="casePrev" aria-label="Предыдущий шкаф">‹</button>
     <button class="case-nav next" id="caseNext" aria-label="Следующий шкаф">›</button>
     <div class="bookcase" id="bookcase"></div>
@@ -890,7 +910,11 @@ main,footer{position:relative;z-index:1}
 <div class="modal bookinfo" id="infoModal" role="dialog" aria-modal="true" aria-label="О книге">
   <button class="close" data-close>×</button>
   <div class="row">
-    <div class="big-spine" id="infoSpine"></div>
+    <div class="spine-wrap">
+      <div class="big-spine" id="infoSpine"></div>
+      <button class="cover-edit" id="infoCoverEdit" type="button" title="Заменить обложку" style="display:none">✏️</button>
+      <input type="file" id="infoCoverInput" accept="image/*" hidden>
+    </div>
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
@@ -1625,6 +1649,21 @@ main,footer{position:relative;z-index:1}
     }; im.src = r.result; };
     r.readAsDataURL(file);
   }
+  /* сжать обложку до прямоугольника 2:3 (200×300, JPEG) — чтобы блоб полки не раздувался */
+  function coverToDataURL(file, cb){
+    const r = new FileReader();
+    r.onload = () => { const im = new Image(); im.onload = () => {
+      const W=200, H=300, tar=W/H;
+      const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+      const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
+      const ar=im.width/im.height; let sw,sh,sx,sy;
+      if(ar>tar){ sh=im.height; sw=sh*tar; sx=(im.width-sw)/2; sy=0; }   // шире — режем бока
+      else { sw=im.width; sh=sw/tar; sx=0; sy=(im.height-sh)/2; }        // выше — режем верх/низ
+      ctx.drawImage(im, sx,sy,sw,sh, 0,0,W,H);
+      cb(cv.toDataURL("image/jpeg", 0.7));
+    }; im.src = r.result; };
+    r.readAsDataURL(file);
+  }
 
   /* сердечко над любимыми книгами (сплошное с белой обводкой) */
   function pixelHeartSVG(size){
@@ -1682,6 +1721,7 @@ main,footer{position:relative;z-index:1}
   let myReading = readReadingLS();
   let myEmail = localStorage.getItem("polka_email") || "";   // почта для восстановления доступа (пишется в колонку shelves.email, обратно не читается — приватность)
   let myWishlist = []; try{ myWishlist = JSON.parse(localStorage.getItem("polka_wishlist") || "[]"); }catch(e){ myWishlist = []; }
+  let myView = (localStorage.getItem("polka_view")==="covers") ? "covers" : "spines";   // вид полки: корешки / обложки (запоминается)
   const saveWish = () => { try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
   /* ---- счётчик «дней с книгой» (стрик) ---- */
   let myStreak=0, myTotal=0, myLastMark="", myPause=false;
@@ -2194,10 +2234,43 @@ main,footer{position:relative;z-index:1}
     </div>`;
   }
 
+  /* прямая обложка книги (загруженная или сохранённая ссылка) — приоритет над авто-обложкой */
+  function bookCover(b){
+    const c = b && b.cover ? String(b.cover) : "";
+    return /^(data:|https?:)/i.test(c) ? c : "";
+  }
+  /* ячейка сетки «обложки»: плашка в цвет книги (название/автор) + оверлей реальной обложки + сердечко */
+  function coverCellHTML(b, i){
+    const bg = spineBg(b), fg = pickFg(bg);
+    const direct = bookCover(b);                       // загруженная — сразу, без ленивой подгрузки
+    const heart = isFav(b) ? `<span class="gv-heart">${pixelHeartSVG(18)}</span>` : "";
+    const imgTag = direct ? `<img class="cc-img loaded" src="${esc(direct.replace(/^http:/,"https:"))}" alt="" onerror="this.remove()">` : "";
+    const lazy = direct ? "" : ` data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}"`;   // без прямой — авто-обложка через ensureCover
+    return `<div class="gv-cell" data-i="${i}">
+      <div class="cat-cover"${lazy} style="background:${bg};color:${fg}">
+        <div class="cc-frame"><div class="cc-motif">📖</div>
+        <div class="cc-title">${esc(capTitle(b.t))}</div><div class="cc-author">${esc(lastName(b.a))}</div></div>
+        ${heart}${imgTag}</div>
+      <div class="gv-t">${esc(b.t)}</div><div class="gv-a">${esc(b.a||"")}</div>
+    </div>`;
+  }
+
   /* шкаф: книги натурального размера, упаковываются по ширине полки слева направо */
   function renderCase(){
     const books = currentList();
     const me = isMe();
+    // переключатель «корешки / обложки» — показываем, когда на полке есть книги
+    { const vt=$("#viewToggle"); if(vt){ vt.style.display = books.length ? "flex" : "none";
+        vt.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.vw===myView)); } }
+    if(myView==="covers" && books.length){
+      $("#casePrev").classList.remove("show"); $("#caseNext").classList.remove("show");
+      const ind=$("#caseInd"); if(ind) ind.style.display="none";
+      const addCell = me ? `<div class="gv-cell" data-add="1"><div class="cat-cover" style="background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-size:34px;border:2px dashed var(--line)">+</div><div class="gv-t" style="color:var(--ink-soft)">добавить</div></div>` : "";
+      bookcase.innerHTML = `<div class="cover-grid">${books.map((b,i)=>coverCellHTML(b,i)).join("")}${addCell}</div>`;
+      hydrateCovers(bookcase);
+      if(!reduce && slideDir!==0){ bookcase.animate([{opacity:.4},{opacity:1}],{duration:260}); slideDir=0; }
+      return;
+    }
     const innerW = Math.max(120, bookcase.clientWidth - 36);
     const gap = 5, addW = phone()?30:40;
 
@@ -3521,9 +3594,18 @@ main,footer{position:relative;z-index:1}
   /* клик по корешку / плюсу */
   bookcase.addEventListener("click", e=>{
     if(e.target.closest("#quickAdd")){ openAdd(); return; }
+    const cell = e.target.closest(".gv-cell");
+    if(cell){ if(cell.dataset.add){ openAdd(); return; } openInfo(parseInt(cell.dataset.i,10)); return; }
     const sp = e.target.closest(".spine");
     if(sp) openInfo(parseInt(sp.dataset.i,10));
   });
+  // переключатель вида полки: корешки / обложки (запоминается)
+  { const vt=$("#viewToggle"); if(vt) vt.addEventListener("click", e=>{
+      const b=e.target.closest("button[data-vw]"); if(!b) return;
+      if(myView===b.dataset.vw) return;
+      myView=b.dataset.vw; try{ localStorage.setItem("polka_view", myView); }catch(err){}
+      slideDir=0; casePage=0; renderCase();
+    }); }
 
   function renderAll(){ renderTabs(); renderProfile(); renderPicker(); renderCase(); if(localStorage.getItem("polka_registered")) hideSplash(); }
 
@@ -3679,10 +3761,16 @@ main,footer{position:relative;z-index:1}
   }); }
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
-  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], infoReviewData=null, infoReadingIdx=null;
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], iCover="", infoReviewData=null, infoReadingIdx=null;
   function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
   function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); }
-  $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); $("#infoSpine").style.background=iSelColor; });
+  // обложка в карточке: загруженная/сохранённая — картинкой; иначе авто-обложка каталога; иначе цвет-плашка
+  function paintInfoCover(){ const sp=$("#infoSpine"); if(!sp) return;
+    const url = iCover || (infoBook && !iCover ? coverUrl(infoBook.t, infoBook.a) : "");
+    if(url){ sp.style.background=iSelColor; sp.style.backgroundImage=`url(${url.replace(/^http:/,"https:")})`; }
+    else { sp.style.backgroundImage="none"; sp.style.background=iSelColor; }
+  }
+  $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); paintInfoCover(); });
   $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
   $("#iFav").addEventListener("click", ()=>{ iFav=!iFav; paintIFav(); });
   function openInfo(i, fromReading){
@@ -3705,13 +3793,15 @@ main,footer{position:relative;z-index:1}
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
-      $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=iSelColor;
+      iCover = bookCover(b); paintInfoCover();
+      { const ce=$("#infoCoverEdit"); if(ce) ce.style.display=""; }   // ✏️ заменить обложку — только на своей/читаемой книге
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
       if(!fromReading){ $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _draft=reviewDrafts[_bk]; const _txt=(_draft&&_draft.trim())?_draft:((_rv&&_rv.text)||""); const _hasPub=!!(_rv&&_rv.text); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=_hasPub?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=_hasPub?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); if($("#openReviewBtn")) $("#openReviewBtn").textContent=(_hasPub||(_draft&&_draft.trim()))?"✏️ Редактировать рецензию":"✍️ Написать рецензию"; } }
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
-      $("#infoSpine").style.backgroundImage="none"; $("#infoSpine").style.background=spineBg(b);
+      { const ce=$("#infoCoverEdit"); if(ce) ce.style.display="none"; }   // чужая книга — обложку не меняем
+      iSelColor = spineBg(b); iCover = bookCover(b); paintInfoCover();
       $("#infoStars").textContent = (b.r? starsStr(b.r):"") + (isFav(b)?"  ♥":"");
       // комментарии убраны как опция — не показываем
       const cmt=$("#infoComment"); if(cmt){ cmt.style.display="none"; cmt.innerHTML=""; }
@@ -3739,7 +3829,17 @@ main,footer{position:relative;z-index:1}
     infoBook.a = capAuthor($("#iAuthor").value) || "неизвестный автор";
     infoBook.g = $("#iGenre").value;
     infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
+    infoBook.cover = iCover || "";   // загруженная обложка (сжата); пусто → авто-обложка/плашка
   }
+  // ✏️ заменить обложку в карточке книги — своя картинка с телефона, сжимается до 200×300
+  { const ce=$("#infoCoverEdit"), ci=$("#infoCoverInput");
+    if(ce && ci){
+      ce.addEventListener("click", ()=>ci.click());
+      ci.addEventListener("change", e=>{ const f=e.target.files && e.target.files[0]; if(!f) return;
+        coverToDataURL(f, url=>{ iCover=url; paintInfoCover(); toast("Обложка обновится после «Сохранить»"); });
+        ci.value="";
+      });
+    } }
   $("#saveInfo").addEventListener("click", ()=>{
     if(!infoBook) return;
     const isReading = infoReadingIdx!=null;
