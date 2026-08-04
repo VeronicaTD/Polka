@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="267" />
+<meta name="app-version" content="268" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3490,7 +3490,7 @@ main,footer{position:relative;z-index:1}
     list.innerHTML = readers.map((r,i)=>{
       const initial=esc((r.name||"?").trim()[0]||"?");
       const face = r.photo ? `background-image:url(${r.photo})` : `background:${r.color||'#b8493a'}`;
-      const pct = r._pct>0 ? `<span class="rd-pct">💫 ${r._pct}%</span>` : "";
+      const pct = `<span class="rd-pct">💫 ${r._pct}%</span>`;   // мэтч на ВСЕХ карточках, включая 0% (чтобы у каждого читателя был виден процент)
       const meta = `${r.count} ${plural(r.count,"книга","книги","книг")}${r._friend?" · ❤ друг":""}`;
       return `<button type="button" class="rd-card" data-i="${i}">
         <span class="rd-face" style="${face}">${r.photo?'':initial}</span>
