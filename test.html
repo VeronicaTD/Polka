@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="265" />
+<meta name="app-version" content="266" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -216,9 +216,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .vibe-pill:active{opacity:.8}
 .fav-pill.on{background:#e0556a;color:#fff;border-color:#e0556a}
 .co-pill{border-color:#b8894a;color:#8a5f2c;background:rgba(184,137,74,.08)}
-.add-pill{border-color:#5a9e6f;color:#3c7a52;background:rgba(90,158,111,.1)}
+.add-pill{border-color:var(--accent);color:#fff;background:var(--accent);font-weight:600}
 .add-pill:active{opacity:.8}
-.add-pill.waiting{border-color:var(--line);color:var(--muted);background:none;cursor:default}
+.add-pill.waiting{border-color:var(--line);color:var(--ink-soft);background:var(--paper-2);cursor:default;font-weight:500}
 .co-pill:active{opacity:.8}
 .tab .tab-heart{font-size:11px;margin-left:2px}
 .tab.fav{border-color:#e0556a}
@@ -2065,7 +2065,7 @@ main,footer{position:relative;z-index:1}
           ab.style.display = showAdd ? "" : "none";
           const waiting = showAdd && myOutgoingPending.has(f.code);
           ab.classList.toggle("waiting", waiting);
-          ab.textContent = waiting ? "⏳ ожидание" : "＋ добавить в друзья";
+          ab.textContent = waiting ? "✓ заявка отправлена" : "＋ добавить в друзья";
           ab.disabled = waiting;
         } }
       { const _cb=$("#coreadBtn"); if(_cb){ const fp=$("#friendPills"); if(_cb.parentNode!==fp) fp.insertBefore(_cb, $("#addFriendVibe")); _cb.classList.remove("co-inline"); _cb.style.display = f.code ? "" : "none"; } }
