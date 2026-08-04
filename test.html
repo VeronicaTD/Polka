@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="272" />
+<meta name="app-version" content="273" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1929,6 +1929,8 @@ main,footer{position:relative;z-index:1}
   let myStickers = [];
   try { myStickers = JSON.parse(localStorage.getItem("polka_stickers") || "null") || []; } catch(e){ myStickers = []; }
   let myCode = localStorage.getItem("polka_code") || "";
+  const OWNER_CODE = "YZ97JT";   // полка-куратор (Veronica): её загруженные обложки становятся ЭТАЛОННЫМИ для всех (пишутся в справочник, cover_ref). Сменишь полку — поменяй тут И в SQL catalog_set_cover.
+  const isOwner = () => CLOUD() && myCode && String(myCode).toUpperCase()===OWNER_CODE;
   let myPass = localStorage.getItem("polka_pass") || "";   // пароль полки — ХРАНИТСЯ ЛОКАЛЬНО на устройстве для автовхода/записи; на сервере только bcrypt-хеш
   let myPublic = localStorage.getItem("polka_public")==="1";   // показывать полку в разделе «Читатели» (флаг public в блобе, индекс 12)
   /* свои загруженные стикеры (картинки) */
@@ -2244,10 +2246,11 @@ main,footer{position:relative;z-index:1}
   /* ячейка сетки «обложки»: плашка в цвет книги (название/автор) + оверлей реальной обложки + сердечко */
   function coverCellHTML(b, i){
     const bg = spineBg(b), fg = pickFg(bg);
-    const direct = bookCover(b);                       // загруженная — сразу, без ленивой подгрузки
+    const cached = (typeof catalogCache!=="undefined") ? catalogCache[looseKey(b.t,b.a)] : null;
+    const direct = bookCover(b) || (cached && cached.coverRef) || "";   // личная обложка → эталон из справочника (кэш) → иначе ленивая загрузка
     const heart = isFav(b) ? `<span class="gv-heart">${pixelHeartSVG(18)}</span>` : "";
     const imgTag = direct ? `<img class="cc-img loaded" src="${esc(direct.replace(/^http:/,"https:"))}" alt="" onerror="this.remove()">` : "";
-    const lazy = direct ? "" : ` data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}"`;   // без прямой — авто-обложка через ensureCover
+    const lazy = direct ? "" : ` data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}"`;   // без прямой — эталон/авто через ensureCover
     return `<div class="gv-cell" data-i="${i}">
       <div class="cat-cover"${lazy} style="background:${bg};color:${fg}">
         <div class="cc-frame"><div class="cc-motif">📖</div>
@@ -3003,38 +3006,43 @@ main,footer{position:relative;z-index:1}
     img.onload=()=>img.classList.add("loaded"); img.onerror=()=>img.remove();
     img.src=String(src).replace(/^http:/,"https:"); el.appendChild(img);
   }
+  function applyCardMeta(el, title, author){   // каноничные название/автор в плашку/подпись
+    const card = el.closest(".cat-book") || el.parentElement;
+    if(title){ const tt=capTitle(title);
+      const e1=el.querySelector(".cc-title"); if(e1) e1.textContent=tt;
+      const e2=card&&card.querySelector(".cat-t"); if(e2) e2.textContent=tt; }
+    if(author){
+      const a1=el.querySelector(".cc-author"); if(a1) a1.textContent=lastName(author);
+      const a2=card&&card.querySelector(".cat-a"); if(a2) a2.textContent=author; }
+  }
   function normalizeCard(el, t, a){   // каноничные название/автор/обложку — из общего справочника (по normTitle)
     if(!el || typeof catalogGet!=="function") return;
     catalogGet(looseKey(t,a)).then(c=>{
       if(!c) return;
-      const card = el.closest(".cat-book") || el.parentElement;
-      if(c.title){ const tt=capTitle(c.title);
-        const e1=el.querySelector(".cc-title"); if(e1) e1.textContent=tt;
-        const e2=card&&card.querySelector(".cat-t"); if(e2) e2.textContent=tt; }
-      if(c.author){
-        const a1=el.querySelector(".cc-author"); if(a1) a1.textContent=lastName(c.author);
-        const a2=card&&card.querySelector(".cat-a"); if(a2) a2.textContent=c.author; }
-      if(c.cover && !coverUrl(t,a) && !el.querySelector(".cc-img")) putCover(el, c.cover);   // ручной GBID приоритетен
+      applyCardMeta(el, c.title, c.author);
+      if(!el.querySelector(".cc-img")){
+        if(c.coverRef) putCover(el, c.coverRef);                           // ЭТАЛОН (загружен Veronica) — высший приоритет
+        else if(c.cover && !coverUrl(t,a)) putCover(el, c.cover);          // авто-обложка из справочника (если нет зашитого GBID)
+      }
     }).catch(()=>{});
   }
-  function ensureCover(el,t,a){
+  async function ensureCover(el,t,a){
     if(!el) return;
-    normalizeCard(el, t, a);   // название/автор из справочника — даже если обложка уже стоит
+    const c = await catalogGet(looseKey(t,a)).catch(()=>null);   // ждём справочник, чтобы ЭТАЛОН выиграл гонку у зашитого GBID
+    if(c) applyCardMeta(el, c.title, c.author);
     if(el.querySelector(".cc-img")) return;
+    if(c && c.coverRef){ putCover(el, c.coverRef); return; }     // 1) ЭТАЛОН Veronica
     const url=coverUrl(t,a);
-    if(url){ putCover(el, url); return; }                      // свой ID (книги каталога) — приоритет
-    // нет своего ID (книга читателей) — тянем обложку из Google Books (кэшируется), показываем и в карусели
+    if(url){ putCover(el, url); return; }                        // 2) зашитый GBID (выверенные издания)
+    if(c && c.cover){ putCover(el, c.cover); return; }           // 3) авто-обложка, ранее сохранённая в справочник
+    // 4) нет ничего — тянем из Google Books (кэшируется, дозапишется в справочник)
     fetchBookInfo(t,a).then(info=>{
       if(!info) return;
-      if(info.img) putCover(el, info.img);
+      if(info.img && !el.querySelector(".cc-img")) putCover(el, info.img);
+      if(info.title) applyCardMeta(el, info.title, "");
       const card = el.closest(".cat-book") || el.parentElement;
-      if(info.title){ const tt=capTitle(info.title);
-        const e1=el.querySelector(".cc-title"); if(e1) e1.textContent=tt;
-        const e2=card&&card.querySelector(".cat-t"); if(e2) e2.textContent=tt; }
       const curA=(card&&card.querySelector(".cat-a")?.textContent)||"";
-      if(info.author && (!curA.trim() || /неизвест/i.test(curA))){   // фиксим только пустой/«неизвестен», хорошего автора не трогаем
-        const a1=el.querySelector(".cc-author"); if(a1) a1.textContent=lastName(info.author);
-        const a2=card&&card.querySelector(".cat-a"); if(a2) a2.textContent=info.author; }
+      if(info.author && (!curA.trim() || /неизвест/i.test(curA))) applyCardMeta(el, "", info.author);   // фиксим только пустой/«неизвестен»
     });
   }
   function renderCatalog(){
@@ -3220,7 +3228,7 @@ main,footer{position:relative;z-index:1}
     if(catalogCache[norm]) return catalogCache[norm];
     if(catalogNull.has(norm) || typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return null;
     try{ const rows=await sbRpc("catalog_get",{p_norm:norm}); const row=Array.isArray(rows)?rows[0]:rows;
-      if(row){ const v={title:row.title||"", author:row.author||"", cover:row.cover||"", desc:row.description||""}; catalogCache[norm]=v; try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} return v; }
+      if(row){ const v={title:row.title||"", author:row.author||"", cover:row.cover||"", coverRef:row.cover_ref||"", desc:row.description||""}; catalogCache[norm]=v; try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} return v; }
       catalogNull.add(norm); return null;
     }catch(e){ return null; }
   }
@@ -3771,14 +3779,19 @@ main,footer{position:relative;z-index:1}
   }); }
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
-  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], iCover="", infoReviewData=null, infoReadingIdx=null;
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], iCover="", iCoverChanged=false, infoReviewData=null, infoReadingIdx=null;
   function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
   function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); }
   // обложка в карточке: загруженная/сохранённая — картинкой; иначе авто-обложка каталога; иначе цвет-плашка
   function paintInfoCover(){ const sp=$("#infoSpine"); if(!sp) return;
-    const url = iCover || (infoBook && !iCover ? coverUrl(infoBook.t, infoBook.a) : "");
+    // приоритет: личная/выбранная iCover → эталон из справочника (cover_ref) → зашитый GBID → цвет-плашка
+    const cat = infoBook ? catalogCache[looseKey(infoBook.t, infoBook.a)] : null;
+    const url = iCover || (cat && cat.coverRef) || (infoBook ? coverUrl(infoBook.t, infoBook.a) : "");
     if(url){ sp.style.background=iSelColor; sp.style.backgroundImage=`url(${url.replace(/^http:/,"https:")})`; }
     else { sp.style.backgroundImage="none"; sp.style.background=iSelColor; }
+    // если эталона нет в кэше — подтянем асинхронно и перекрасим (без личной обложки)
+    if(!iCover && infoBook && !(cat && cat.coverRef)){ const _t=infoBook.t,_a=infoBook.a;
+      catalogGet(looseKey(_t,_a)).then(c=>{ if(c && c.coverRef && infoBook && infoBook.t===_t && infoBook.a===_a && !iCover){ sp.style.background=iSelColor; sp.style.backgroundImage=`url(${c.coverRef.replace(/^http:/,"https:")})`; } }).catch(()=>{}); }
   }
   $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); paintInfoCover(); });
   $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
@@ -3803,7 +3816,7 @@ main,footer{position:relative;z-index:1}
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
       iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
-      iCover = bookCover(b); paintInfoCover();
+      iCover = bookCover(b); iCoverChanged=false; paintInfoCover();
       { const ce=$("#infoCoverEdit"); if(ce) ce.style.display=""; }   // ✏️ заменить обложку — только на своей/читаемой книге
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
@@ -3811,7 +3824,7 @@ main,footer{position:relative;z-index:1}
     } else {
       $("#infoEdit").style.display="none"; $("#infoRead").style.display="";
       { const ce=$("#infoCoverEdit"); if(ce) ce.style.display="none"; }   // чужая книга — обложку не меняем
-      iSelColor = spineBg(b); iCover = bookCover(b); paintInfoCover();
+      iSelColor = spineBg(b); iCover = bookCover(b); iCoverChanged=false; paintInfoCover();
       $("#infoStars").textContent = (b.r? starsStr(b.r):"") + (isFav(b)?"  ♥":"");
       // комментарии убраны как опция — не показываем
       const cmt=$("#infoComment"); if(cmt){ cmt.style.display="none"; cmt.innerHTML=""; }
@@ -3846,7 +3859,8 @@ main,footer{position:relative;z-index:1}
     if(ce && ci){
       ce.addEventListener("click", ()=>ci.click());
       ci.addEventListener("change", e=>{ const f=e.target.files && e.target.files[0]; if(!f) return;
-        coverToDataURL(f, url=>{ iCover=url; paintInfoCover(); toast("Обложка обновится после «Сохранить»"); });
+        coverToDataURL(f, url=>{ iCover=url; iCoverChanged=true; paintInfoCover();
+          toast(isOwner()?"Эталонная обложка — сохранится для всех":"Обложка обновится после «Сохранить»"); });
         ci.value="";
       });
     } }
@@ -3855,8 +3869,14 @@ main,footer{position:relative;z-index:1}
     const isReading = infoReadingIdx!=null;
     if(!isReading && !isMe()) return;
     applyInfoEdits();
+    // куратор (полка Veronica) задаёт ЭТАЛОННУЮ обложку для всех — в общий справочник (cover_ref, с перезаписью)
+    if(iCoverChanged && iCover && isOwner()){ const nk=looseKey(infoBook.t, infoBook.a);
+      try{ sbRpc("catalog_set_cover",{p_norm:nk, p_cover:iCover, p_code:myCode}).catch(()=>{}); }catch(e){}
+      catalogCache[nk]=Object.assign({title:"",author:"",cover:"",coverRef:"",desc:""}, catalogCache[nk], {coverRef:iCover});
+      try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} catalogNull.delete(nk);
+    }
     if(isReading){ saveReadingLS(); } else { saveMine(); }   // цитаты/оценка читаемой книги — сразу в облако, не дожидаясь полки
-    syncUp(); closeModals(); renderAll(); toast("Сохранено");
+    syncUp(); closeModals(); renderAll(); toast(iCoverChanged && isOwner() ? "Сохранено · эталонная обложка обновлена" : "Сохранено");
   });
   // «Прочитал» — перенос читаемой книги на полку СО ВСЕМ (цитаты, оценка, цвет, обложка)
   $("#infoToShelf").addEventListener("click", ()=>{
