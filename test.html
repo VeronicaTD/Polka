@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="264" />
+<meta name="app-version" content="265" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1483,6 +1483,9 @@ main,footer{position:relative;z-index:1}
   }
   async function sbFetchAllShelves(){
     try{ const a = await sbRpc("readers_content", {}); return Array.isArray(a)?a:[]; }catch(e){ return []; }   // контент всех полок без кода
+  }
+  async function sbPublicReaders(){
+    try{ const a = await sbRpc("public_readers", {}); return Array.isArray(a)?a:[]; }catch(e){ return null; }   // публичные полки С кодом (null = функции ещё нет, до SQL)
   }
   async function sbInsertReview(row){
     const r = await fetch(SUPABASE_URL+"/rest/v1/reviews",{method:"POST",headers:{...SB_H(),Prefer:"return=representation"},body:JSON.stringify(row)});
@@ -3467,11 +3470,20 @@ main,footer{position:relative;z-index:1}
   { const mr=$("#mReaders"); if(mr) mr.addEventListener("click", ()=>{ menuGo(()=>{ openPage("readersPage"); renderReaders(); }); }); }
   async function renderReaders(){
     const list=$("#readersList"); if(!list) return;
-    if(!list.innerHTML) list.innerHTML=`<p class="mp">Загружаю…</p>`;
-    let data = await loadReadersData();
-    if(!data || !data.readers) data = await loadReadersData(true);   // кэш без readers → тянем свежее
-    let readers = (data.readers||[]).filter(r=> !(myName && r.name && normTitle(r.name)===normTitle(myName)));   // себя не показываем
-    readers.forEach(r=>{ const ms=matchStats(r); r._pct = ms?ms.percent:0; });
+    list.innerHTML=`<p class="mp">Загружаю…</p>`;
+    let readers=[];
+    const rows = await sbPublicReaders();   // публичные полки С кодом
+    if(rows){
+      rows.forEach(row=>{ if(!row||!row.data) return; let p; try{ p=decodeCode(row.data); }catch(e){ return; }
+        const bks=(p&&p.b)||[]; if(!bks.length) return;
+        if(row.code && myCode && String(row.code).toUpperCase()===String(myCode).toUpperCase()) return;   // себя не показываем (по коду — надёжно)
+        readers.push({ code:row.code||"", name:(p&&p.n)||row.name||"Читатель", photo:(p&&p.ph)||"", color:"#b8493a", count:bks.length, books:bks, wishlist:(p&&Array.isArray(p.wl))?p.wl:[], quote:(p&&p.q)||"" });
+      });
+    } else {   // функции ещё нет (до SQL) — из общего индекса, без кода (тап = только просмотр)
+      let data=await loadReadersData(); if(!data||!data.readers) data=await loadReadersData(true);
+      readers=(data.readers||[]).filter(r=>!(myName && r.name && normTitle(r.name)===normTitle(myName)));
+    }
+    readers.forEach(r=>{ const ms=matchStats(r); r._pct=ms?ms.percent:0; r._friend = !!(r.code && savedFriends.some(f=>f.code && String(f.code).toUpperCase()===String(r.code).toUpperCase())); });
     readers.sort((a,b)=> (b._pct-a._pct) || (b.count-a.count));
     list._readers=readers;
     if(!readers.length){ list.innerHTML=`<p class="mp">Пока никто не открыл полку. Будьте первым — включите показ в профиле 👥</p>`; return; }
@@ -3479,15 +3491,18 @@ main,footer{position:relative;z-index:1}
       const initial=esc((r.name||"?").trim()[0]||"?");
       const face = r.photo ? `background-image:url(${r.photo})` : `background:${r.color||'#b8493a'}`;
       const pct = r._pct>0 ? `<span class="rd-pct">💫 ${r._pct}%</span>` : "";
+      const meta = `${r.count} ${plural(r.count,"книга","книги","книг")}${r._friend?" · ❤ друг":""}`;
       return `<button type="button" class="rd-card" data-i="${i}">
         <span class="rd-face" style="${face}">${r.photo?'':initial}</span>
-        <span class="rd-info"><span class="rd-name">${esc(r.name)}</span><span class="rd-meta">${r.count} ${plural(r.count,"книга","книги","книг")}</span></span>
+        <span class="rd-info"><span class="rd-name">${esc(r.name)}</span><span class="rd-meta">${meta}</span></span>
         ${pct}</button>`;
     }).join("");
   }
   { const rl=$("#readersList"); if(rl) rl.addEventListener("click", e=>{ const c=e.target.closest(".rd-card"); if(!c) return; const r=(rl._readers||[])[+c.dataset.i]; if(!r) return;
       document.querySelectorAll(".fullpage.open").forEach(m=>m.classList.remove("open"));
-      showGuest({name:r.name, color:r.color||"#b8493a", photo:r.photo||"", books:r.books||[], wishlist:r.wishlist||[], quote:r.quote||"", stickers:[], reading:"", code:""}); }); }
+      if(r.code) viewGuestByCode(r.code);   // код есть → viewGuestByCode разрулит: свой→me, друг→его профиль, чужой→гость с «добавить в друзья»
+      else showGuest({name:r.name, color:r.color||"#b8493a", photo:r.photo||"", books:r.books||[], wishlist:r.wishlist||[], quote:r.quote||"", stickers:[], reading:"", code:""});   // без кода (до SQL) — только просмотр
+    }); }
   $("#mReviews").addEventListener("click", ()=>{ menuGo(()=>openReviewsFeed()); });
   $("#mYear").addEventListener("click", ()=>{ menuGo(()=>$("#yearBtn").click()); });
   $("#mTheme").addEventListener("click", ()=>{ menuGo(()=>openThemes()); });
