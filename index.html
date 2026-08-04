@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="268" />
+<meta name="app-version" content="270" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -789,17 +789,16 @@ main,footer{position:relative;z-index:1}
 <nav id="sideMenu" class="side-menu" aria-label="Меню">
   <div class="menu-h">Polka 📚</div>
   <button class="menu-item" id="mHome">📚 Моя полка</button>
-  <div class="menu-sep"></div>
   <button class="menu-item" id="mQuotes">💬 Мои цитаты</button>
   <button class="menu-item" id="mWish">📌 Мои хотелки</button>
+  <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
+  <div class="menu-sep"></div>
   <button class="menu-item" id="mCatalog">📚 Подборки книг</button>
   <button class="menu-item" id="mReaders">👥 Читатели</button>
   <button class="menu-item" id="mPoems">✒️ Поэзия</button>
   <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
-  <button class="menu-item" id="mYear" style="display:none">✨ Мой книжный год</button>
   <div class="menu-sep"></div>
   <button class="menu-item" id="mTheme">🎨 Тема оформления</button>
-  <button class="menu-item" id="mPassword">🔒 Пароль полки</button>
   <button class="menu-item" id="mAccess" style="display:none;color:#c98a2b;font-weight:700">🔓 Подключить полный доступ</button>
 </nav>
 
@@ -948,10 +947,11 @@ main,footer{position:relative;z-index:1}
   <div class="field"><label>Код вашей полки</label>
     <textarea class="codebox" id="myCode" readonly></textarea>
     <button class="linklike" id="copyCode" type="button">📋 Скопировать код полки</button>
+    <div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Сохраните код — по нему вы войдёте на любом устройстве. С паролем — только вы.</div>
   </div>
-  <div class="field"><label>🔑 Ссылка для входа (сохраните её!)</label>
-    <textarea class="codebox" id="myLink" readonly></textarea>
-    <button class="linklike" id="copyLink" type="button">📋 Скопировать ссылку для входа</button>
+  <div class="field"><label>🔒 Пароль полки</label>
+    <button class="linklike" id="pPasswordBtn" type="button">Задать / изменить пароль</button>
+    <div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Без пароля по коду полку можно только смотреть. С паролем — редактировать с любого устройства.</div>
   </div>
   <div class="field"><button class="linklike" id="logoutBtn" type="button" style="color:#c0566a">↩ Выйти из профиля</button></div>
   <div class="modal-foot"><button class="btn ghost" data-close>Отмена</button><button class="btn" id="saveProfile">Сохранить</button></div>
@@ -3506,7 +3506,7 @@ main,footer{position:relative;z-index:1}
   $("#mReviews").addEventListener("click", ()=>{ menuGo(()=>openReviewsFeed()); });
   $("#mYear").addEventListener("click", ()=>{ menuGo(()=>$("#yearBtn").click()); });
   $("#mTheme").addEventListener("click", ()=>{ menuGo(()=>openThemes()); });
-  { const _mp=$("#mPassword"); if(_mp) _mp.addEventListener("click", ()=>{ closeMenu(); if(!CLOUD()||!myCode){ toast("Пароль доступен для облачной полки"); return; } promptSetPassword(myPass?"change":"offer"); }); }
+  { const _pb=$("#pPasswordBtn"); if(_pb) _pb.addEventListener("click", ()=>{ if(!CLOUD()||!myCode){ toast("Пароль доступен для облачной полки"); return; } closeModals(); promptSetPassword(myPass?"change":"offer"); }); }
 
   /* свайп */
   let sx=null;
@@ -3854,7 +3854,7 @@ main,footer{position:relative;z-index:1}
     { const _i=$("#pReadingInput"); if(_i){ _i.value=""; const _s=$("#pReadingSuggest"); if(_s){ _s.hidden=true; _s.innerHTML=""; } } }
     renderReadingEditor();   // список «сейчас читаю» — управляется вживую (добавление/убрать/прочитал сохраняются сразу)
     $("#myCode").value = myShareCode();
-    $("#myLink").value = loginLink();
+    { const _pb=$("#pPasswordBtn"); if(_pb) _pb.textContent = myPass ? "Изменить пароль" : "Задать пароль"; }
     overlay.classList.add("open"); profileModal.classList.add("open");
   }
   $("#editProfile").addEventListener("click", openProfile);
@@ -3935,10 +3935,6 @@ main,footer{position:relative;z-index:1}
     $("#myCode").value=v;
     if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Код полки скопирован!"), sel); else sel();
     function sel(){ $("#myCode").select(); toast("Код выделен — скопируйте вручную"); }
-  });
-  $("#copyLink").addEventListener("click", ()=>{
-    const v=loginLink(); $("#myLink").value=v;
-    if(navigator.clipboard) navigator.clipboard.writeText(v).then(()=>toast("Ссылка для входа скопирована!"), ()=>$("#myLink").select()); else $("#myLink").select();
   });
   $("#saveProfile").addEventListener("click", ()=>{
     myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myEmail=$("#pEmailInput").value.trim().toLowerCase(); myPhoto=tempPhoto;   // «сейчас читаю» уже сохранён вживую (renderReadingEditor)
