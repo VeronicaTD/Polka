@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="274" />
+<meta name="app-version" content="275" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -447,6 +447,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .spine-wrap{position:relative;flex-shrink:0}
 .spine-wrap .big-spine{background-size:cover;background-position:center}
 .cover-edit{position:absolute;right:-8px;bottom:-8px;width:30px;height:30px;border-radius:50%;border:2px solid var(--paper);background:var(--accent);color:#fff;font-size:13px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:0}
+/* ✏️ куратора прямо на обложке в подборках / на странице книги (внутри cat-cover, т.к. overflow:hidden) */
+.cat-cover-edit{right:4px;bottom:4px;top:auto;left:auto;width:26px;height:26px;font-size:12px;z-index:7;border:1.5px solid rgba(255,255,255,.85)}
+#bpCover .cat-cover-edit{width:30px;height:30px;font-size:14px}
 /* статус «не прочитано»: приглушённый корешок/обложка + значок 📕 */
 .spine.unread{opacity:.5;filter:grayscale(.4)}
 .spine .s-toread{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:10px;z-index:2;pointer-events:none;line-height:1}
@@ -1455,7 +1458,7 @@ main,footer{position:relative;z-index:1}
   function recSaveSeen(){ try{ localStorage.setItem("polka_rec_seen", JSON.stringify([...recSeen])); }catch(e){} }
   let recBook=null, recTo=null;   // bpBook уже объявлен ниже (страница книги)
   function canRecommend(){ return CLOUD() && myCode && savedFriends.some(f=>f.code); }
-  function recCover(t,a,c){ return c || (typeof coverUrl==="function" ? coverUrl(t,a) : ""); }
+  function recCover(t,a,c){ const cat=(typeof catalogCache!=="undefined")?catalogCache[looseKey(t,a)]:null; return c || (cat&&cat.coverRef) || (typeof coverUrl==="function" ? coverUrl(t,a) : ""); }   // эталон приоритетнее авто
   function openRecommendPicker(book){
     if(!book || !book.t) return;
     if(!canRecommend()){ toast("Сначала добавь друга по коду 🙂"); return; }
@@ -2811,9 +2814,10 @@ main,footer{position:relative;z-index:1}
   const bookKey = (t,a) => (String(t||"")+"|"+String(a||"")).trim().toLowerCase();
   function coverHTML(b, motif, bg){
     // дизайнерская обложка-заглушка: показывается сразу; поверх подгружается настоящая обложка, если найдётся
+    const own = (typeof isOwner==="function" && isOwner()) ? `<button class="cover-edit cat-cover-edit" type="button" title="Задать эталонную обложку для всех">✏️</button>` : "";
     return `<div class="cat-cover" data-open data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}" style="background:${bg};color:${pickFg(bg)}">
       <div class="cc-frame"><div class="cc-motif">${motif||"📖"}</div>
-      <div class="cc-title">${esc(capTitle(b.t))}</div><div class="cc-author">${esc(lastName(b.a))}</div></div></div>`;
+      <div class="cc-title">${esc(capTitle(b.t))}</div><div class="cc-author">${esc(lastName(b.a))}</div></div>${own}</div>`;
   }
   // мини-полка «читаю»: до 3 вертикальных корешков без текста (тап → тултип с названием)
   function miniShelfHTML(arr){
@@ -3244,22 +3248,26 @@ main,footer{position:relative;z-index:1}
   // Работает мягко: если таблицы/сети нет — просто откат к Google (клиент можно катить до SQL).
   let catalogCache={}; try{ catalogCache=JSON.parse(localStorage.getItem("polka_catalog")||"{}"); }catch(e){ catalogCache={}; }
   const catalogNull=new Set();   // ключи, которых нет в справочнике (в памяти, чтобы не дёргать сервер повторно за сессию)
+  const catalogChecked=new Set();   // нормы, сверенные с сервером в ЭТОЙ сессии (чтобы подхватить свежий эталон cover_ref, но не дёргать сервер бесконечно)
   async function catalogGet(norm){
     if(!norm) return null;
-    if(catalogCache[norm]) return catalogCache[norm];
-    if(catalogNull.has(norm) || typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return null;
+    const cached = catalogCache[norm];
+    // отдаём кэш сразу, если в нём уже есть эталон ИЛИ мы уже сверялись с сервером в этой сессии
+    if(cached && (cached.coverRef || catalogChecked.has(norm))) return cached;
+    if(typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return cached || null;
     try{ const rows=await sbRpc("catalog_get",{p_norm:norm}); const row=Array.isArray(rows)?rows[0]:rows;
+      catalogChecked.add(norm);
       if(row){ const v={title:row.title||"", author:row.author||"", cover:row.cover||"", coverRef:row.cover_ref||"", desc:row.description||""}; catalogCache[norm]=v; try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} return v; }
-      catalogNull.add(norm); return null;
-    }catch(e){ return null; }
+      catalogNull.add(norm); return cached || null;
+    }catch(e){ return cached || null; }
   }
   function catalogPut(norm, o){
     if(!norm || !o || !(o.cover||o.desc||o.author)) return;
     if(typeof CLOUD!=="function" || !CLOUD() || typeof sbRpc!=="function") return;
     const ttl=o.title?capTitle(o.title):"", aut=o.author?capAuthor(o.author):"";   // в справочник — сразу опрятно (заглавные)
     try{ sbRpc("catalog_put",{p_norm:norm, p_title:ttl, p_author:aut, p_cover:o.cover||"", p_desc:o.desc||""}).catch(()=>{});
-      const prev=catalogCache[norm]||{title:"",author:"",cover:"",desc:""};
-      catalogCache[norm]={title:prev.title||ttl, author:prev.author||aut, cover:prev.cover||o.cover||"", desc:prev.desc||o.desc||""};
+      const prev=catalogCache[norm]||{title:"",author:"",cover:"",coverRef:"",desc:""};
+      catalogCache[norm]={title:prev.title||ttl, author:prev.author||aut, cover:prev.cover||o.cover||"", coverRef:prev.coverRef||"", desc:prev.desc||o.desc||""};   // coverRef (эталон) не теряем
       catalogNull.delete(norm); try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){}
     }catch(e){}
   }
@@ -3890,6 +3898,27 @@ main,footer{position:relative;z-index:1}
         ci.value="";
       });
     } }
+  // ✏️ КУРАТОРА: задать ЭТАЛОННУЮ обложку прямо с обложки в подборках / на странице книги (для любой книги)
+  { let pendCoverEl=null, pendT="", pendA="";
+    const ownIn=document.createElement("input"); ownIn.type="file"; ownIn.accept="image/*"; ownIn.hidden=true; document.body.appendChild(ownIn);
+    document.addEventListener("click", e=>{ const btn=e.target.closest(".cat-cover-edit"); if(!btn) return;
+      if(!isOwner()) return;
+      e.preventDefault(); e.stopPropagation();
+      const cov=btn.closest(".cat-cover"); if(!cov) return;
+      pendCoverEl=cov; pendT=cov.dataset.ct||""; pendA=cov.dataset.ca||"";
+      ownIn.click();
+    }, true);
+    ownIn.addEventListener("change", ()=>{ const f=ownIn.files && ownIn.files[0]; ownIn.value=""; if(!f || !pendT) return;
+      coverToDataURL(f, url=>{
+        const nk=looseKey(pendT, pendA);
+        try{ sbRpc("catalog_set_cover",{p_norm:nk, p_cover:url, p_code:myCode}).catch(()=>{}); }catch(e){}
+        catalogCache[nk]=Object.assign({title:"",author:"",cover:"",coverRef:"",desc:""}, catalogCache[nk], {coverRef:url}); catalogChecked.add(nk);
+        try{ localStorage.setItem("polka_catalog", JSON.stringify(catalogCache)); }catch(e){} catalogNull.delete(nk);
+        if(pendCoverEl){ pendCoverEl.querySelectorAll(".cc-img").forEach(x=>x.remove()); putCover(pendCoverEl, url); }   // сразу показать новую
+        toast("Эталонная обложка обновлена — теперь у всех ✨");
+      });
+    });
+  }
   $("#saveInfo").addEventListener("click", ()=>{
     if(!infoBook) return;
     const isReading = infoReadingIdx!=null;
@@ -4709,8 +4738,8 @@ main,footer{position:relative;z-index:1}
     const avaStyle = (target&&target.photo) ? `background-image:url(${target.photo});background-size:cover;background-position:center` : `background:${crAvaColor(name)}`;
     const avaInner = (target&&target.photo) ? "" : esc((name[0]||"?").toUpperCase());
     const rows = done.slice().sort((a,b)=> new Date(b.finished_at||0) - new Date(a.finished_at||0)).map(c=>{
-      const cu=coverUrl(c.title,c.author);
-      const cov = cu ? `<div class="cr-hist-cov" style="background-image:url(${cu})"></div>`
+      const cu=(catalogCache[looseKey(c.title,c.author)]?.coverRef)||coverUrl(c.title,c.author);
+      const cov = cu ? `<div class="cr-hist-cov" style="background-image:url(${cu.replace(/^http:/,"https:")})"></div>`
                      : `<div class="cr-hist-cov" style="background:${crAvaColor(c.title)}">${esc((c.title[0]||"·").toUpperCase())}</div>`;
       const date = c.finished_at ? new Date(c.finished_at).toLocaleDateString("ru",{day:"numeric",month:"short",year:"numeric"}) : "";
       const pn = c.partner_name || "";
@@ -4828,8 +4857,8 @@ main,footer{position:relative;z-index:1}
   function renderCoreadDetail(){
     const c=crdCur; if(!c) return;
     $("#crdBook").textContent=c.title; $("#crdAuthor").textContent=c.author||"";
-    const cu=coverUrl(c.title,c.author); const sp=$("#crdSpine");
-    if(cu){ sp.style.backgroundImage=`url(${cu})`; sp.style.backgroundSize="cover"; sp.style.backgroundPosition="center"; } else { sp.style.backgroundImage="none"; sp.style.background=COLORS[0]; }
+    const cu=(catalogCache[looseKey(c.title,c.author)]?.coverRef)||coverUrl(c.title,c.author); const sp=$("#crdSpine");
+    if(cu){ sp.style.backgroundImage=`url(${cu.replace(/^http:/,"https:")})`; sp.style.backgroundSize="cover"; sp.style.backgroundPosition="center"; } else { sp.style.backgroundImage="none"; sp.style.background=COLORS[0]; }
     const myPct=c.my_pages?Math.min(100,Math.round(c.my_page/c.my_pages*100)):0;
     const paPct=c.partner_pages?Math.min(100,Math.round(c.partner_page/c.partner_pages*100)):0;
     $("#crdMyBar").style.width=myPct+"%"; $("#crdMyNums").textContent=c.my_page+" из "+(c.my_pages||"?");
