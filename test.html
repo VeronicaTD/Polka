@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="273" />
+<meta name="app-version" content="274" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -447,6 +447,15 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .spine-wrap{position:relative;flex-shrink:0}
 .spine-wrap .big-spine{background-size:cover;background-position:center}
 .cover-edit{position:absolute;right:-8px;bottom:-8px;width:30px;height:30px;border-radius:50%;border:2px solid var(--paper);background:var(--accent);color:#fff;font-size:13px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:0}
+/* статус «не прочитано»: приглушённый корешок/обложка + значок 📕 */
+.spine.unread{opacity:.5;filter:grayscale(.4)}
+.spine .s-toread{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:10px;z-index:2;pointer-events:none;line-height:1}
+.gv-cell.unread .cat-cover{opacity:.55;filter:grayscale(.35)}
+.gv-toread{position:absolute;top:3px;left:4px;z-index:4;font-size:12px;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+/* тумблер статуса в карточке книги */
+.status-row{display:flex;gap:8px;margin-top:2px}
+.status-row .st-btn{flex:1;border:1.5px solid var(--line);background:var(--paper);color:var(--ink-soft);border-radius:12px;padding:9px 8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.status-row .st-btn.on{border-color:var(--accent);background:var(--accent);color:#fff}
 /* страница книги */
 .bp-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:6px}
 #bpCover .cat-cover{width:130px;height:190px;cursor:default}
@@ -934,6 +943,10 @@ main,footer{position:relative;z-index:1}
         <div class="field"><label>Цвет обложки</label><div class="swatches" id="iColors"></div></div>
         <div class="field"><label>Оценка</label><div class="rate" id="iRate"><button type="button" data-r="1">★</button><button type="button" data-r="2">★</button><button type="button" data-r="3">★</button><button type="button" data-r="4">★</button><button type="button" data-r="5">★</button></div></div>
         <div class="field"><button class="fav-toggle" id="iFav" type="button"><span class="hh">♡</span><span id="iFavLabel">В любимые</span></button></div>
+        <div class="field"><label>Статус</label>
+          <div class="status-row"><button type="button" class="st-btn" id="iUnread">📕 <span id="iUnreadLabel">Ещё не прочитана</span></button></div>
+          <div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Книга дома, но ещё не прочитана — не попадёт в счётчик «прочитано». Прочтёшь — выключи.</div>
+        </div>
         <div class="field"><label>Любимые цитаты из книги</label><div id="iQuotes" class="quotes-edit"></div><button type="button" class="linklike add-quote" id="iAddQuote">+ ещё цитата</button><div class="quote-hint">📷 Не хочется набирать? Задержи палец на поле → «Автозаполнение» → «Отсканировать текст» — камера сама распознает страницу</div></div>
         <div class="field review-field"><label>📢 Рецензия</label><button class="read-link" id="openReviewBtn" type="button" style="width:100%;justify-content:center;display:flex;padding:12px;font-size:14px;cursor:pointer">✍️ Написать рецензию</button></div>
         <div class="modal-foot"><button class="del" id="delBook">Удалить</button><button class="btn" id="infoToShelf" style="display:none;min-width:0">Прочитал</button><button class="btn" id="saveInfo">Сохранить</button></div>
@@ -1719,12 +1732,14 @@ main,footer{position:relative;z-index:1}
   }
   function readReadingLS(){ const raw=localStorage.getItem("polka_reading"); if(raw==null) return [];
     try{ return asReadingArr(JSON.parse(raw)); }catch(e){ return asReadingArr(raw); } }
-  function saveReadingLS(){ try{ localStorage.setItem("polka_reading", JSON.stringify(myReading)); }catch(e){} }
+  // привести название/автора к виду с заглавной (склейка книг между полками); служебные слова внутри названия capTitle не трогает
+  function capBook(b){ if(b){ if(b.t) b.t=capTitle(b.t); if(b.a && !/неизвест/i.test(b.a)) b.a=capAuthor(b.a); } return b; }
+  function saveReadingLS(){ myReading.forEach(capBook); try{ localStorage.setItem("polka_reading", JSON.stringify(myReading)); }catch(e){} }
   let myReading = readReadingLS();
   let myEmail = localStorage.getItem("polka_email") || "";   // почта для восстановления доступа (пишется в колонку shelves.email, обратно не читается — приватность)
   let myWishlist = []; try{ myWishlist = JSON.parse(localStorage.getItem("polka_wishlist") || "[]"); }catch(e){ myWishlist = []; }
   let myView = (localStorage.getItem("polka_view")==="covers") ? "covers" : "spines";   // вид полки: корешки / обложки (запоминается)
-  const saveWish = () => { try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
+  const saveWish = () => { myWishlist.forEach(capBook); try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
   /* ---- счётчик «дней с книгой» (стрик) ---- */
   let myStreak=0, myTotal=0, myLastMark="", myPause=false;
   try{ const s=JSON.parse(localStorage.getItem("polka_streak")||"null"); if(s){ myStreak=s.s||0; myTotal=s.t||0; myLastMark=s.l||""; myPause=!!s.p; } }catch(e){}
@@ -1940,7 +1955,7 @@ main,footer{position:relative;z-index:1}
   /* мои книги — новый профиль начинается пустым */
   let myBooks = [];
   try { myBooks = JSON.parse(localStorage.getItem("polka_books") || "[]"); } catch(e){ myBooks = []; }
-  const saveMine = () => { try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} };
+  const saveMine = () => { myBooks.forEach(capBook); try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} };
 
   /* коды (компактный формат PLK2) */
   const GENRES = ["Проза","Фантастика","Нон-фикшн","Поэзия","Детектив","Классика"];
@@ -1949,7 +1964,7 @@ main,footer{position:relative;z-index:1}
   function encodeCode(p){
     const gi = g => { const k = GENRES.indexOf(g); return k<0?0:k; };
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
-    const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk)]);
+    const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk), bk.unread?1:0]);   // индекс 9 = «не прочитано»
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
     return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null, p.public?1:0]));   // rd=«сейчас читаю»; pm=закладки стихов; qf=любимые цитаты; st(индекс 11)=стрик {s,t,l,p}; public(индекс 12)=показывать в разделе «Читатели»
   }
@@ -1960,7 +1975,7 @@ main,footer{position:relative;z-index:1}
       return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null, public:!!a[12],
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
-            r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[] }; }) };
+            r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[], unread:isNum?!!x[9]:false }; }) };
     }
     raw = raw.replace(/^PLK1/,"");
     const d = JSON.parse(b64d(raw));
@@ -2118,7 +2133,7 @@ main,footer{position:relative;z-index:1}
       { const mb=$("#matchStat"), pc=$("#matchPct"); if(mb&&pc){ const ms=matchStats(f); if(ms && ms.denom>0){ pc.textContent=ms.percent+"%"; mb.style.display="flex"; } else mb.style.display="none"; } }
       setAva(f.photo, f.color, (f.name[0]||"?"));
     }
-    $("#stTotal").textContent = books.length;
+    $("#stTotal").textContent = books.filter(b=>!b.unread).length;   // «не прочитано» не считаем прочитанными
     $("#stFav").textContent = books.filter(isFav).length;
     // счётчик «дней с книгой» (стрик) — вместо мэтча
     { const ss=$("#streakStat"), n=$("#stStreakN"), lbl=$("#stStreakLbl");
@@ -2232,7 +2247,8 @@ main,footer{position:relative;z-index:1}
     const bandFont = Math.max(4, Math.min(Math.round(d.font*0.55), fit));
     const heart = Math.min(16, Math.max(11, Math.round(d.w*0.36)));
     const bg = spineBg(b);
-    return `<div class="spine" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}" style="width:${d.w}px;height:${d.h}px;background:${bg};color:${pickFg(bg)}">
+    return `<div class="spine${b.unread?' unread':''}" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}${b.unread?' · ещё не прочитана':''}" style="width:${d.w}px;height:${d.h}px;background:${bg};color:${pickFg(bg)}">
+      ${b.unread?'<span class="s-toread">📕</span>':''}
       <div class="s-title" style="font-size:${d.font}px;max-height:${d.titleMax}px">${esc(b.t)}</div>
       <div class="s-foot">${isFav(b)?pixelHeartSVG(heart):''}<div class="s-band" style="font-size:${bandFont}px">${esc(name)}</div></div>
     </div>`;
@@ -2249,13 +2265,14 @@ main,footer{position:relative;z-index:1}
     const cached = (typeof catalogCache!=="undefined") ? catalogCache[looseKey(b.t,b.a)] : null;
     const direct = bookCover(b) || (cached && cached.coverRef) || "";   // личная обложка → эталон из справочника (кэш) → иначе ленивая загрузка
     const heart = isFav(b) ? `<span class="gv-heart">${pixelHeartSVG(18)}</span>` : "";
+    const toread = b.unread ? `<span class="gv-toread">📕</span>` : "";
     const imgTag = direct ? `<img class="cc-img loaded" src="${esc(direct.replace(/^http:/,"https:"))}" alt="" onerror="this.remove()">` : "";
     const lazy = direct ? "" : ` data-ct="${esc(b.t)}" data-ca="${esc(b.a||"")}"`;   // без прямой — эталон/авто через ensureCover
-    return `<div class="gv-cell" data-i="${i}">
+    return `<div class="gv-cell${b.unread?' unread':''}" data-i="${i}">
       <div class="cat-cover"${lazy} style="background:${bg};color:${fg}">
         <div class="cc-frame"><div class="cc-motif">📖</div>
         <div class="cc-title">${esc(capTitle(b.t))}</div><div class="cc-author">${esc(lastName(b.a))}</div></div>
-        ${heart}${imgTag}</div>
+        ${heart}${toread}${imgTag}</div>
       <div class="gv-t">${esc(b.t)}</div><div class="gv-a">${esc(b.a||"")}</div>
     </div>`;
   }
@@ -2268,13 +2285,17 @@ main,footer{position:relative;z-index:1}
     { const vt=$("#viewToggle"); if(vt){ vt.style.display = books.length ? "flex" : "none";
         vt.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.vw===myView)); } }
     if(myView==="covers" && books.length){
-      const PER_PAGE = 20;   // 4 в ряд × 5 полок = один шкаф
+      // колонки — от РАЗМЕРА экрана (как корешки): на телефоне ~4, на планшете/компьютере больше
+      const gcGap=7, gcMin=76, gcPad=4;   // gcMin подобран так, чтобы на телефоне помещалось 4, на планшете/ПК — больше
+      const gw = Math.max(120, bookcase.clientWidth - gcPad*2);
+      const cols = Math.max(3, Math.floor((gw + gcGap) / (gcMin + gcGap)));
+      const PER_PAGE = cols * 5;   // 5 «полок» на шкаф, дальше — новый шкаф
       const cells = books.map((b,i)=>coverCellHTML(b,i));
       if(me) cells.push(`<div class="gv-cell" data-add="1"><div class="cat-cover" style="background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-size:30px;border:2px dashed var(--line)">+</div><div class="gv-t" style="color:var(--ink-soft)">добавить</div></div>`);
       const pages=[]; for(let i=0;i<cells.length;i+=PER_PAGE) pages.push(cells.slice(i,i+PER_PAGE));
       if(!pages.length) pages.push([]);
       casePage = Math.min(Math.max(0,casePage), pages.length-1);
-      bookcase.innerHTML = `<div class="cover-grid">${pages[casePage].join("")}</div>`;
+      bookcase.innerHTML = `<div class="cover-grid" style="grid-template-columns:repeat(${cols},1fr)">${pages[casePage].join("")}</div>`;
       hydrateCovers(bookcase);
       $("#casePrev").classList.toggle("show", casePage>0);
       $("#caseNext").classList.toggle("show", casePage<pages.length-1);
@@ -3779,8 +3800,9 @@ main,footer{position:relative;z-index:1}
   }); }
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
-  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iSelColor=COLORS[0], iCover="", iCoverChanged=false, infoReviewData=null, infoReadingIdx=null;
+  const infoModal = $("#infoModal"); let infoBook=null, iRate=0, iFav=false, iUnread=false, iSelColor=COLORS[0], iCover="", iCoverChanged=false, infoReviewData=null, infoReadingIdx=null;
   function paintIFav(){ $("#iFav").classList.toggle("on", iFav); $("#iFav").querySelector(".hh").textContent = iFav?"♥":"♡"; $("#iFavLabel").textContent = iFav?"В любимых":"В любимые"; }
+  function paintIUnread(){ const b=$("#iUnread"); if(!b) return; b.classList.toggle("on", iUnread); const l=$("#iUnreadLabel"); if(l) l.textContent = iUnread?"Ещё не прочитана ✓":"Ещё не прочитана"; }
   function paintIColors(){ $("#iColors").innerHTML = COLORS.map(c=>`<button type="button" class="swatch ${c===iSelColor?'sel':''}" data-c="${c}" style="background:${c}"></button>`).join(""); }
   // обложка в карточке: загруженная/сохранённая — картинкой; иначе авто-обложка каталога; иначе цвет-плашка
   function paintInfoCover(){ const sp=$("#infoSpine"); if(!sp) return;
@@ -3796,6 +3818,7 @@ main,footer{position:relative;z-index:1}
   $("#iColors").addEventListener("click", e=>{ const s=e.target.closest(".swatch"); if(!s) return; iSelColor=s.dataset.c; paintIColors(); paintInfoCover(); });
   $("#iRate").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; iRate=+b.dataset.r; paintRate($("#iRate"),iRate); });
   $("#iFav").addEventListener("click", ()=>{ iFav=!iFav; paintIFav(); });
+  { const u=$("#iUnread"); if(u) u.addEventListener("click", ()=>{ iUnread=!iUnread; paintIUnread(); }); }
   function openInfo(i, fromReading){
     const b = fromReading ? myReading[i] : currentList()[i]; if(!b) return; infoBook=b; infoReadingIdx = fromReading ? i : null;
     { const _rb=$("#infoReview"); if(_rb){ _rb.style.display="none"; _rb.innerHTML=""; } infoReviewData=null; collapseInfoModal(); }
@@ -3819,6 +3842,8 @@ main,footer{position:relative;z-index:1}
       iCover = bookCover(b); iCoverChanged=false; paintInfoCover();
       { const ce=$("#infoCoverEdit"); if(ce) ce.style.display=""; }   // ✏️ заменить обложку — только на своей/читаемой книге
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
+      iUnread = !!b.unread; paintIUnread();
+      { const _sr=$("#iUnread")?.closest(".field"); if(_sr) _sr.style.display = fromReading ? "none" : ""; }   // статус «не прочитано» — только для книги с полки, не для «сейчас читаю»
       renderQuoteEditor("iQuotes", quotesOf(b)); growAll("#infoModal textarea");
       if(!fromReading){ $("#iReview").value=""; $("#iReviewMsg").textContent=""; if($("#iPreviewReview")) $("#iPreviewReview").style.display="none"; { const _bk=bookKey(b.t,b.a); const _rv=myReviews[_bk]; const _draft=reviewDrafts[_bk]; const _txt=(_draft&&_draft.trim())?_draft:((_rv&&_rv.text)||""); const _hasPub=!!(_rv&&_rv.text); if(_txt){ $("#iReview").value=_txt; if($("#iPreviewReview")) $("#iPreviewReview").style.display=""; } if($("#iPublishReview")) $("#iPublishReview").textContent=_hasPub?"Обновить рецензию":"Опубликовать рецензию"; if($("#iDeleteReview")) $("#iDeleteReview").style.display=_hasPub?"":"none"; reviewQSel=(_rv&&Array.isArray(_rv.quotes))?_rv.quotes.slice():quotesOf(b).slice(); renderReviewQuotes(); if($("#openReviewBtn")) $("#openReviewBtn").textContent=(_hasPub||(_draft&&_draft.trim()))?"✏️ Редактировать рецензию":"✍️ Написать рецензию"; } }
     } else {
@@ -3853,6 +3878,7 @@ main,footer{position:relative;z-index:1}
     infoBook.g = $("#iGenre").value;
     infoBook.c = iSelColor; infoBook.r = iRate; infoBook.fav = iFav; infoBook.qt = collectQuotes("iQuotes");
     infoBook.cover = iCover || "";   // загруженная обложка (сжата); пусто → авто-обложка/плашка
+    infoBook.unread = (infoReadingIdx==null) ? iUnread : false;   // статус «не прочитано» только у книги с полки
   }
   // ✏️ заменить обложку в карточке книги — своя картинка с телефона, сжимается до 200×300
   { const ce=$("#infoCoverEdit"), ci=$("#infoCoverInput");
