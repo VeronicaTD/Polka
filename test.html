@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="276" />
+<meta name="app-version" content="277" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3098,7 +3098,8 @@ main,footer{position:relative;z-index:1}
   }
   // ОБЩИЙ ИНДЕКС: собираем все книги и все цитаты со ВСЕХ полок в облаке (кэшируем на сессию)
   let readersData = null, readersDataPromise = null;
-  try{ const c=JSON.parse(localStorage.getItem("polka_readers_cache2")||"null"); if(c && Array.isArray(c.books)) readersData=c; }catch(e){}   // мгновенно из кэша, потом обновим в фоне
+  try{ localStorage.removeItem("polka_readers_cache2"); }catch(e){}   // сброс старого кэша (мог содержать тест-цитаты)
+  try{ const c=JSON.parse(localStorage.getItem("polka_readers_cache3")||"null"); if(c && Array.isArray(c.books)) readersData=c; }catch(e){}   // мгновенно из кэша, потом обновим в фоне
   async function loadReadersData(force){
     if(readersData && !force) return readersData;
     if(readersDataPromise && !force) return readersDataPromise;
@@ -3136,7 +3137,7 @@ main,footer{position:relative;z-index:1}
       readersData={ books, quotes:qmap, reviews:rmap, readers };
       try{   // кэшируем (фото рецензий выкидываем, чтобы не раздувать localStorage)
         const slimR={}; Object.keys(rmap).forEach(k=>slimR[k]=rmap[k].map(rv=>Object.assign({},rv,{photo:""})));
-        localStorage.setItem("polka_readers_cache2", JSON.stringify({books, quotes:qmap, reviews:slimR}));
+        localStorage.setItem("polka_readers_cache3", JSON.stringify({books, quotes:qmap, reviews:slimR}));
       }catch(e){}
       readersDataPromise=null;
       return readersData;
@@ -3192,7 +3193,8 @@ main,footer{position:relative;z-index:1}
     if(typeof catalogGet==="function") catalogGet(looseKey(t,a)).then(c=>{   // каноничные название/автор из общего справочника
       if(!c || !stillOn(t,a)) return;
       if(c.title) $("#bpTitle").textContent=capTitle(c.title);
-      if(c.author) $("#bpAuthor").textContent=c.author;
+      // автора из справочника берём ТОЛЬКО если у книги его нет (иначе кривая авто-запись Google затирает верного автора)
+      if(c.author && (!(a||"").trim() || /неизвест/i.test(a||""))) $("#bpAuthor").textContent=c.author;
     }).catch(()=>{});
     ensureCover($("#bpCover .cat-cover"), t, a);        // настоящая обложка поверх заглушки (если есть свой ID)
     const anno = annoFor(t,a);                           // авторская аннотация (по названию, при любом написании автора)
@@ -3204,10 +3206,7 @@ main,footer{position:relative;z-index:1}
         if(info.author){ const cur=$("#bpAuthor").textContent||""; if(!cur.trim()||/неизвест/i.test(cur)) $("#bpAuthor").textContent=info.author; }   // автор из справочника/Google, если пусто/«неизвестен»
         if(info.title){ const cur=$("#bpTitle").textContent||""; if(!cur.trim()) $("#bpTitle").textContent=capTitle(info.title); }
         $("#bpAnno").innerHTML = info.desc ? renderAnno(info.desc) : `<p class="mp">Описание для этой книги не нашлось 🌱</p>`;
-        if(info.img && !GBID[t+"|"+a]){       // обложка из Google Books, если своей нет
-          const cov=$("#bpCover .cat-cover");
-          if(cov && !cov.querySelector(".cc-img")){ const im=new Image(); im.className="cc-img"; im.alt=""; im.onload=()=>im.classList.add("loaded"); im.onerror=()=>im.remove(); im.src=String(info.img).replace(/^http:/,"https:"); cov.appendChild(im); }
-        }
+        // обложку здесь НЕ трогаем — ею единолично заведует ensureCover (эталон→GBID→справочник→Google), чтобы подборки и страница книги были одинаковы
       });
     }
     if($("#bpQuotes")){ $("#bpQuotes").style.display="none"; $("#bpQuotes").innerHTML=""; }
@@ -3955,7 +3954,7 @@ main,footer{position:relative;z-index:1}
     if(infoBook && isMe()){
       if(!(await askConfirm("Удалить книгу «"+infoBook.t+"» с полки? Рецензию и цитаты тоже потеряешь."))) return;
       const idx=myBooks.indexOf(infoBook); if(idx>-1){ myBooks.splice(idx,1); saveMine();
-        syncUp().then(()=>{ readersData=null; try{localStorage.removeItem("polka_readers_cache2");}catch(e){} loadReadersData(true); });   // обновить «Выбор читателей», чтобы удалённая книга исчезла из подборки
+        syncUp().then(()=>{ readersData=null; try{localStorage.removeItem("polka_readers_cache3");}catch(e){} loadReadersData(true); });   // обновить «Выбор читателей», чтобы удалённая книга исчезла из подборки
       } closeModals(); renderAll();
     }
   });
