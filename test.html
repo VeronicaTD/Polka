@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="279" />
+<meta name="app-version" content="280" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3751,11 +3751,24 @@ main,footer{position:relative;z-index:1}
     }); }
   /* ---- «Итоги»: картинка для сторис (canvas 1080×1920) ---- */
   function loadImgCross(src){ return new Promise(res=>{ if(!src) return res(null); const im=new Image(); im.crossOrigin="anonymous"; im.onload=()=>res(im); im.onerror=()=>res(null); im.src=String(src).replace(/^http:/,"https:"); }); }
-  function summaryCoverSrc(b){ const cat=(typeof catalogCache!=="undefined")?catalogCache[looseKey(b.t,b.a)]:null; const c=bookCover(b) || (cat&&cat.coverRef) || ""; return /^data:/.test(c)?c:""; }   // в canvas только data-URL (загруженные/эталонные) — Google CORS не отдаёт, ушли бы в ошибку; остальные → цветная плашка
+  function summaryCoverSrc(b){
+    const cat=(typeof catalogCache!=="undefined")?catalogCache[looseKey(b.t,b.a)]:null;
+    let c=bookCover(b) || (cat&&cat.coverRef) || (cat&&cat.cover) || (typeof coverUrl==="function"?coverUrl(b.t,b.a):"") || "";
+    if(!c) return "";
+    if(/^data:/.test(c)) return c;                                   // загруженная/эталон — напрямую (CORS не нужен)
+    c=c.replace(/^http:/,"https:");
+    return "https://images.weserv.nl/?url="+encodeURIComponent(c);   // прокси с CORS-заголовком → Google-обложку можно нарисовать в canvas
+  }
   function itSolid(b){ const c=b.c||""; if(/^#/.test(c)) return c; const m=String(c).match(/#[0-9a-f]{3,8}/i); return m?m[0]:"#7a5b8f"; }
   function itWrap(ctx,text,cx,cy,maxW,lineH,maxLines){ const words=String(text||"").split(/\s+/); const lines=[]; let cur=""; for(const w of words){ const t=cur?cur+" "+w:w; if(ctx.measureText(t).width>maxW && cur){ lines.push(cur); cur=w; } else cur=t; } if(cur) lines.push(cur); const use=lines.slice(0,maxLines); const startY=cy-(use.length-1)*lineH/2; use.forEach((l,i)=>ctx.fillText(l,cx,startY+i*lineH)); }
-  function drawSummaryStars(ctx,cx,y,r,gold){ const n=5,sz=28,gap=7,tot=n*sz+(n-1)*gap,sx=cx-tot/2; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="700 "+sz+"px serif"; for(let i=0;i<n;i++){ ctx.globalAlpha=i<r?1:.25; ctx.fillStyle=gold; ctx.fillText("★", sx+i*(sz+gap)+sz/2, y); } ctx.globalAlpha=1; }
+  function drawSummaryStars(ctx,cx,y,r,gold,line){
+    const n=5,sz=26,gap=6,tot=n*sz+(n-1)*gap, padX=18,padY=10, pillW=tot+padX*2, pillH=sz+padY*2;
+    ctx.save(); ctx.fillStyle="rgba(255,255,255,.6)"; rrect(ctx,cx-pillW/2,y-pillH/2,pillW,pillH,pillH/2); ctx.fill(); ctx.strokeStyle=line||"rgba(0,0,0,.12)"; ctx.lineWidth=1.5; rrect(ctx,cx-pillW/2,y-pillH/2,pillW,pillH,pillH/2); ctx.stroke(); ctx.restore();
+    const sx=cx-tot/2; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="700 "+sz+"px serif";
+    for(let i=0;i<n;i++){ ctx.globalAlpha=i<r?1:.28; ctx.fillStyle=gold; ctx.fillText("★", sx+i*(sz+gap)+sz/2, y+1); } ctx.globalAlpha=1;
+  }
   function drawSummaryCover(ctx,x,y,w,h,b,img,gold,line){
+    ctx.save(); ctx.shadowColor="rgba(40,25,10,.45)"; ctx.shadowBlur=26; ctx.shadowOffsetY=13; rrect(ctx,x,y,w,h,8); ctx.fillStyle=itSolid(b); ctx.fill(); ctx.restore();   // тень как на экране
     ctx.save(); rrect(ctx,x,y,w,h,8); ctx.clip();
     if(img){ const ar=img.width/img.height, tar=w/h; let sw,sh,sx,sy; if(ar>tar){ sh=img.height; sw=sh*tar; sx=(img.width-sw)/2; sy=0; } else { sw=img.width; sh=sw/tar; sx=0; sy=(img.height-sh)/2; } ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h); }
     else { ctx.fillStyle=itSolid(b); ctx.fillRect(x,y,w,h); ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="600 26px Fraunces, serif"; itWrap(ctx,capTitle(b.t),x+w/2,y+h/2,w-26,30,5); }
@@ -3772,26 +3785,25 @@ main,footer{position:relative;z-index:1}
     try{
       try{ await Promise.all([document.fonts.load('600 84px Fraunces'),document.fonts.load('600 36px Fredoka')]); }catch(e){}
       const cs=getComputedStyle(document.body), V=k=>cs.getPropertyValue(k).trim();
-      const accentDeep=V("--accent-deep")||"#5e4538", gold=V("--gold")||"#b8893f", line=V("--line")||"#e7d9c8";
+      const paper=V("--paper")||"#FFF8F1", paper2=V("--paper-2")||"#f3e7da", ink=V("--ink")||"#4a382e", inkSoft=V("--ink-soft")||"#7a6253", accent=V("--accent")||"#7B5B4B", accentDeep=V("--accent-deep")||"#5e4538", gold=V("--gold")||"#b8893f", line=V("--line")||"#e7d9c8";
       const star1=V("--star-1")||gold, star2=V("--star-2")||gold, star3=V("--star-3")||gold;
       const W=1080,H=1920, cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
-      ctx.fillStyle=accentDeep; ctx.fillRect(0,0,W,H);
-      const vg=ctx.createLinearGradient(0,0,0,H); vg.addColorStop(0,"rgba(255,255,255,.06)"); vg.addColorStop(1,"rgba(0,0,0,.20)"); ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
-      [[90,300,92,star1,.4],[985,285,120,star2,.35],[1015,700,64,gold,.3],[66,700,80,star1,.3],[1020,1560,72,star2,.32],[58,1600,86,star3,.32],[540,1690,52,gold,.32]].forEach(st=>drawSpark(ctx,st[0],st[1],st[2],st[3],st[4]));
-      const TOP=230; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
-      ctx.fillStyle="rgba(255,255,255,.55)"; ctx.font="600 34px Fredoka, sans-serif"; ctx.fillText(ymNom(ym).toUpperCase().split("").join(" "), W/2, TOP);
-      ctx.fillStyle="#fff"; ctx.font="600 84px Fraunces, serif"; ctx.fillText("Итоги "+ymGen(ym), W/2, TOP+92);
-      ctx.fillStyle="rgba(255,255,255,.5)"; ctx.font="400 40px Fredoka, sans-serif"; ctx.fillText(String(ymY(ym)), W/2, TOP+150);
+      const bgg=ctx.createLinearGradient(0,0,0,H); bgg.addColorStop(0,paper); bgg.addColorStop(1,paper2); ctx.fillStyle=bgg; ctx.fillRect(0,0,W,H);   // светлый фон темы, как на экране
+      [[90,300,92,star1,.32],[985,285,120,star2,.28],[1015,700,64,gold,.24],[66,700,80,star1,.24],[1020,1560,72,star2,.26],[58,1600,86,star3,.26],[540,1690,52,gold,.26]].forEach(st=>drawSpark(ctx,st[0],st[1],st[2],st[3],st[4]));
+      const TOP=225; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+      ctx.fillStyle=inkSoft; ctx.font="600 32px Fredoka, sans-serif"; ctx.fillText(String(ymY(ym)).split("").join("  "), W/2, TOP);   // год разрядкой
+      ctx.fillStyle=ink; ctx.font="600 88px Fraunces, serif"; ctx.fillText("Итоги "+ymGen(ym), W/2, TOP+96);
+      const rulY=TOP+152; ctx.strokeStyle=line; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(W/2-80,rulY); ctx.lineTo(W/2+80,rulY); ctx.stroke(); ctx.fillStyle=accent; ctx.beginPath(); ctx.arc(W/2,rulY,7,0,7); ctx.fill();   // линейка с точкой
       const favs=books.filter(isFav).length, quotes=books.reduce((s,b)=>s+(Array.isArray(b.qt)?b.qt.length:0),0);
-      ctx.fillStyle="rgba(255,255,255,.82)"; ctx.font="400 36px Fredoka, sans-serif";
-      ctx.fillText(`${books.length} ${plural(books.length,"книга","книги","книг")}  ·  ${favs} любимых  ·  ${quotes} ${plural(quotes,"цитата","цитаты","цитат")}`, W/2, TOP+218);
+      ctx.fillStyle=inkSoft; ctx.font="400 36px Fredoka, sans-serif";
+      ctx.fillText(`${books.length} ${plural(books.length,"книга","книги","книг")}   ·   ${favs} любимых   ·   ${quotes} ${plural(quotes,"цитата","цитаты","цитат")}`, W/2, TOP+218);
       const shown=Math.min(9,books.length), pick=books.slice(0,shown);
       const imgs=await Promise.all(pick.map(b=>loadImgCross(summaryCoverSrc(b))));
-      const cols=3, gapX=36, gapY=92, marg=112, cw=Math.floor((W-marg*2-gapX*(cols-1))/cols), ch=Math.round(cw*3/2), gridTop=TOP+300;
-      pick.forEach((b,i)=>{ const cx=marg+(i%cols)*(cw+gapX), cy=gridTop+Math.floor(i/cols)*(ch+gapY); drawSummaryCover(ctx,cx,cy,cw,ch,b,imgs[i],gold,line); drawSummaryStars(ctx,cx+cw/2,cy+ch+36,b.r||0,gold); });
+      const cols=3, gapX=36, gapY=98, marg=112, cw=Math.floor((W-marg*2-gapX*(cols-1))/cols), ch=Math.round(cw*3/2), gridTop=TOP+300;
+      pick.forEach((b,i)=>{ const cx=marg+(i%cols)*(cw+gapX), cy=gridTop+Math.floor(i/cols)*(ch+gapY); drawSummaryCover(ctx,cx,cy,cw,ch,b,imgs[i],gold,line); drawSummaryStars(ctx,cx+cw/2,cy+ch+42,b.r||0,gold,line); });
       const bottomY=gridTop+Math.ceil(shown/cols)*(ch+gapY);
-      if(books.length>shown){ ctx.fillStyle="rgba(255,255,255,.6)"; ctx.font="400 34px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.fillText("и ещё "+(books.length-shown)+" "+plural(books.length-shown,"книга","книги","книг"), W/2, bottomY+34); }
-      ctx.fillStyle="rgba(255,255,255,.88)"; ctx.font="600 42px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.fillText("моя полка в polka 🌙", W/2, H-120);
+      if(books.length>shown){ ctx.fillStyle=inkSoft; ctx.font="400 34px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.fillText("и ещё "+(books.length-shown)+" "+plural(books.length-shown,"книга","книги","книг"), W/2, bottomY+28); }
+      ctx.fillStyle=accentDeep; ctx.font="600 42px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.fillText("моя полка в polka 🌙", W/2, H-120);
       cv.toBlob(blob=>{ if(!blob){ toast("Не получилось создать картинку"); return; } itShareBlob=blob; try{ $("#itShareImg").src=URL.createObjectURL(blob); }catch(e){} overlay.classList.add("open"); $("#itShareModal").classList.add("open"); },"image/png");
     }catch(e){ toast("Не получилось создать картинку"); }
   }
