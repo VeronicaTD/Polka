@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="281" />
+<meta name="app-version" content="282" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3761,11 +3761,22 @@ main,footer{position:relative;z-index:1}
   }
   function itSolid(b){ const c=b.c||""; if(/^#/.test(c)) return c; const m=String(c).match(/#[0-9a-f]{3,8}/i); return m?m[0]:"#7a5b8f"; }
   function itWrap(ctx,text,cx,cy,maxW,lineH,maxLines){ const words=String(text||"").split(/\s+/); const lines=[]; let cur=""; for(const w of words){ const t=cur?cur+" "+w:w; if(ctx.measureText(t).width>maxW && cur){ lines.push(cur); cur=w; } else cur=t; } if(cur) lines.push(cur); const use=lines.slice(0,maxLines); const startY=cy-(use.length-1)*lineH/2; use.forEach((l,i)=>ctx.fillText(l,cx,startY+i*lineH)); }
+  function starPath(ctx,cx,cy,R){ const r=R*0.382; ctx.beginPath();
+    for(let i=0;i<10;i++){ const rad=(i%2===0)?R:r, a=Math.PI*i/5 - Math.PI/2;
+      const x=cx+Math.cos(a)*rad, y=cy+Math.sin(a)*rad; i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.closePath(); }
   function drawSummaryStars(ctx,cx,y,r,gold,line){
-    const n=5,sz=26,gap=6,tot=n*sz+(n-1)*gap, padX=18,padY=10, pillW=tot+padX*2, pillH=sz+padY*2;
-    ctx.save(); ctx.fillStyle="rgba(255,255,255,.6)"; rrect(ctx,cx-pillW/2,y-pillH/2,pillW,pillH,pillH/2); ctx.fill(); ctx.strokeStyle=line||"rgba(0,0,0,.12)"; ctx.lineWidth=1.5; rrect(ctx,cx-pillW/2,y-pillH/2,pillW,pillH,pillH/2); ctx.stroke(); ctx.restore();
-    const sx=cx-tot/2; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="700 "+sz+"px serif";
-    for(let i=0;i<n;i++){ ctx.globalAlpha=i<r?1:.28; ctx.fillStyle=gold; ctx.fillText("★", sx+i*(sz+gap)+sz/2, y+1); } ctx.globalAlpha=1;
+    const n=5, R=13, gap=10, step=R*2+gap, tot=n*R*2+(n-1)*gap,
+          padX=18, padY=10, pillW=tot+padX*2, pillH=R*2+padY*2;
+    ctx.save();
+    ctx.fillStyle="rgba(255,255,255,.6)";
+    rrect(ctx,cx-pillW/2,y-pillH/2,pillW,pillH,pillH/2); ctx.fill();
+    ctx.strokeStyle=line||"rgba(0,0,0,.12)"; ctx.lineWidth=1.5;
+    rrect(ctx,cx-pillW/2,y-pillH/2,pillW,pillH,pillH/2); ctx.stroke();
+    const sx=cx-tot/2+R;
+    for(let i=0;i<n;i++){ ctx.globalAlpha = i<r ? 1 : .25; ctx.fillStyle=gold;
+      starPath(ctx, sx+i*step, y, R); ctx.fill(); }
+    ctx.restore();
   }
   function drawSummaryCover(ctx,x,y,w,h,b,img,gold,line){
     ctx.save(); ctx.shadowColor="rgba(40,25,10,.45)"; ctx.shadowBlur=26; ctx.shadowOffsetY=13; rrect(ctx,x,y,w,h,8); ctx.fillStyle=itSolid(b); ctx.fill(); ctx.restore();   // тень как на экране
