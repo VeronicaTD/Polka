@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="293" />
+<meta name="app-version" content="294" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -835,8 +835,11 @@ body[data-theme="comic"]{
 body[data-theme="comic"] #comicDecor{ display:block }
 #comicDecor .cm-web{ position:fixed; top:-8px; right:-8px; width:285px; height:285px; color:var(--ink); opacity:.5; z-index:1; pointer-events:none; transform:scaleX(-1) }   /* паутина в правом верхнем углу, длиннее — выходит и видна */
 #comicDecor .cm-star2{ position:fixed; height:auto; z-index:0; pointer-events:none; opacity:.3 }   /* звёзды-нашивки на заднем фоне, полупрозрачные */
-#comicDecor .cm-thwip{ position:fixed; right:-4px; top:37%; width:132px; height:auto; z-index:2; pointer-events:none; opacity:.92; filter:drop-shadow(0 3px 5px rgba(0,0,0,.35)) }   /* рука THWIP справа */
-@media(min-width:900px){ #comicDecor .cm-thwip{ width:200px; top:auto; bottom:70px; right:2.5% } }   /* на десктопе — крупнее, в правый нижний угол над крышами (а не «улетала» в пустоту сбоку) */
+/* рука THWIP приклеена к облачку «о себе» — скроллится вместе с ним, не висит над «читаю» */
+.cm-thwip{ display:none }
+body[data-theme="comic"] .sub-wrap{ display:inline-block; position:relative; max-width:100% }
+body[data-theme="comic"] .cm-thwip{ display:block; position:absolute; right:-8px; bottom:-4px; width:84px; height:auto; z-index:3; pointer-events:none; filter:drop-shadow(0 3px 5px rgba(0,0,0,.35)) }
+@media(min-width:760px){ body[data-theme="comic"] .cm-thwip{ left:100%; right:auto; margin-left:8px; bottom:-8px; width:116px } }   /* на широком экране облачко узкое — рука сразу ЗА правым краем облачка, в пустом поле, не накрывает текст */
 #comicDecor .cm-bolt{ position:fixed; height:auto; z-index:0; pointer-events:none; opacity:.2 }   /* молнии на заднем фоне */
 #comicDecor .cm-bolt.b1{ top:100px; left:-34px; width:200px; transform:rotate(-12deg) }
 #comicDecor .cm-bolt.b2{ bottom:120px; right:-26px; width:180px; transform:rotate(9deg) }
@@ -955,7 +958,6 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   <img class="cm-bolt b4" src="bolt.png" alt="" aria-hidden="true">
   <img class="cm-bolt b5" src="bolt.png" alt="" aria-hidden="true">
   <img class="cm-bolt b6" src="bolt.png" alt="" aria-hidden="true">
-  <img class="cm-thwip" src="thwip.png" alt="" aria-hidden="true">
   <svg class="cm-skyline" viewBox="0 0 1200 140" preserveAspectRatio="none"><path d="M0 140 L0 96 L34 96 L34 70 L74 70 L74 104 L104 104 L104 54 L120 54 L120 40 L134 40 L134 54 L150 54 L150 104 L196 104 L196 78 L232 78 L232 48 L268 48 L268 90 L300 90 L300 66 L300 30 L312 30 L312 66 L352 66 L352 100 L392 100 L392 60 L430 60 L430 88 L470 88 L470 44 L508 44 L508 96 L548 96 L548 72 L586 72 L586 104 L626 104 L626 52 L664 52 L664 84 L704 84 L704 62 L742 62 L742 100 L782 100 L782 46 L800 46 L800 32 L814 32 L814 46 L830 46 L830 94 L872 94 L872 68 L910 68 L910 100 L950 100 L950 56 L988 56 L988 88 L1028 88 L1028 74 L1066 74 L1066 102 L1106 102 L1106 58 L1146 58 L1146 90 L1200 90 L1200 140 Z"/></svg>
 </div>
 
@@ -1010,7 +1012,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       <div class="pname-row" id="pnameRow">
         <span class="pname-wrap"><h1 id="pName">Моя полка</h1><button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button></span>
       </div>
-      <div class="sub" id="pSub"></div>
+      <div class="sub-wrap"><div class="sub" id="pSub"></div><img class="cm-thwip" src="thwip.png" alt="" aria-hidden="true"></div>
       <div class="friend-pills" id="friendPills" style="display:none">
         <button class="fav-pill" id="favFriendBtn" style="display:none">🤍 в любимки</button>
         <button class="fav-pill add-pill" id="addFriendBtn" style="display:none">＋ добавить в друзья</button>
