@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="287" />
+<meta name="app-version" content="288" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -833,10 +833,10 @@ body[data-theme="comic"]{
 /* глобальные украшения */
 #comicDecor{ display:none }
 body[data-theme="comic"] #comicDecor{ display:block }
-#comicDecor .cm-web{ position:fixed; top:0; left:0; width:150px; height:150px; color:var(--ink); opacity:.3; z-index:1; pointer-events:none }
-#comicDecor .cm-star{ position:fixed; top:16px; right:14px; width:72px; height:72px; z-index:2; pointer-events:none; filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)) }
-#comicDecor .cm-star-fill{ fill:#B4322F }
-#comicDecor .cm-star-stitch{ fill:none; stroke:#fff; stroke-width:1.7; stroke-dasharray:3.2 3.2; opacity:.92 }
+#comicDecor .cm-web{ position:fixed; top:-6px; left:-6px; width:215px; height:215px; color:var(--ink); opacity:.5; z-index:1; pointer-events:none }
+#comicDecor .cm-star{ position:fixed; top:12px; right:12px; width:96px; height:96px; z-index:2; pointer-events:none; filter:drop-shadow(0 4px 7px rgba(0,0,0,.55)) }
+#comicDecor .cm-star-fill{ fill:#C4392E; stroke:#F2E4CC; stroke-width:2.6 }   /* кремовый кант — «нашивка» отделяется от красного фона */
+#comicDecor .cm-star-stitch{ fill:none; stroke:#fff; stroke-width:2.3; stroke-dasharray:4 3.4; opacity:1 }
 #comicDecor .cm-skyline{ position:fixed; left:0; right:0; bottom:0; width:100%; height:88px; color:#4a1414; fill:currentColor; z-index:0; pointer-events:none; opacity:.9 }
 /* декор-звёзды в тон */
 body[data-theme="comic"] .d-star{ color:var(--star-2); opacity:.5 }
@@ -891,6 +891,8 @@ body[data-theme="comic"] .arc-cell.current .arc-n{ color:#fff }
 body[data-theme="comic"] .arc-total{ color:var(--ink) }
 body[data-theme="comic"] .arc-nav b{ color:var(--ink) }
 body[data-theme="comic"] .arc-nav button{ background:var(--ink); color:var(--paper); border-color:#c9b48f }
+/* кнопка «совместное» — синяя */
+body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ background:var(--accent); color:#F2E4CC; border-color:var(--accent) }
 /* ═══════════════ конец темы «Комикс» ═══════════════ */
 </style>
 </head>
@@ -1801,6 +1803,9 @@ body[data-theme="comic"] .arc-nav button{ background:var(--ink); color:var(--pap
     "Нон-фикшн":"linear-gradient(95deg,#f7e289,#e9cb5e)","Поэзия":"linear-gradient(95deg,#f9a2c5,#f277a8)",
     "Детектив":"linear-gradient(95deg,#252d45,#161b2c)","Классика":"linear-gradient(95deg,#a6b486,#87976a)"};
   const spineBg = b => b.c || PALETTE[b.g] || "linear-gradient(95deg,#444,#222)";
+  // тема «Комикс» — корешки/плашки в цветах темы (ротация по индексу; данные книги b.c не трогаем, это только отображение)
+  const COMIC_SPINES = ["linear-gradient(160deg,#B4322F,#8a2222)","linear-gradient(160deg,#2b5480,#1E3A5F)","linear-gradient(160deg,#ecdcb8,#d6c096)","linear-gradient(160deg,#9E2B2B,#6f1c1c)","linear-gradient(160deg,#31578a,#22406a)"];
+  function themedBg(b,i){ if(document.body.getAttribute("data-theme")==="comic"){ const n=COMIC_SPINES.length; return COMIC_SPINES[((i||0)%n+n)%n]; } return spineBg(b); }
   /* цвет текста на корешке: тёмный на светлых обложках, белый на тёмных */
   function pickFg(grad){
     const m = String(grad).match(/#([0-9a-fA-F]{6})/); if(!m) return "#fff";
@@ -2449,7 +2454,7 @@ body[data-theme="comic"] .arc-nav button{ background:var(--ink); color:var(--pap
     const fit = Math.floor((d.w - 7) / (Math.max(1, name.length) * 0.6));
     const bandFont = Math.max(4, Math.min(Math.round(d.font*0.55), fit));
     const heart = Math.min(16, Math.max(11, Math.round(d.w*0.36)));
-    const bg = spineBg(b);
+    const bg = themedBg(b,i);
     return `<div class="spine${b.unread?' unread':''}" data-i="${i}" title="${esc(b.t)} — ${esc(b.a)}${b.unread?' · ещё не прочитана':''}" style="width:${d.w}px;height:${d.h}px;background:${bg};color:${pickFg(bg)}">
       ${b.unread?'<span class="s-toread">📕</span>':''}
       <div class="s-title" style="font-size:${d.font}px;max-height:${d.titleMax}px">${esc(b.t)}</div>
@@ -2464,7 +2469,7 @@ body[data-theme="comic"] .arc-nav button{ background:var(--ink); color:var(--pap
   }
   /* ячейка сетки «обложки»: плашка в цвет книги (название/автор) + оверлей реальной обложки + сердечко */
   function coverCellHTML(b, i){
-    const bg = spineBg(b), fg = pickFg(bg);
+    const bg = themedBg(b,i), fg = pickFg(bg);
     const cached = (typeof catalogCache!=="undefined") ? catalogCache[looseKey(b.t,b.a)] : null;
     const direct = bookCover(b) || (cached && cached.coverRef) || "";   // личная обложка → эталон из справочника (кэш) → иначе ленивая загрузка
     const heart = isFav(b) ? `<span class="gv-heart">${pixelHeartSVG(18)}</span>` : "";
@@ -4569,7 +4574,7 @@ body[data-theme="comic"] .arc-nav button{ background:var(--ink); color:var(--pap
     $("#themeList").innerHTML = THEMES.map(t=>`<button class="theme-opt ${t.id===myTheme?'on':''}" data-t="${t.id}"><span class="theme-sw" style="background:${t.c1};border:4px solid ${t.c2}"></span>${t.name}</button>`).join("");
   }
   function openThemes(){ renderThemes(); overlay.classList.add("open"); $("#themeModal").classList.add("open"); }
-  $("#themeList").addEventListener("click", e=>{ const b=e.target.closest(".theme-opt"); if(!b) return; applyTheme(b.dataset.t); renderThemes(); });
+  $("#themeList").addEventListener("click", e=>{ const b=e.target.closest(".theme-opt"); if(!b) return; applyTheme(b.dataset.t); renderThemes(); try{ renderCase(); }catch(_){} });   // перерисовать полку — корешки/плашки перекрашиваются под тему сразу
   applyTheme(myTheme);
 
   /* ---- добавить полку по коду ---- */
