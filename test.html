@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="285" />
+<meta name="app-version" content="286" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2417,11 +2417,9 @@ main,footer{position:relative;z-index:1}
       casePage = Math.min(Math.max(0,casePage), pages.length-1);
       bookcase.innerHTML = `<div class="cover-grid" style="grid-template-columns:repeat(${cols},1fr)">${pages[casePage].join("")}</div>`;
       hydrateCovers(bookcase);
-      $("#casePrev").classList.toggle("show", casePage>0);
-      $("#caseNext").classList.toggle("show", casePage<pages.length-1);
-      const ind=$("#caseInd");
-      if(pages.length>1){ ind.style.display="block"; ind.textContent = `Шкаф ${casePage+1} / ${pages.length}`; }
-      else ind.style.display="none";
+      { const cp=$("#casePrev"); if(cp) cp.classList.toggle("show", casePage>0); }
+      { const cn=$("#caseNext"); if(cn) cn.classList.toggle("show", casePage<pages.length-1); }
+      { const ind=$("#caseInd"); if(ind){ if(pages.length>1){ ind.style.display="block"; ind.textContent = `Шкаф ${casePage+1} / ${pages.length}`; } else ind.style.display="none"; } }
       if(!reduce && slideDir!==0){ bookcase.animate([{opacity:.4,transform:`translateX(${slideDir*36}px)`},{opacity:1,transform:"none"}],{duration:280,easing:"cubic-bezier(.16,1,.3,1)"}); slideDir=0; }
       return;
     }
@@ -2456,11 +2454,9 @@ main,footer{position:relative;z-index:1}
     while(pageShelves.length < SHELVES_PER_CASE) pageShelves.push("");
     bookcase.innerHTML = pageShelves.map(html=>`<div class="shelf">${html}</div>`).join("");
 
-    $("#casePrev").classList.toggle("show", casePage>0);
-    $("#caseNext").classList.toggle("show", casePage<pages.length-1);
-    const ind = $("#caseInd");
-    if(pages.length>1){ ind.style.display="block"; ind.textContent = `Шкаф ${casePage+1} / ${pages.length}`; }
-    else ind.style.display="none";
+    { const cp=$("#casePrev"); if(cp) cp.classList.toggle("show", casePage>0); }
+    { const cn=$("#caseNext"); if(cn) cn.classList.toggle("show", casePage<pages.length-1); }
+    { const ind = $("#caseInd"); if(ind){ if(pages.length>1){ ind.style.display="block"; ind.textContent = `Шкаф ${casePage+1} / ${pages.length}`; } else ind.style.display="none"; } }
 
     if(!reduce && slideDir!==0){
       bookcase.animate([{opacity:.4,transform:`translateX(${slideDir*36}px)`},{opacity:1,transform:"none"}],{duration:300,easing:"cubic-bezier(.16,1,.3,1)"});
