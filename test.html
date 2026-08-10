@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="289" />
+<meta name="app-version" content="290" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -833,8 +833,8 @@ body[data-theme="comic"]{
 /* глобальные украшения */
 #comicDecor{ display:none }
 body[data-theme="comic"] #comicDecor{ display:block }
-#comicDecor .cm-web{ position:fixed; top:-6px; right:-6px; width:215px; height:215px; color:var(--ink); opacity:.5; z-index:1; pointer-events:none; transform:scaleX(-1) }   /* паутина в правом верхнем углу */
-#comicDecor .cm-star2{ position:fixed; height:auto; z-index:2; pointer-events:none; opacity:.9; filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)) }   /* звёзды-нашивки: синие и красные, белая строчка */
+#comicDecor .cm-web{ position:fixed; top:-8px; right:-8px; width:285px; height:285px; color:var(--ink); opacity:.5; z-index:1; pointer-events:none; transform:scaleX(-1) }   /* паутина в правом верхнем углу, длиннее — выходит и видна */
+#comicDecor .cm-star2{ position:fixed; height:auto; z-index:0; pointer-events:none; opacity:.3 }   /* звёзды-нашивки на заднем фоне, полупрозрачные */
 #comicDecor .cm-skyline{ position:fixed; left:0; right:0; bottom:0; width:100%; height:88px; color:#4a1414; fill:currentColor; z-index:0; pointer-events:none; opacity:.9 }
 /* в теме прячем стандартный декор — все звёзды заменены нашивками */
 body[data-theme="comic"] .decor{ display:none }
