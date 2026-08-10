@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="286" />
+<meta name="app-version" content="287" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -820,6 +820,78 @@ main,footer{position:relative;z-index:1}
   .stats{margin-left:0;width:100%;gap:22px}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}.spine:hover{transform:translateY(-8px)!important}}
+/* ═══════════════ ТЕМА «КОМИКС» — изолированный блок (удаляется целиком) ═══════════════ */
+body[data-theme="comic"]{
+  --paper:#8E2B2B; --paper-2:#7A2424; --ink:#F2E4CC; --ink-soft:#D6BC97; --line:#5E1A1A;
+  --accent:#1E3A5F; --accent-deep:#152a45; --gold:#D9A441;
+  --wood-1:#7a5236; --wood-2:#4a3120;
+  --star-1:#D9A441; --star-2:#B4322F; --star-3:#F2E4CC;
+  background-color:#8E2B2B;
+  background-image:radial-gradient(circle, rgba(0,0,0,.20) 1px, transparent 1px);   /* печатный растр */
+  background-size:4px 4px; background-attachment:fixed;
+}
+/* глобальные украшения */
+#comicDecor{ display:none }
+body[data-theme="comic"] #comicDecor{ display:block }
+#comicDecor .cm-web{ position:fixed; top:0; left:0; width:150px; height:150px; color:var(--ink); opacity:.3; z-index:1; pointer-events:none }
+#comicDecor .cm-star{ position:fixed; top:16px; right:14px; width:72px; height:72px; z-index:2; pointer-events:none; filter:drop-shadow(0 3px 4px rgba(0,0,0,.4)) }
+#comicDecor .cm-star-fill{ fill:#B4322F }
+#comicDecor .cm-star-stitch{ fill:none; stroke:#fff; stroke-width:1.7; stroke-dasharray:3.2 3.2; opacity:.92 }
+#comicDecor .cm-skyline{ position:fixed; left:0; right:0; bottom:0; width:100%; height:88px; color:#4a1414; fill:currentColor; z-index:0; pointer-events:none; opacity:.9 }
+/* декор-звёзды в тон */
+body[data-theme="comic"] .d-star{ color:var(--star-2); opacity:.5 }
+body[data-theme="comic"] .d-spark{ color:var(--gold); opacity:.55 }
+/* торн-шапки: кремовый обрывок, лёгкий наклон, капс */
+body[data-theme="comic"] .fp-head h3{
+  position:relative; z-index:0; color:var(--paper); text-transform:uppercase; letter-spacing:.05em;
+  font-weight:800; display:inline-block; padding:5px 15px; margin:2px 0; transform:rotate(-1.2deg);
+}
+body[data-theme="comic"] .fp-head h3::before{
+  content:""; position:absolute; inset:-3px -4px; background:var(--ink); filter:url(#torn); z-index:-1;
+}
+/* облачко «о себе» — горизонтальное, с хвостиком слева снизу */
+body[data-theme="comic"] .sub:not(:empty){
+  position:relative; display:inline-block; max-width:100%;
+  background:var(--ink); color:#3a2418; border:2px solid var(--line);
+  padding:12px 17px; margin:12px 0 14px; border-radius:26px/20px; font-style:normal; line-height:1.45;
+}
+body[data-theme="comic"] .sub:not(:empty)::before{
+  content:""; position:absolute; left:24px; bottom:-13px; border:9px solid transparent;
+  border-top-color:var(--line); border-bottom:0; filter:none;
+}
+body[data-theme="comic"] .sub:not(:empty)::after{
+  content:""; position:absolute; left:26px; bottom:-9px; border:7px solid transparent;
+  border-top-color:var(--ink); border-bottom:0;
+}
+/* обложки собираются в «единый лист»: кремовая рамка + пунктирная прострочка + лёгкое состаривание */
+body[data-theme="comic"] .cc-img{
+  border:3px solid var(--ink); outline:1px dashed rgba(94,26,26,.55); outline-offset:-5px;
+  filter:sepia(.15) contrast(1.05);
+}
+body[data-theme="comic"] .it-cover{ box-shadow:0 0 0 3px var(--ink), 0 10px 20px -12px rgba(0,0,0,.8) }
+body[data-theme="comic"] .it-cover::before{ box-shadow:inset 0 0 0 1px rgba(94,26,26,.5); border:1px dashed rgba(94,26,26,.35) }
+/* точечный растр поверх обложек (0.12) */
+body[data-theme="comic"] .cat-cover, body[data-theme="comic"] .it-cover{ position:relative }
+body[data-theme="comic"] .cat-cover .cc-img::after{ content:"" }
+/* звёздная нашивка-акцент у любимых уже красная через --gold */
+body[data-theme="comic"] .btn{ text-transform:uppercase; letter-spacing:.03em; font-weight:700 }
+/* читаемость: подписи-счётчики чуть светлее на тёмно-красном */
+body[data-theme="comic"] .stats span, body[data-theme="comic"] .it-counters span{ color:#D8BE9C }
+/* архив — кремовые «бумажные» карточки на красном (как в референсе), текущий месяц красная нашивка */
+body[data-theme="comic"] .arc-cell{ background:var(--ink); border-color:#c9b48f }
+body[data-theme="comic"] .arc-n{ color:#8E2B2B }
+body[data-theme="comic"] .arc-m{ color:#7a5a3a }
+body[data-theme="comic"] .arc-cell.has .arc-n{ color:#B4322F }
+body[data-theme="comic"] .arc-cell.zero{ opacity:.55 }
+body[data-theme="comic"] .arc-cell.current{ background:#B4322F; border-color:#fff; border-style:dashed }
+body[data-theme="comic"] .arc-cell.current .arc-n,
+body[data-theme="comic"] .arc-cell.current .arc-m,
+body[data-theme="comic"] .arc-cell.current .arc-tag{ color:var(--ink) }
+body[data-theme="comic"] .arc-cell.current .arc-n{ color:#fff }
+body[data-theme="comic"] .arc-total{ color:var(--ink) }
+body[data-theme="comic"] .arc-nav b{ color:var(--ink) }
+body[data-theme="comic"] .arc-nav button{ background:var(--ink); color:var(--paper); border-color:#c9b48f }
+/* ═══════════════ конец темы «Комикс» ═══════════════ */
 </style>
 </head>
 <body>
@@ -855,6 +927,19 @@ main,footer{position:relative;z-index:1}
   <svg class="d-spark k3" viewBox="0 0 100 100"><use href="#spark"/></svg>
   <svg class="d-spark k4" viewBox="0 0 100 100"><use href="#spark"/></svg>
   <svg class="d-spark k5" viewBox="0 0 100 100"><use href="#spark"/></svg>
+</div>
+
+<!-- украшения темы «Комикс» (видны только при data-theme=comic) -->
+<div id="comicDecor" aria-hidden="true">
+  <svg class="cm-web" viewBox="0 0 100 100"><g fill="none" stroke="currentColor" stroke-width="0.9" stroke-linecap="round">
+    <path d="M0 0 L100 4 M0 0 L86 42 M0 0 L60 60 M0 0 L42 86 M0 0 L4 100"/>
+    <path d="M20 0 Q17 17 0 20 M42 2 Q37 37 2 42 M64 4 Q56 56 4 64 M86 6 Q76 76 6 86"/>
+  </g></svg>
+  <svg class="cm-star" viewBox="0 0 100 100">
+    <path class="cm-star-fill" d="M50 6 L60.6 35.4 L91.8 36.4 L67.1 55.6 L75.9 85.6 L50 68 L24.1 85.6 L32.9 55.6 L8.2 36.4 L39.4 35.4 Z"/>
+    <path class="cm-star-stitch" d="M50 16 L58.2 38.7 L82.3 39.5 L63.3 54.3 L70 77.5 L50 64 L30 77.5 L36.7 54.3 L17.7 39.5 L41.8 38.7 Z"/>
+  </svg>
+  <svg class="cm-skyline" viewBox="0 0 1200 140" preserveAspectRatio="none"><path d="M0 140 L0 96 L34 96 L34 70 L74 70 L74 104 L104 104 L104 54 L120 54 L120 40 L134 40 L134 54 L150 54 L150 104 L196 104 L196 78 L232 78 L232 48 L268 48 L268 90 L300 90 L300 66 L300 30 L312 30 L312 66 L352 66 L352 100 L392 100 L392 60 L430 60 L430 88 L470 88 L470 44 L508 44 L508 96 L548 96 L548 72 L586 72 L586 104 L626 104 L626 52 L664 52 L664 84 L704 84 L704 62 L742 62 L742 100 L782 100 L782 46 L800 46 L800 32 L814 32 L814 46 L830 46 L830 94 L872 94 L872 68 L910 68 L910 100 L950 100 L950 56 L988 56 L988 88 L1028 88 L1028 74 L1066 74 L1066 102 L1106 102 L1106 58 L1146 58 L1146 90 L1200 90 L1200 140 Z"/></svg>
 </div>
 
 <header>
@@ -4461,7 +4546,8 @@ main,footer{position:relative;z-index:1}
     {id:"rose",    name:"Роза", c1:"#F2EED8", c2:"#E09290"},
     {id:"night",   name:"Ночь", c1:"#051F45", c2:"#F2C4CD"},
     {id:"tiffany", name:"Тиффани", c1:"#99D5C9", c2:"#2D0320"},
-    {id:"matcha",  name:"Матча", c1:"#BAD797", c2:"#670626"}
+    {id:"matcha",  name:"Матча", c1:"#BAD797", c2:"#670626"},
+    {id:"comic",   name:"Комикс", c1:"#8E2B2B", c2:"#D9A441"}
   ];
   let myTheme = localStorage.getItem("polka_theme") || "coffee";
   if(myTheme!=="coffee" && !THEMES.some(t=>t.id===myTheme)) myTheme = "coffee";   // убрали тему (напр. «мяту») → откат на кофе
