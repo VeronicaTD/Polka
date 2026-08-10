@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="283" />
+<meta name="app-version" content="284" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3751,14 +3751,11 @@ main,footer{position:relative;z-index:1}
     }); }
   /* ---- «Итоги»: картинка для сторис (canvas 1080×1920) ---- */
   function loadImgCross(src){ return new Promise(res=>{ if(!src) return res(null); const im=new Image(); im.crossOrigin="anonymous"; im.onload=()=>res(im); im.onerror=()=>res(null); im.src=String(src).replace(/^http:/,"https:"); }); }
-  function summaryCoverSrc(b){
+  function summaryCoverRaw(b){   // обложка из данных книги (без прокси): личная → эталон → справочник → зашитый GBID
     const cat=(typeof catalogCache!=="undefined")?catalogCache[looseKey(b.t,b.a)]:null;
-    let c=bookCover(b) || (cat&&cat.coverRef) || (cat&&cat.cover) || (typeof coverUrl==="function"?coverUrl(b.t,b.a):"") || "";
-    if(!c) return "";
-    if(/^data:/.test(c)) return c;                                   // загруженная/эталон — напрямую (CORS не нужен)
-    c=c.replace(/^http:/,"https:");
-    return "https://images.weserv.nl/?url="+encodeURIComponent(c);   // прокси с CORS-заголовком → Google-обложку можно нарисовать в canvas
+    return bookCover(b) || (cat&&cat.coverRef) || (cat&&cat.cover) || (typeof coverUrl==="function"?coverUrl(b.t,b.a):"") || "";
   }
+  function itProxy(c){ if(!c) return ""; if(/^data:/.test(c)) return c; c=c.replace(/^http:/,"https:"); if(/images\.weserv\.nl/.test(c)) return c; return "https://images.weserv.nl/?url="+encodeURIComponent(c); }   // Google-обложке нужен CORS-прокси, data-URL/эталон — напрямую
   function itSolid(b){ const c=b.c||""; if(/^#/.test(c)) return c; const m=String(c).match(/#[0-9a-f]{3,8}/i); return m?m[0]:"#7a5b8f"; }
   function itWrap(ctx,text,cx,cy,maxW,lineH,maxLines){ const words=String(text||"").split(/\s+/); const lines=[]; let cur=""; for(const w of words){ const t=cur?cur+" "+w:w; if(ctx.measureText(t).width>maxW && cur){ lines.push(cur); cur=w; } else cur=t; } if(cur) lines.push(cur); const use=lines.slice(0,maxLines); const startY=cy-(use.length-1)*lineH/2; use.forEach((l,i)=>ctx.fillText(l,cx,startY+i*lineH)); }
   function starPath(ctx,cx,cy,R){ const r=R*0.382; ctx.beginPath();
@@ -3844,7 +3841,8 @@ main,footer{position:relative;z-index:1}
       ctx.fillStyle=inkSoft; ctx.font="400 36px Fredoka, sans-serif";
       ctx.fillText(`${books.length} ${plural(books.length,"книга","книги","книг")}   ·   ${favs} любимых   ·   ${quotes} ${plural(quotes,"цитата","цитаты","цитат")}`, W/2, TOP+218);
       const shown=Math.min(9,books.length), pick=books.slice(0,shown);
-      const imgs=await Promise.all(pick.map(b=>loadImgCross(summaryCoverSrc(b))));
+      const domCovers=[...document.querySelectorAll("#summaryBody .it-grid .it-cover")].map(cv=>{ const im=cv.querySelector(".cc-img"); return (im&&im.complete&&im.naturalWidth)?(im.currentSrc||im.src):""; });   // реальная обложка с экрана (в т.ч. живьём подтянутая из Google) — ground truth
+      const imgs=await Promise.all(pick.map((b,i)=>loadImgCross(itProxy(domCovers[i]||summaryCoverRaw(b)))));
       const cols=3, gapX=36, gapY=98, marg=112, cw=Math.floor((W-marg*2-gapX*(cols-1))/cols), ch=Math.round(cw*3/2), gridTop=TOP+300;
       pick.forEach((b,i)=>{ const cx=marg+(i%cols)*(cw+gapX), cy=gridTop+Math.floor(i/cols)*(ch+gapY); drawSummaryCover(ctx,cx,cy,cw,ch,b,imgs[i],gold,line); drawSummaryStars(ctx,cx+cw/2,cy+ch+42,b.r||0,gold,line); });
       const bottomY=gridTop+Math.ceil(shown/cols)*(ch+gapY);
