@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="284" />
+<meta name="app-version" content="285" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1990,7 +1990,11 @@ main,footer{position:relative;z-index:1}
       ctx.fillStyle=bgg; ctx.fillRect(0,0,W,H);   // фон текущей темы (не нейтральный бежевый)
       const TOP=250, BOT=H-250;   // безопасные зоны сторис (9:16) — контент только между TOP и BOT
       // звёзды темы — как на экране приложения
-      [[90,300,92,star1,.5],[985,285,122,star2,.45],[1015,660,64,gold,.4],[66,660,82,star1,.4],[1022,1150,72,star2,.4],[58,1200,88,star3,.4],[150,1470,60,star1,.42],[965,1500,80,star2,.4],[540,1560,52,gold,.42]].forEach(st=>drawSpark(ctx,st[0],st[1],st[2],st[3],st[4]));
+      [[70,300,200,star1,.5,-12],[1015,270,250,star3,.45,14],[45,900,175,star1,.4,-8],
+       [1045,1000,150,star2,.42,10],[60,1520,200,star3,.4,-14],[1025,1540,225,star2,.42,12]]
+        .forEach(s=>drawPStar(ctx,s[0],s[1],s[2],s[3],s[4],s[5]));
+      [[540,1610,34,gold,.5],[200,1250,26,star1,.45],[900,175,28,star2,.5]]
+        .forEach(s=>drawPSpark(ctx,s[0],s[1],s[2],s[3],s[4]));
       // — полароиды с процентом —
       const s=280, ay=TOP+70;
       await drawAvatarBox(ctx, 80, ay, s, myPhoto, myName, accent, -4);
