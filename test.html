@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="282" />
+<meta name="app-version" content="283" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3789,6 +3789,37 @@ main,footer{position:relative;z-index:1}
     ctx.strokeStyle="rgba(255,255,255,.4)"; ctx.lineWidth=2; rrect(ctx,x+2,y+2,w-4,h-4,7); ctx.stroke(); // внутренняя рамка
     if(isFav(b)){ const hx=x+w-32,hy=y+32; ctx.fillStyle="rgba(255,255,255,.94)"; ctx.beginPath(); ctx.arc(hx,hy,22,0,7); ctx.fill(); ctx.fillStyle="#d05a6e"; ctx.font="700 24px serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("♥",hx,hy+1); }
   }
+  // фоновые звёзды на картинке — та же кривая, что у SVG-символа #pstar (шестиконечная, 3 слоя, газетная текстура), не плоская искра
+  const PSTAR_D="M100 10 L118 68.8 L177.9 55 L136 100 L177.9 145 L118 131.2 L100 190 L82 131.2 L22.1 145 L64 100 L22.1 55 L82 68.8 Z";
+  const SPARK_D="M50 6 C55 38 62 45 94 50 C62 55 55 62 50 94 C45 62 38 55 6 50 C38 45 45 38 50 6 Z";
+  let newsTile=null;
+  function newsPattern(ctx){
+    if(!newsTile){
+      newsTile=document.createElement("canvas"); newsTile.width=42; newsTile.height=26;
+      const c=newsTile.getContext("2d");
+      c.fillStyle="#efe7d3"; c.fillRect(0,0,42,26);
+      c.fillStyle="#9b9078";
+      [[3,4,36],[3,9,28],[3,14,36],[3,19,22]].forEach(r=>c.fillRect(r[0],r[1],r[2],2));
+    }
+    const pat=ctx.createPattern(newsTile,"repeat");
+    try{ pat.setTransform(new DOMMatrix().rotate(-7)); }catch(e){}
+    return pat;
+  }
+  function drawPStar(ctx,cx,cy,S,color,alpha,deg){
+    const p=new Path2D(PSTAR_D), k=S/200;
+    ctx.save(); ctx.globalAlpha=alpha;
+    ctx.translate(cx,cy); ctx.rotate((deg||0)*Math.PI/180); ctx.scale(k,k); ctx.translate(-100,-100);
+    ctx.fillStyle=color; ctx.fill(p);
+    ctx.save(); ctx.translate(26,26); ctx.scale(.74,.74); ctx.fillStyle=newsPattern(ctx); ctx.fill(p); ctx.restore();
+    ctx.save(); ctx.translate(60,60); ctx.scale(.4,.4); ctx.globalAlpha=alpha*.92; ctx.fillStyle=color; ctx.fill(p); ctx.restore();
+    ctx.restore();
+  }
+  function drawPSpark(ctx,cx,cy,S,color,alpha){
+    const p=new Path2D(SPARK_D), k=S/100;
+    ctx.save(); ctx.globalAlpha=alpha;
+    ctx.translate(cx,cy); ctx.scale(k,k); ctx.translate(-50,-50);
+    ctx.fillStyle=color; ctx.fill(p); ctx.restore();
+  }
   let itShareBlob=null;
   async function shareSummaryCard(ym){
     const books=itMonthList(ym); if(!books.length){ toast("В этом месяце пока нет книг"); return; }
@@ -3800,7 +3831,11 @@ main,footer{position:relative;z-index:1}
       const star1=V("--star-1")||gold, star2=V("--star-2")||gold, star3=V("--star-3")||gold;
       const W=1080,H=1920, cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
       const bgg=ctx.createLinearGradient(0,0,0,H); bgg.addColorStop(0,paper); bgg.addColorStop(1,paper2); ctx.fillStyle=bgg; ctx.fillRect(0,0,W,H);   // светлый фон темы, как на экране
-      [[90,300,92,star1,.32],[985,285,120,star2,.28],[1015,700,64,gold,.24],[66,700,80,star1,.24],[1020,1560,72,star2,.26],[58,1600,86,star3,.26],[540,1690,52,gold,.26]].forEach(st=>drawSpark(ctx,st[0],st[1],st[2],st[3],st[4]));
+      [[70,300,200,star1,.5,-12],[1015,265,250,star3,.45,14],[1040,980,150,star2,.4,10],
+       [48,1005,175,star1,.38,-8],[1025,1700,230,star2,.42,12],[55,1745,195,star3,.4,-14]]
+        .forEach(s=>drawPStar(ctx,s[0],s[1],s[2],s[3],s[4],s[5]));
+      [[540,1812,34,gold,.5],[205,1788,26,star1,.45],[885,185,28,star2,.5]]
+        .forEach(s=>drawPSpark(ctx,s[0],s[1],s[2],s[3],s[4]));
       const TOP=225; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
       ctx.fillStyle=inkSoft; ctx.font="600 32px Fredoka, sans-serif"; ctx.fillText(String(ymY(ym)).split("").join("  "), W/2, TOP);   // год разрядкой
       ctx.fillStyle=ink; ctx.font="600 88px Fraunces, serif"; ctx.fillText("Итоги "+ymGen(ym), W/2, TOP+96);
