@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="296" />
+<meta name="app-version" content="297" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4088,7 +4088,9 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     const master=!!p.master;
     document.querySelectorAll("#notifModal .notif-sub").forEach(el=>{ el.style.opacity = master?"1":".4"; el.style.pointerEvents = master?"":"none"; });
   }
-  function openNotifSettings(){ renderNotifSettings(); overlay.classList.add("open"); $("#notifModal").classList.add("open"); }
+  function openNotifSettings(){ renderNotifSettings(); if(("Notification" in window)&&Notification.permission==="granted") subscribePush(); overlay.classList.add("open"); $("#notifModal").classList.add("open"); }
+  // если разрешение уже выдано — подписаться автоматически (при загрузке/после входа), иначе подписка не сохранится
+  function maybeAutoSubscribe(){ try{ if(isMe() && myCode && notifSupported() && Notification.permission==="granted") subscribePush(); }catch(e){} }
   { const m=$("#notifModal"); if(m) m.addEventListener("click", async (e)=>{
       const t=e.target.closest(".notif-tgl"); if(t){ const p=notifPrefs(); const k=t.dataset.k; p[k]=!p[k]; saveNotifPrefs(p); renderNotifSettings();
         if(k==="master" && p.master && Notification.permission==="default"){ maybeAskNotif(); }
@@ -5476,6 +5478,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   }
 
   renderAll();
+  setTimeout(maybeAutoSubscribe, 2500);   // если уведомления уже разрешены — тихо переподписаться, чтобы подписка была в базе
 })();
 </script>
 <script>
