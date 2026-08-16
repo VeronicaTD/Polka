@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="298" />
+<meta name="app-version" content="299" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2274,11 +2274,20 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
   function setUrlLogin(){ if(CLOUD() && myCode){ try{ history.replaceState(null, "", location.pathname + "?login=" + encodeURIComponent(myCode)); }catch(e){} } }
   let bootLoaded=false;   // true только после загрузки настоящих данных этой полки из облака (или явного входа)
+  // сводка «книг по месяцам» для серверных уведомлений (сервер не читает блоб)
+  function computeMonthBooks(){ const m={}; (myBooks||[]).forEach(b=>{ if(b && !b.unread && typeof b.d==="string" && /^\d{4}-\d{2}$/.test(b.d)) m[b.d]=(m[b.d]||0)+1; }); return m; }
+  async function syncActivity(){
+    try{
+      if(!(CLOUD() && myCode)) return;
+      const tz=(window.Intl && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone||"") : "";
+      await sbRpc("sync_activity", { p_code:myCode, p_tz:tz, p_month_books:computeMonthBooks(), p_streak:(myStreak||0), p_last_mark:(myLastMark||null) });
+    }catch(e){}   // RPC развернёт Веро; до этого — тихо
+  }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
     const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic});
-    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; return true; }
+    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; syncActivity(); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
@@ -5480,6 +5489,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
 
   renderAll();
   setTimeout(maybeAutoSubscribe, 2500);   // если уведомления уже разрешены — тихо переподписаться, чтобы подписка была в базе
+  setTimeout(syncActivity, 3200);         // сводка книг-по-месяцам/серии на сервер — для уведомлений по расписанию
 })();
 </script>
 <script>
