@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="297" />
+<meta name="app-version" content="298" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -255,7 +255,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .cr-hist-pava{width:19px;height:19px;border-radius:50%;color:#fff;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background-size:cover;background-position:center}
 .cr-src{display:block;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;cursor:pointer;font-family:inherit;color:var(--ink)}
 .cr-src:hover{border-color:var(--accent)}
-.req-item.cr-invite{flex-wrap:wrap}
+.req-item.cr-invite,.req-item.req-friend{flex-wrap:wrap}
+.req-item.req-friend .req-who{flex-basis:calc(100% - 52px)}   /* имя+текст на первой строке, кнопки — на второй, не давятся */
 .crd-head{display:flex;gap:14px;align-items:center;margin-bottom:18px}
 #crdSpine{width:56px;height:80px;border-radius:2px 5px 5px 2px;flex:0 0 auto;box-shadow:2px 2px 8px -2px rgba(0,0,0,.5)}
 .crd-track{margin-top:14px}
@@ -5156,7 +5157,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     let h = "";
     if(pendingReqs.length){
       h += `<div class="cat-genre">Хотят добавить вас в друзья</div>`;
-      h += pendingReqs.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
+      h += pendingReqs.map(r=>`<div class="req-item req-friend" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
         <button type="button" class="req-face-btn" data-viewcode="${esc(r.from_code||'')}" title="посмотреть полку">${faceFor(r.from_name, r.from_photo, '#b8493a')}</button>
         <span class="req-who"><b>${esc(r.from_name||'Кто-то')}</b> хочет добавить вас в друзья</span>
         <button class="btn ghost req-dismiss">Отклонить</button>
