@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="299" />
+<meta name="app-version" content="300" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1983,7 +1983,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   const READING_MAX = 3;
   function asReadingArr(rd){
     if(Array.isArray(rd)) return rd.filter(x=>x && x.t).slice(0,READING_MAX)
-      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[])}));
+      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[]), sd:x.sd||""}));
     const s=String(rd||"").trim(); if(!s) return [];
     const parts=s.split(" — ");   // старый формат мог быть «Название — Автор»
     return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:"", r:0, fav:false, note:"", qt:[]}];
@@ -2220,6 +2220,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   const saveMine = () => { myBooks.forEach(capBook); try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} };
   /* ---- «Итоги месяца»: месяц прочтения книги d = «ГГГГ-ММ» ---- */
   function curYM(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
+  function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   const MONTH_NOM=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
   const MONTH_GEN=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   function ymY(ym){ return +String(ym||"").slice(0,4); }
@@ -2280,7 +2281,8 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     try{
       if(!(CLOUD() && myCode)) return;
       const tz=(window.Intl && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone||"") : "";
-      await sbRpc("sync_activity", { p_code:myCode, p_tz:tz, p_month_books:computeMonthBooks(), p_streak:(myStreak||0), p_last_mark:(myLastMark||null) });
+      const reading=(myReading||[]).filter(b=>b&&b.t&&b.sd).map(b=>({t:String(b.t).slice(0,120), sd:b.sd}));   // для «застрявшей книги»
+      await sbRpc("sync_activity", { p_code:myCode, p_tz:tz, p_month_books:computeMonthBooks(), p_streak:(myStreak||0), p_last_mark:(myLastMark||null), p_reading:reading });
     }catch(e){}   // RPC развернёт Веро; до этого — тихо
   }
   async function syncUp(){
@@ -3003,7 +3005,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       const rb=myReading[choice];
       if(rb){ if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[],d:curYM()}); saveMine(); } myReading.splice(choice,1); }
     }
-    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||""});
+    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||"", sd:todayISO()});
     const wi=myWishlist.findIndex(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a)); if(wi>-1) myWishlist.splice(wi,1);
     saveReadingLS(); saveWish(); syncUp(); closeWishAct(); renderAll(); toast("Читаешь сейчас 📖");
   });
@@ -4317,7 +4319,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return false; }
     if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a||""))){ toast("Эту книгу уже читаешь"); return false; }
     // читаемая книга — полноценный объект книги (цитаты/оценка/цвет пишутся во время чтения, а не после)
-    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[]});
+    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[], sd:todayISO()});
     saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return true;
   }
   bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // выбор из подсказки
