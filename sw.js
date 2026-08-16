@@ -6,7 +6,7 @@ self.addEventListener("push", (event) => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; }
   catch (e) { d = { body: event.data ? event.data.text() : "" }; }
-  const title = d.title || "Polka";
+  const title = (typeof d.title === "string") ? d.title : "Polka";   // можно передать "" — тогда iOS покажет только имя приложения + тело
   const opts = {
     body: d.body || "",
     icon: d.icon || "icon-192.png",
