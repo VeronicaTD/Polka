@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="294" />
+<meta name="app-version" content="295" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -5346,6 +5346,14 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
 
   renderAll();
 })();
+</script>
+<script>
+/* регистрация service worker — для веб-пуш уведомлений (работает на iOS только из standalone/с домашнего экрана) */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
