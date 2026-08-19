@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="300" />
+<meta name="app-version" content="301" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4045,7 +4045,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       openSummary(ym); }); }
   /* ============ УВЕДОМЛЕНИЯ (веб-пуш) ============ */
   const VAPID_PUBLIC = "BAQn1MUZM1JRRld3nGEqZxKIQGY9iWZuZ1z9hBOIXU80e1rgfWOrg9dHYzh2nkD9ufxiFS912yiX7oMQm9EvfIs";
-  const NOTIF_DEFAULTS = { master:true, social:true, coread:true, summary:true, reminders:false, poetry:true };
+  const NOTIF_DEFAULTS = { master:true, social:true, coread:true, summary:true, reminders:true, poetry:true };
   function notifPrefs(){ try{ return Object.assign({}, NOTIF_DEFAULTS, JSON.parse(localStorage.getItem("polka_notif")||"{}")); }catch(e){ return Object.assign({}, NOTIF_DEFAULTS); } }
   function saveNotifPrefs(p){ try{ localStorage.setItem("polka_notif", JSON.stringify(p)); }catch(e){} }
   function isStandalone(){ return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone===true; }

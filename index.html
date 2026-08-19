@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="294" />
+<meta name="app-version" content="301" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -255,7 +255,8 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .cr-hist-pava{width:19px;height:19px;border-radius:50%;color:#fff;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background-size:cover;background-position:center}
 .cr-src{display:block;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;cursor:pointer;font-family:inherit;color:var(--ink)}
 .cr-src:hover{border-color:var(--accent)}
-.req-item.cr-invite{flex-wrap:wrap}
+.req-item.cr-invite,.req-item.req-friend{flex-wrap:wrap}
+.req-item.req-friend .req-who{flex-basis:calc(100% - 52px)}   /* имя+текст на первой строке, кнопки — на второй, не давятся */
 .crd-head{display:flex;gap:14px;align-items:center;margin-bottom:18px}
 #crdSpine{width:56px;height:80px;border-radius:2px 5px 5px 2px;flex:0 0 auto;box-shadow:2px 2px 8px -2px rgba(0,0,0,.5)}
 .crd-track{margin-top:14px}
@@ -820,6 +821,28 @@ main,footer{position:relative;z-index:1}
   .stats{margin-left:0;width:100%;gap:22px}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}.spine:hover{transform:translateY(-8px)!important}}
+/* ---- Уведомления ---- */
+.notif-ic{font-size:40px;text-align:center;margin:6px 0 2px}
+.notif-status{font-size:13.5px;color:var(--ink-soft);background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.notif-status.ok{color:var(--accent-deep);border-color:var(--accent)}
+.notif-tgl{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;background:transparent;border:none;padding:11px 2px;font-size:15px;color:var(--ink);cursor:pointer;text-align:left;border-bottom:1px solid var(--line)}
+.notif-master{font-weight:700;border-bottom:2px solid var(--line)}
+.notif-list .notif-tgl:last-child{border-bottom:none}
+.notif-list{padding-left:2px}
+.notif-sw{flex:0 0 auto;width:42px;height:24px;border-radius:999px;background:var(--line);position:relative;transition:background .18s}
+.notif-sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .18s}
+.notif-tgl.on .notif-sw{background:var(--accent)}
+.notif-tgl.on .notif-sw::after{left:20px}
+/* баннер «на домашний экран» */
+.hs-banner{position:relative;display:flex;gap:12px;align-items:flex-start;width:calc(100% - 8px);max-width:520px;margin:4px auto 10px;padding:13px 30px 13px 14px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px}
+.hs-x{position:absolute;top:5px;right:9px;font-size:17px;color:var(--ink-soft);line-height:1;padding:2px 5px;background:none;border:none;cursor:pointer}
+.hs-ic{font-size:26px;flex:0 0 auto;line-height:1.2}
+.hs-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.hs-txt b{font-size:14.5px;color:var(--ink);font-weight:600}
+.hs-txt>span{font-size:12.5px;color:var(--ink-soft);line-height:1.35}
+.hs-steps{margin-top:4px;display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.hs-steps b{font-weight:700}
+.hs-share{vertical-align:-2px;color:var(--accent)}
 /* ═══════════════ ТЕМА «КОМИКС» — изолированный блок (удаляется целиком) ═══════════════ */
 body[data-theme="comic"]{
   --paper:#8E2B2B; --paper-2:#7A2424; --ink:#F2E4CC; --ink-soft:#D6BC97; --line:#5E1A1A;
@@ -1000,6 +1023,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   <button class="menu-item" id="mReviews" style="display:none">💬 Рецензии читателей</button>
   <div class="menu-sep"></div>
   <button class="menu-item" id="mTheme">🎨 Тема оформления</button>
+  <button class="menu-item" id="mNotif">🔔 Уведомления</button>
   <button class="menu-item" id="mAccess" style="display:none;color:#c98a2b;font-weight:700">🔓 Подключить полный доступ</button>
 </nav>
 
@@ -1034,6 +1058,13 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     <span class="sp-go">›</span>
     <span class="sp-x" id="spClose" role="button" aria-label="Закрыть">×</span>
   </button>
+
+  <div class="hs-banner" id="homescreenBanner" style="display:none">
+    <button class="hs-x" id="hsClose" aria-label="Закрыть">×</button>
+    <div class="hs-ic">📲</div>
+    <div class="hs-txt"><b>Добавь Polka на домашний экран</b><span>так удобнее заходить, и я смогу напоминать о твоих книгах</span>
+      <span class="hs-steps">Нажми <b>Поделиться</b> <svg class="hs-share" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11 H7 a1 1 0 0 0 -1 1 v7 a1 1 0 0 0 1 1 h10 a1 1 0 0 0 1 -1 v-7 a1 1 0 0 0 -1 -1 h-1.5"/><path d="M12 3 v11 M8 6.5 L12 3 L16 6.5"/></svg> внизу → <b>«На экран „Домой“»</b></span></div>
+  </div>
 
   <section class="tabs" id="tabs"></section>
 
@@ -1218,6 +1249,31 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   <h3>Тема оформления 🎨</h3>
   <p class="mp">Выберите палитру для всего сайта.</p>
   <div class="themes" id="themeList"></div>
+</div>
+
+<!-- уведомления: своё окошко перед системным запросом -->
+<div class="modal" id="notifOptIn" role="dialog" aria-modal="true" aria-label="Уведомления">
+  <div class="notif-ic">🔔</div>
+  <h3 style="text-align:center">Включить уведомления?</h3>
+  <p class="mp" id="notifOptInText" style="text-align:center"></p>
+  <div class="modal-foot" style="justify-content:center"><button class="btn ghost" id="notifLater">Не сейчас</button><button class="btn" id="notifEnable">Включить</button></div>
+</div>
+
+<!-- уведомления: экран настроек -->
+<div class="modal" id="notifModal" role="dialog" aria-modal="true" aria-label="Настройки уведомлений">
+  <button class="close" data-close>×</button>
+  <h3>Уведомления 🔔</h3>
+  <div class="notif-status" id="notifStatus"></div>
+  <div id="notifEnableRow" style="display:none;margin:0 0 12px"><button class="btn" id="notifEnableBtn" style="width:100%;justify-content:center;display:flex">Включить уведомления</button></div>
+  <button class="notif-tgl notif-master" data-k="master" type="button"><span>Все уведомления</span><span class="notif-sw"></span></button>
+  <div class="notif-list">
+    <button class="notif-tgl notif-sub" data-k="social" type="button"><span>Друзья и приглашения</span><span class="notif-sw"></span></button>
+    <button class="notif-tgl notif-sub" data-k="coread" type="button"><span>Совместное чтение</span><span class="notif-sw"></span></button>
+    <button class="notif-tgl notif-sub" data-k="summary" type="button"><span>Итоги месяца</span><span class="notif-sw"></span></button>
+    <button class="notif-tgl notif-sub" data-k="reminders" type="button"><span>Напоминания о чтении</span><span class="notif-sw"></span></button>
+    <button class="notif-tgl notif-sub" data-k="poetry" type="button"><span>Новое в «Поэзии»</span><span class="notif-sw"></span></button>
+  </div>
+  <p class="mp" style="margin-top:10px;font-size:12.5px">С 22:00 до 9:00 тихо — придержу всё, кроме заявок и приглашений, до утра.</p>
 </div>
 
 <!-- запросы «добавили вас» -->
@@ -1623,6 +1679,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   async function sbInsertRequest(row){
     // канал requests защищён серверными функциями (коды не сливаются в таблицу целиком)
     await sbRpc("req_send", {p_from_code:row.from_code, p_from_name:row.from_name||"", p_from_photo:row.from_photo||"", p_to_code:row.to_code});
+    try{ maybeAskNotif(); }catch(e){}   // осмысленное действие — предложить уведомления
   }
   async function sbFetchRequests(code){
     try{ const a = await sbRpc("req_incoming", {p_code:code}); return Array.isArray(a)?a:[]; }catch(e){ return []; }
@@ -1635,7 +1692,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   }
   /* ===== СОВМЕСТНОЕ ЧТЕНИЕ (coreads) — обёртки серверных функций ===== */
   async function crList(partnerCode){ if(!CLOUD()||!myCode) return []; try{ const v=await sbRpc("coread_list",{p_code:myCode, p_partner:partnerCode||null}); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
-  async function crInvite(toCode, title, author, pagesA){ if(!CLOUD()||!myCode) return null; try{ return await sbRpc("coread_invite",{p_from_code:myCode, p_from_name:myName, p_to_code:toCode, p_title:title, p_author:author||"", p_pages_a:pagesA||0}); }catch(e){ return null; } }
+  async function crInvite(toCode, title, author, pagesA){ if(!CLOUD()||!myCode) return null; try{ const v=await sbRpc("coread_invite",{p_from_code:myCode, p_from_name:myName, p_to_code:toCode, p_title:title, p_author:author||"", p_pages_a:pagesA||0}); const f=(savedFriends||[]).find(x=>x.code===toCode); try{ maybeAskNotif(f&&f.name?{name:String(f.name).split(" ")[0]}:null); }catch(e){} return v; }catch(e){ return null; } }
   async function crRespond(id, accept, pagesB){ try{ return (await sbRpc("coread_respond",{p_id:id, p_code:myCode, p_name:myName, p_accept:!!accept, p_pages_b:pagesB||0}))===true; }catch(e){ return false; } }
   async function crPage(id, page){ try{ return (await sbRpc("coread_page",{p_id:id, p_code:myCode, p_page:page|0}))===true; }catch(e){ return false; } }
   async function crReact(id, reaction){ try{ return (await sbRpc("coread_react",{p_id:id, p_code:myCode, p_reaction:String(reaction||"").slice(0,120)}))===true; }catch(e){ return false; } }
@@ -1926,7 +1983,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   const READING_MAX = 3;
   function asReadingArr(rd){
     if(Array.isArray(rd)) return rd.filter(x=>x && x.t).slice(0,READING_MAX)
-      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[])}));
+      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[]), sd:x.sd||""}));
     const s=String(rd||"").trim(); if(!s) return [];
     const parts=s.split(" — ");   // старый формат мог быть «Название — Автор»
     return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:"", r:0, fav:false, note:"", qt:[]}];
@@ -2163,6 +2220,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   const saveMine = () => { myBooks.forEach(capBook); try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} };
   /* ---- «Итоги месяца»: месяц прочтения книги d = «ГГГГ-ММ» ---- */
   function curYM(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
+  function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   const MONTH_NOM=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
   const MONTH_GEN=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   function ymY(ym){ return +String(ym||"").slice(0,4); }
@@ -2217,11 +2275,21 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
   function setUrlLogin(){ if(CLOUD() && myCode){ try{ history.replaceState(null, "", location.pathname + "?login=" + encodeURIComponent(myCode)); }catch(e){} } }
   let bootLoaded=false;   // true только после загрузки настоящих данных этой полки из облака (или явного входа)
+  // сводка «книг по месяцам» для серверных уведомлений (сервер не читает блоб)
+  function computeMonthBooks(){ const m={}; (myBooks||[]).forEach(b=>{ if(b && !b.unread && typeof b.d==="string" && /^\d{4}-\d{2}$/.test(b.d)) m[b.d]=(m[b.d]||0)+1; }); return m; }
+  async function syncActivity(){
+    try{
+      if(!(CLOUD() && myCode)) return;
+      const tz=(window.Intl && Intl.DateTimeFormat) ? (Intl.DateTimeFormat().resolvedOptions().timeZone||"") : "";
+      const reading=(myReading||[]).filter(b=>b&&b.t&&b.sd).map(b=>({t:String(b.t).slice(0,120), sd:b.sd}));   // для «застрявшей книги»
+      await sbRpc("sync_activity", { p_code:myCode, p_tz:tz, p_month_books:computeMonthBooks(), p_streak:(myStreak||0), p_last_mark:(myLastMark||null), p_reading:reading });
+    }catch(e){}   // RPC развернёт Веро; до этого — тихо
+  }
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
     const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic});
-    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; return true; }
+    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; syncActivity(); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
 
@@ -2937,7 +3005,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       const rb=myReading[choice];
       if(rb){ if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[],d:curYM()}); saveMine(); } myReading.splice(choice,1); }
     }
-    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||""});
+    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||"", sd:todayISO()});
     const wi=myWishlist.findIndex(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a)); if(wi>-1) myWishlist.splice(wi,1);
     saveReadingLS(); saveWish(); syncUp(); closeWishAct(); renderAll(); toast("Читаешь сейчас 📖");
   });
@@ -3975,6 +4043,83 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   { const el=$("#summaryPlaque"); if(el) el.addEventListener("click", e=>{ const ym=el.dataset.ym||prevYM(curYM());
       if(e.target.closest("#spClose")){ try{ localStorage.setItem("polka_sum_dismiss_"+ym,"1"); }catch(err){} el.style.display="none"; return; }
       openSummary(ym); }); }
+  /* ============ УВЕДОМЛЕНИЯ (веб-пуш) ============ */
+  const VAPID_PUBLIC = "BAQn1MUZM1JRRld3nGEqZxKIQGY9iWZuZ1z9hBOIXU80e1rgfWOrg9dHYzh2nkD9ufxiFS912yiX7oMQm9EvfIs";
+  const NOTIF_DEFAULTS = { master:true, social:true, coread:true, summary:true, reminders:true, poetry:true };
+  function notifPrefs(){ try{ return Object.assign({}, NOTIF_DEFAULTS, JSON.parse(localStorage.getItem("polka_notif")||"{}")); }catch(e){ return Object.assign({}, NOTIF_DEFAULTS); } }
+  function saveNotifPrefs(p){ try{ localStorage.setItem("polka_notif", JSON.stringify(p)); }catch(e){} }
+  function isStandalone(){ return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone===true; }
+  function notifSupported(){ return ("Notification" in window) && ("serviceWorker" in navigator) && ("PushManager" in window); }
+  function urlB64ToU8(b64){ const pad="=".repeat((4-b64.length%4)%4); const s=(b64+pad).replace(/-/g,"+").replace(/_/g,"/"); const raw=atob(s); const u=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) u[i]=raw.charCodeAt(i); return u; }
+  async function subscribePush(){
+    try{
+      if(!notifSupported() || Notification.permission!=="granted") return false;
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlB64ToU8(VAPID_PUBLIC) });
+      const j = sub.toJSON();
+      try{ await sbRpc("save_push_subscription", { p_code: myCode||"", p_endpoint: j.endpoint, p_keys: j.keys, p_prefs: notifPrefs() }); }catch(e){}   // RPC развернёт Веро; до этого — тихо
+      return true;
+    }catch(e){ return false; }
+  }
+  // двухшаговый запрос: своё окошко → по «Включить» системный запрос (его нельзя вызывать вслепую — показывается 1 раз навсегда)
+  function maybeAskNotif(context){
+    if(!isMe() || !notifSupported()) return;
+    if(Notification.permission==="granted"){ subscribePush(); return; }
+    if(Notification.permission==="denied") return;
+    const last=+(localStorage.getItem("polka_notif_asked")||0);
+    if(Date.now()-last < 7*864e5) return;   // не чаще раза в неделю
+    openNotifOptIn(context||null);
+  }
+  function openNotifOptIn(context){
+    const t = (context && context.name)
+      ? `Сообщить, когда ${context.name} ответит? Заодно буду присылать приглашения и итоги месяца.`
+      : `Сообщу, когда друг позовёт читать вместе, придёт заявка в друзья или соберутся итоги месяца.`;
+    $("#notifOptInText").textContent = t;
+    overlay.classList.add("open"); $("#notifOptIn").classList.add("open");
+  }
+  { const b=$("#notifEnable"); if(b) b.addEventListener("click", async ()=>{
+      try{ localStorage.setItem("polka_notif_asked", String(Date.now())); }catch(e){}
+      closeModals();
+      if(!notifSupported()){ toast("Уведомления недоступны на этом устройстве"); return; }
+      let perm="default"; try{ perm=await Notification.requestPermission(); }catch(e){}
+      if(perm==="granted"){ const ok=await subscribePush(); toast(ok?"Уведомления включены 🔔":"Почти! Уведомления включатся, когда всё будет готово"); }
+      else if(perm==="denied"){ toast("Разрешение не выдано — можно включить в настройках телефона"); }
+    }); }
+  { const b=$("#notifLater"); if(b) b.addEventListener("click", ()=>{ try{ localStorage.setItem("polka_notif_asked", String(Date.now())); }catch(e){} closeModals(); }); }
+  // экран настроек «Уведомления»
+  function renderNotifSettings(){
+    const p=notifPrefs(); const has=("Notification" in window); const perm=has?Notification.permission:"unsupported"; const on=perm==="granted";
+    $("#notifStatus").textContent = !notifSupported() ? "На этом устройстве уведомления недоступны"
+      : (perm==="denied" ? "Разрешение выключено — включи в настройках телефона"
+      : (on ? "Уведомления включены" : "Нажми «Включить», чтобы получать напоминания о книгах"));
+    $("#notifStatus").className = "notif-status" + (on?" ok":"");
+    $("#notifEnableRow").style.display = (notifSupported() && perm==="default") ? "block" : "none";
+    document.querySelectorAll("#notifModal .notif-tgl").forEach(el=>{ const k=el.dataset.k; el.classList.toggle("on", !!p[k]); });
+    // если общий выключен — остальные приглушены
+    const master=!!p.master;
+    document.querySelectorAll("#notifModal .notif-sub").forEach(el=>{ el.style.opacity = master?"1":".4"; el.style.pointerEvents = master?"":"none"; });
+  }
+  function openNotifSettings(){ renderNotifSettings(); if(("Notification" in window)&&Notification.permission==="granted") subscribePush(); overlay.classList.add("open"); $("#notifModal").classList.add("open"); }
+  // если разрешение уже выдано — подписаться автоматически (при загрузке/после входа), иначе подписка не сохранится
+  function maybeAutoSubscribe(){ try{ if(isMe() && myCode && notifSupported() && Notification.permission==="granted") subscribePush(); }catch(e){} }
+  { const m=$("#notifModal"); if(m) m.addEventListener("click", async (e)=>{
+      const t=e.target.closest(".notif-tgl"); if(t){ const p=notifPrefs(); const k=t.dataset.k; p[k]=!p[k]; saveNotifPrefs(p); renderNotifSettings();
+        if(k==="master" && p.master && Notification.permission==="default"){ maybeAskNotif(); }
+        if(Notification.permission==="granted") subscribePush();   // обновить префы на сервере
+        return; }
+      if(e.target.closest("#notifEnableBtn")){ if(!notifSupported()){ toast("Недоступно на этом устройстве"); return; } let perm="default"; try{ perm=await Notification.requestPermission(); }catch(_){} if(perm==="granted"){ const ok=await subscribePush(); toast(ok?"Уведомления включены 🔔":"Готово"); } renderNotifSettings(); return; }
+    }); }
+  { const mn=$("#mNotif"); if(mn) mn.addEventListener("click", ()=>{ menuGo(()=>openNotifSettings()); }); }
+  // баннер «добавь на домашний экран» — для iOS Safari (не standalone), кто уже втянулся (≥3 книги)
+  function maybeHomescreenBanner(){
+    const el=$("#homescreenBanner"); if(!el) return;
+    const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const dismissed = +(localStorage.getItem("polka_hs_dismiss")||0);
+    const show = isMe() && iOS && !isStandalone() && (myBooks||[]).length>=3 && (Date.now()-dismissed > 14*864e5);
+    el.style.display = show ? "block" : "none";
+  }
+  { const x=$("#hsClose"); if(x) x.addEventListener("click", ()=>{ try{ localStorage.setItem("polka_hs_dismiss", String(Date.now())); }catch(e){} const el=$("#homescreenBanner"); if(el) el.style.display="none"; }); }
   function menuGo(fn){ closeMenu(); document.querySelectorAll(".fullpage.open").forEach(m=>m.classList.remove("open")); if(fn) fn(); }
   $("#menuBtn").addEventListener("click", openMenu);
   $("#menuBack").addEventListener("click", closeMenu);
@@ -4055,7 +4200,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       slideDir=0; casePage=0; renderCase();
     }); }
 
-  function renderAll(){ renderTabs(); renderProfile(); renderPicker(); renderCase(); maybeShowSummaryPlaque(); if(localStorage.getItem("polka_registered")) hideSplash(); }
+  function renderAll(){ renderTabs(); renderProfile(); renderPicker(); renderCase(); maybeShowSummaryPlaque(); maybeHomescreenBanner(); if(localStorage.getItem("polka_registered")) hideSplash(); }
 
   /* ---- добавить книгу ---- */
   const addModal = $("#addModal");
@@ -4174,7 +4319,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return false; }
     if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a||""))){ toast("Эту книгу уже читаешь"); return false; }
     // читаемая книга — полноценный объект книги (цитаты/оценка/цвет пишутся во время чтения, а не после)
-    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[]});
+    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[], sd:todayISO()});
     saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return true;
   }
   bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // выбор из подсказки
@@ -5023,7 +5168,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     let h = "";
     if(pendingReqs.length){
       h += `<div class="cat-genre">Хотят добавить вас в друзья</div>`;
-      h += pendingReqs.map(r=>`<div class="req-item" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
+      h += pendingReqs.map(r=>`<div class="req-item req-friend" data-id="${esc(r.id)}" data-from="${esc(r.from_code||'')}">
         <button type="button" class="req-face-btn" data-viewcode="${esc(r.from_code||'')}" title="посмотреть полку">${faceFor(r.from_name, r.from_photo, '#b8493a')}</button>
         <span class="req-who"><b>${esc(r.from_name||'Кто-то')}</b> хочет добавить вас в друзья</span>
         <button class="btn ghost req-dismiss">Отклонить</button>
@@ -5345,7 +5490,17 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   }
 
   renderAll();
+  setTimeout(maybeAutoSubscribe, 2500);   // если уведомления уже разрешены — тихо переподписаться, чтобы подписка была в базе
+  setTimeout(syncActivity, 3200);         // сводка книг-по-месяцам/серии на сервер — для уведомлений по расписанию
 })();
+</script>
+<script>
+/* регистрация service worker — для веб-пуш уведомлений (работает на iOS только из standalone/с домашнего экрана) */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
