@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="303" />
+<meta name="app-version" content="304" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -540,6 +540,13 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .store-links{display:flex;gap:8px;margin:12px 0 2px}
 .store-link{flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--accent-deep);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:var(--paper-2);white-space:nowrap}
 .store-link:hover{border-color:var(--accent);color:var(--accent)}
+.bi-wish{width:100%;justify-content:center;margin-top:12px}
+.bi-share{position:absolute;top:15px;right:52px;background:none;border:none;padding:4px;color:var(--ink-soft);line-height:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.bi-share:hover{color:var(--accent)}
+.bi-stores{margin-top:16px;font-size:13px;color:var(--ink-soft);text-align:center}
+.bi-stores span{opacity:.8}
+.bi-stores a{color:var(--accent-deep);font-weight:600;text-decoration:none}
+.bi-stores a:hover{text-decoration:underline}
 .rd-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:10px;cursor:pointer}
 .rd-card:active{opacity:.85}
 .rd-face{flex:0 0 auto;width:46px;height:46px;border-radius:50%;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:19px}
@@ -1135,9 +1142,10 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
 
 <!-- инфо о книге -->
 <div class="modal bookinfo" id="infoModal" role="dialog" aria-modal="true" aria-label="О книге">
+  <button class="bi-share" id="infoRecommend" type="button" title="Посоветовать другу" aria-label="Посоветовать другу"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
   <button class="close" data-close>×</button>
   <div class="row">
-    <div class="spine-wrap">
+    <div class="spine-wrap" id="infoCoverTap" title="Открыть страницу книги" style="cursor:pointer">
       <div class="big-spine" id="infoSpine"></div>
       <button class="cover-edit" id="infoCoverEdit" type="button" title="Заменить обложку" style="display:none">✏️</button>
       <input type="file" id="infoCoverInput" accept="image/*" hidden>
@@ -1145,10 +1153,9 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     <div style="flex:1;min-width:0">
       <h3 id="infoTitle"></h3>
       <div class="meta" id="infoMeta"></div>
-      <div class="read-row"><button id="infoBookPage" class="read-link" type="button">📖 страница книги</button><button id="readWish" class="read-link" type="button" style="display:none">📌 в хотелки</button><button id="infoRecommend" class="read-link" type="button">💌 посоветовать другу</button></div>
+      <button id="readWish" class="btn bi-wish" type="button" style="display:none">📌 В хотелки</button>
     </div>
   </div>
-  <div class="store-links"><a id="readLitres" class="store-link" target="_blank" rel="noopener">📗 Литрес</a><a id="readBookmate" class="store-link" target="_blank" rel="noopener">📗 Яндекс Книги</a></div>
 
       <div id="infoEdit">
         <div class="field"><label>Название</label><input id="iTitle" maxlength="80" /></div>
@@ -1175,6 +1182,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
         <div id="infoQuotes"></div>
         <div id="infoReview" style="display:none;margin-top:10px"></div>
       </div>
+      <div class="bi-stores"><span>Читать:</span> <a id="readLitres" target="_blank" rel="noopener">Литрес</a> · <a id="readBookmate" target="_blank" rel="noopener">Яндекс Книги</a></div>
 </div>
 
 <!-- редактировать профиль -->
@@ -3041,7 +3049,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   $("#waBookmate").addEventListener("click", ()=>{ if(waBook) copyForSearch(waBook.t); });
   $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
   $("#readWish").addEventListener("click", ()=>{ if(infoBook){ addToMyWish(infoBook.t, infoBook.a); closeModals(); } });
-  $("#infoBookPage").addEventListener("click", ()=>{ if(infoBook) openBookPage(infoBook.t, infoBook.a, quotesOf(infoBook)); });   // страница книги: аннотация, обложка, рецензии людей, их цитаты
+  { const _ct=$("#infoCoverTap"); if(_ct) _ct.addEventListener("click", e=>{ if(e.target.closest("#infoCoverEdit")) return; if(infoBook) openBookPage(infoBook.t, infoBook.a, quotesOf(infoBook)); }); }   // тап по обложке → страница книги (аннотация, обложка, рецензии людей, цитаты)
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
@@ -4403,6 +4411,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     $("#readWish").style.display = (!fromReading && !isMe() && !onMyShelf) ? "inline-flex" : "none";
     { const ir=$("#infoRecommend"); if(ir) ir.style.display = "inline-flex"; }   // 💌 посоветовать другу — всегда видна (нет друзей → picker подскажет добавить)
     const editable = fromReading || isMe();
+    { const st=document.querySelector("#infoModal .bi-stores"); if(st) st.style.display = editable ? "none" : ""; }   // строка магазинов — только в просмотре чужой книги, не в форме редактирования
     { const rf=document.querySelector("#infoModal .review-field"); if(rf) rf.style.display = (editable && !fromReading) ? "" : "none"; }   // рецензия — только для книги с полки
     { const ts=$("#infoToShelf"); if(ts) ts.style.display = fromReading ? "" : "none"; }                                                 // «Прочитал» — только у читаемой книги
     { const db=$("#delBook"); if(db) db.style.display = fromReading ? "none" : ""; }   // у читаемой книги «Удалить» прячем (убрать из чтения — крестиком в списке), чтобы «Прочитал»+«Сохранить» влезли
