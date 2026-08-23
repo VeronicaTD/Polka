@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="310" />
+<meta name="app-version" content="311" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -435,19 +435,22 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .view-toggle{display:flex;gap:4px;justify-content:center;margin:2px auto 24px;background:var(--paper-2);border-radius:20px;padding:3px;width:max-content;max-width:92%}
 .view-toggle button{border:none;background:transparent;color:var(--ink-soft);font-size:13px;font-weight:600;padding:6px 14px;border-radius:16px;cursor:pointer;white-space:nowrap;transition:background .18s,color .18s}
 .view-toggle button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
-.shelf-toolbar{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:2px auto 24px;max-width:96%}
+.shelf-toolbar{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:8px;margin:2px auto 24px;max-width:96%}
 .shelf-toolbar .view-toggle{margin:0}
-.shelf-tools{display:flex;align-items:center;gap:6px;position:relative}
-.st-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:15px;padding:0;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);border-radius:50%;cursor:pointer}
-.st-icon:hover{border-color:var(--accent);color:var(--ink)}
-.shelf-search{display:flex;align-items:center;gap:2px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;padding:2px 4px 2px 12px}
-.shelf-search input{border:none;background:transparent;color:var(--ink);font-size:13px;outline:none;width:150px;max-width:42vw}
+.shelf-tools{display:flex;align-items:center;gap:6px;position:relative;flex:0 0 auto}
+.st-round{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:0 0 auto}
+.st-round:hover{border-color:var(--accent);color:var(--ink)}
+.st-round svg{display:block}
+.shelf-search{display:none;align-items:center;gap:6px;flex:1 1 auto;min-width:0;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;height:34px;box-sizing:border-box;padding:0 6px 0 12px;animation:ssIn .26s ease}
+.shelf-toolbar.searching .shelf-search{display:flex}
+.shelf-toolbar.searching .view-toggle{display:none}
+.shelf-toolbar.searching #shelfSearchBtn{display:none}
+.shelf-search .ss-ic{color:var(--ink-soft);display:flex;flex:0 0 auto}
+.shelf-search input{border:none;background:transparent;color:var(--ink);font-size:14px;outline:none;min-width:0;flex:1 1 auto;height:100%}
 .shelf-search input::placeholder{color:var(--ink-soft)}
-.shelf-search button{border:none;background:transparent;color:var(--ink-soft);font-size:19px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:50%}
-.shelf-search button:hover{color:var(--ink)}
-.st-sort{display:flex;align-items:center;gap:5px;padding:7px 12px;white-space:nowrap;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);border-radius:18px;cursor:pointer;font-weight:600;font-size:13px}
-.st-sort:hover{border-color:var(--accent);color:var(--ink)}
-.st-sort-ic{opacity:.75}
+.shelf-search>button{border:none;background:transparent;color:var(--ink-soft);font-size:20px;cursor:pointer;line-height:1;padding:0 2px;flex:0 0 auto}
+.shelf-search>button:hover{color:var(--ink)}
+@keyframes ssIn{from{opacity:0;transform:scaleX(.7);transform-origin:left center}to{opacity:1;transform:none}}
 .sort-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px -10px rgba(0,0,0,.4);padding:5px;min-width:186px}
 .sort-menu button{display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--ink);font-size:14px;padding:9px 12px;border-radius:8px;cursor:pointer}
 .sort-menu button:hover{background:var(--paper-2)}
@@ -1109,13 +1112,14 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       <button type="button" data-vw="spines">📚 Корешки</button>
       <button type="button" data-vw="covers">🖼 Обложки</button>
     </div>
+    <div class="shelf-search" id="shelfSearchField">
+      <span class="ss-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.2-4.2"></path></svg></span>
+      <input type="text" id="shelfSearchInput" placeholder="Название или автор" autocomplete="off" spellcheck="false">
+      <button type="button" id="shelfSearchClear" aria-label="Свернуть">×</button>
+    </div>
     <div class="shelf-tools">
-      <button type="button" class="st-icon" id="shelfSearchBtn" title="Поиск" aria-label="Поиск">🔍</button>
-      <div class="shelf-search" id="shelfSearchField" hidden>
-        <input type="text" id="shelfSearchInput" placeholder="Название или автор" autocomplete="off" spellcheck="false">
-        <button type="button" id="shelfSearchClear" aria-label="Очистить">×</button>
-      </div>
-      <button type="button" class="st-sort" id="shelfSortBtn"><span class="st-sort-ic">⇅</span><span id="shelfSortLbl">Как добавлены</span></button>
+      <button type="button" class="st-round" id="shelfSearchBtn" aria-label="Поиск"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.2-4.2"></path></svg></button>
+      <button type="button" class="st-round" id="shelfSortBtn" aria-label="Сортировка"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5v14M7 19l-3-3M7 19l3-3M17 19V5M17 5l-3 3M17 5l3 3"></path></svg></button>
     </div>
   </div>
 
@@ -2644,8 +2648,8 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     return arr;
   }
   function updateSortLabel(){ const l=$("#shelfSortLbl"); if(l) l.textContent = SORT_LABELS[shelfSort] || SORT_LABELS.added; }
-  function collapseShelfSearch(){ const f=$("#shelfSearchField"), b=$("#shelfSearchBtn"), inp=$("#shelfSearchInput"); if(inp) inp.value=""; if(f) f.hidden=true; if(b) b.style.display=""; }
-  function openShelfSearch(){ const f=$("#shelfSearchField"), b=$("#shelfSearchBtn"), inp=$("#shelfSearchInput"); if(f) f.hidden=false; if(b) b.style.display="none"; if(inp){ inp.focus(); } }
+  function collapseShelfSearch(){ const tb=$("#shelfToolbar"), inp=$("#shelfSearchInput"); if(inp) inp.value=""; if(tb) tb.classList.remove("searching"); }   // назад к иконкам, поле сворачивается
+  function openShelfSearch(){ const tb=$("#shelfToolbar"), inp=$("#shelfSearchInput"); if(tb) tb.classList.add("searching"); if(inp) inp.focus(); }              // поле разворачивается на месте, переключатель уезжает
 
   function renderCase(){
     // смена владельца полки (моя ↔ друг) → сбрасываем поиск, чтобы не «залипал»
@@ -4320,11 +4324,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       const v=e.target.value; clearTimeout(_t);
       _t=setTimeout(()=>{ shelfSearch=v; casePage=0; slideDir=0; renderCase(); }, 150);   // задержка 150мс, чтобы при 200+ книгах не дёргалось на каждую букву
     }); }
-  { const cl=$("#shelfSearchClear"); if(cl) cl.addEventListener("click", ()=>{
-      const inp=$("#shelfSearchInput");
-      if(inp && inp.value){ inp.value=""; shelfSearch=""; casePage=0; renderCase(); inp.focus(); }   // очистить, поле оставить открытым
-      else { collapseShelfSearch(); shelfSearch=""; casePage=0; renderCase(); }                       // пустое → свернуть в лупу
-    }); }
+  { const cl=$("#shelfSearchClear"); if(cl) cl.addEventListener("click", ()=>{ collapseShelfSearch(); shelfSearch=""; casePage=0; renderCase(); }); }   // × сворачивает поле обратно к иконке
 
   // ===== сортировка полки =====
   { const btn=$("#shelfSortBtn"); if(btn) btn.addEventListener("click", (e)=>{
