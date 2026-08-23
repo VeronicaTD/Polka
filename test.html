@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="308" />
+<meta name="app-version" content="309" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4408,8 +4408,9 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     // приоритет: личная/выбранная iCover → эталон из справочника (cover_ref) → зашитый GBID
     const cat = catalogCache[looseKey(infoBook.t, infoBook.a)];
     const url = iCover || (cat && cat.coverRef) || coverUrl(infoBook.t, infoBook.a) || "";
-    // всегда рисуем плашку с названием в цвет книги; реальная обложка ложится сверху (onerror убирает → остаётся корешок, а не глухая заливка)
-    sp.style.background=iSelColor; sp.style.color=pickFg(iSelColor); sp.style.backgroundImage="none";
+    // всегда рисуем плашку с названием в цвет книги; реальная обложка ложится сверху картинкой (onerror убирает → остаётся корешок, а не глухая заливка)
+    // ВАЖНО: НЕ ставить backgroundImage:"none" после background=iSelColor — цвета это градиенты, «none» стёр бы их и плашка стала бы белой
+    sp.style.background=iSelColor; sp.style.color=pickFg(iSelColor);
     sp.innerHTML = `<div class="cc-frame"><div class="cc-motif">📖</div>`+
       `<div class="cc-title">${esc(capTitle(infoBook.t))}</div>`+
       `<div class="cc-author">${esc(lastName(infoBook.a))}</div></div>`+
