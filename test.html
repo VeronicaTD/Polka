@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="307" />
+<meta name="app-version" content="308" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1893,7 +1893,8 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   const PALETTE = {"Проза":"linear-gradient(95deg,#a3c1e2,#7fa3ce)","Фантастика":"linear-gradient(95deg,#6b515e,#4e3a45)",
     "Нон-фикшн":"linear-gradient(95deg,#f7e289,#e9cb5e)","Поэзия":"linear-gradient(95deg,#f9a2c5,#f277a8)",
     "Детектив":"linear-gradient(95deg,#252d45,#161b2c)","Классика":"linear-gradient(95deg,#a6b486,#87976a)"};
-  const spineBg = b => b.c || PALETTE[b.g] || "linear-gradient(95deg,#444,#222)";
+  const validColor = c => (c && /#[0-9a-fA-F]{3}|rgba?\(/i.test(c)) ? c : "";   // годный CSS-цвет (hex/rgb); иначе пусто → откат к жанру
+  const spineBg = b => validColor(b.c) || PALETTE[b.g] || "linear-gradient(95deg,#444,#222)";
   // тема «Комикс» — корешки/плашки в цветах темы (ротация по индексу; данные книги b.c не трогаем, это только отображение)
   const COMIC_SPINES = ["linear-gradient(160deg,#B4322F,#8a2222)","linear-gradient(160deg,#2b5480,#1E3A5F)","linear-gradient(160deg,#ecdcb8,#d6c096)","linear-gradient(160deg,#9E2B2B,#6f1c1c)","linear-gradient(160deg,#31578a,#22406a)"];
   function themedBg(b,i){ if(document.body.getAttribute("data-theme")==="comic"){ const n=COMIC_SPINES.length; return COMIC_SPINES[((i||0)%n+n)%n]; } return spineBg(b); }
@@ -4442,7 +4443,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     if(editable){
       $("#infoEdit").style.display=""; $("#infoRead").style.display="none";
       $("#iTitle").value = b.t; $("#iAuthor").value = b.a; $("#iGenre").value = b.g;
-      iSelColor = b.c || PALETTE[b.g] || COLORS[0]; paintIColors();
+      iSelColor = validColor(b.c) || PALETTE[b.g] || COLORS[0]; paintIColors();
       iCover = bookCover(b); iCoverChanged=false; paintInfoCover();
       { const ce=$("#infoCoverEdit"); if(ce) ce.style.display=""; }   // ✏️ заменить обложку — только на своей/читаемой книге
       iRate = b.r||0; iFav = isFav(b); paintRate($("#iRate"),iRate); paintIFav();
