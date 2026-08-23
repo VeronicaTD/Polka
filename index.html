@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="306" />
+<meta name="app-version" content="307" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1899,8 +1899,11 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   function themedBg(b,i){ if(document.body.getAttribute("data-theme")==="comic"){ const n=COMIC_SPINES.length; return COMIC_SPINES[((i||0)%n+n)%n]; } return spineBg(b); }
   /* цвет текста на корешке: тёмный на светлых обложках, белый на тёмных */
   function pickFg(grad){
-    const m = String(grad).match(/#([0-9a-fA-F]{6})/); if(!m) return "#fff";
-    const h=m[1], r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    const s = String(grad); let r,g,b, m;
+    if((m = s.match(/#([0-9a-fA-F]{6})/))){ const h=m[1]; r=parseInt(h.slice(0,2),16); g=parseInt(h.slice(2,4),16); b=parseInt(h.slice(4,6),16); }
+    else if((m = s.match(/#([0-9a-fA-F]{3})\b/))){ const h=m[1]; r=parseInt(h[0]+h[0],16); g=parseInt(h[1]+h[1],16); b=parseInt(h[2]+h[2],16); }
+    else if((m = s.match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/))){ r=+m[1]; g=+m[2]; b=+m[3]; }
+    else return "#2e2620";   // неизвестный формат цвета — тёмный текст (безопаснее белого, плашка обычно светлая)
     return (0.299*r + 0.587*g + 0.114*b) > 150 ? "#2e2620" : "#fff";
   }
   const isFav = b => b.fav !== undefined ? !!b.fav : (b.r >= 5);
