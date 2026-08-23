@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="311" />
+<meta name="app-version" content="312" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -458,6 +458,11 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .shelf-empty{text-align:center;color:var(--ink-soft);padding:38px 16px;font-size:15px;line-height:1.5}
 .shelf-empty button{margin-top:12px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:18px;padding:7px 16px;cursor:pointer;font-size:13px}
 .shelf-empty button:hover{border-color:var(--accent)}
+.drag-placeholder{opacity:.26}
+.dragging-clone{will-change:left,top,transform;border-radius:inherit;cursor:grabbing}
+.undo-bar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:300;background:var(--ink);color:var(--paper);border-radius:22px;padding:9px 10px 9px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 32px -10px rgba(0,0,0,.55);font-size:14px;max-width:92vw;animation:undoIn .2s ease}
+.undo-bar button{border:none;background:var(--paper);color:var(--ink);font-weight:700;font-size:13px;cursor:pointer;padding:6px 15px;border-radius:16px;white-space:nowrap}
+@keyframes undoIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
 .cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 7px;padding:4px 2px 10px}
 .gv-cell{cursor:pointer;text-align:center;min-width:0}
 .cover-grid .cat-cover{width:100%;height:auto;aspect-ratio:2/3;border-radius:2px 6px 6px 2px;padding:5px}
@@ -4304,11 +4309,117 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
 
   /* клик по корешку / плюсу */
   bookcase.addEventListener("click", e=>{
+    if(dragJustHappened) return;   // после перетаскивания карточку не открываем
     if(e.target.closest("#quickAdd")){ openAdd(); return; }
     const cell = e.target.closest(".gv-cell");
     if(cell){ if(cell.dataset.add){ openAdd(); return; } openInfo(parseInt(cell.dataset.i,10)); return; }
     const sp = e.target.closest(".spine");
     if(sp) openInfo(parseInt(sp.dataset.i,10));
+  });
+
+  /* ===== перетаскивание книг (drag-to-reorder) ===== */
+  let dragActive=false, dragLP=null, dragStart=null, dragEl=null, dragClone=null, dragMoved=false, dragJustHappened=false;
+  let dragOrderSnap=null, reorderUndoSnap=null, undoTimer=null;
+  const reorderAllowed = () => isMe() && !shelfSearch.trim() && shelfSort==="added";   // только своя полка, без поиска и в порядке «Как добавлены»
+
+  bookcase.addEventListener("pointerdown", e=>{
+    if(e.button && e.button!==0) return;
+    const el = e.target.closest(".spine, .gv-cell");
+    if(!el || el.dataset.add) return;
+    dragStart = { x:e.clientX, y:e.clientY, el, pointerId:e.pointerId };
+    dragMoved = false;
+    clearTimeout(dragLP);
+    dragLP = setTimeout(()=>{
+      if(!dragStart) return;
+      if(!reorderAllowed()){
+        if(isMe() && (shelfSort!=="added" || shelfSearch.trim())){ toast("Чтобы переставить книги, выключи сортировку"); dragJustHappened=true; setTimeout(()=>{dragJustHappened=false;},400); }
+        dragStart=null; return;
+      }
+      startDrag();
+    }, 500);   // долгое нажатие ~0.5с → режим перетаскивания
+  }, {passive:true});
+
+  bookcase.addEventListener("pointermove", e=>{
+    if(dragActive){ e.preventDefault(); onDragMove(e); return; }
+    if(dragStart){ if(Math.abs(e.clientX-dragStart.x)>8 || Math.abs(e.clientY-dragStart.y)>8){ clearTimeout(dragLP); dragStart=null; } }  // палец поехал до срабатывания → это скролл/свайп, не удержание
+  }, {passive:false});
+
+  bookcase.addEventListener("pointerup", e=>{ clearTimeout(dragLP); if(dragActive) endDrag(false); else dragStart=null; });
+  bookcase.addEventListener("pointercancel", ()=>{ clearTimeout(dragLP); if(dragActive) endDrag(true); else dragStart=null; });
+
+  function startDrag(){
+    const { el, pointerId, x, y } = dragStart;
+    dragActive=true; dragMoved=false; sx=null;   // sx=null — гасим свайп-навигацию
+    dragEl = el;
+    dragOrderSnap = myBooks.slice();             // снимок для отмены
+    const r = el.getBoundingClientRect();
+    dragClone = el.cloneNode(true);
+    dragClone.classList.add("dragging-clone");
+    Object.assign(dragClone.style, { position:"fixed", left:r.left+"px", top:r.top+"px", width:r.width+"px", height:r.height+"px", margin:"0", zIndex:"9999", pointerEvents:"none", transition:"none" });
+    document.body.appendChild(dragClone);
+    dragClone._dx = x - r.left; dragClone._dy = y - r.top;
+    el.classList.add("drag-placeholder");
+    if(!reduce) requestAnimationFrame(()=>{ if(dragClone){ dragClone.style.transition="transform .12s ease, box-shadow .12s ease"; dragClone.style.transform="scale(1.08)"; dragClone.style.boxShadow="0 16px 32px -8px rgba(0,0,0,.5)"; } });
+    bookcase.style.touchAction="none";
+    try{ bookcase.setPointerCapture(pointerId); }catch(_){}
+    moveClone(x, y);
+  }
+  function moveClone(x, y){ if(dragClone){ dragClone.style.left=(x-dragClone._dx)+"px"; dragClone.style.top=(y-dragClone._dy)+"px"; } }
+  function onDragMove(e){
+    dragMoved=true; moveClone(e.clientX, e.clientY);
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const target = under && under.closest(".spine, .gv-cell");
+    if(!target || target===dragEl || target.dataset.add || !bookcase.contains(target)) return;
+    const r = target.getBoundingClientRect();
+    const before = e.clientX < r.left + r.width/2;
+    flipReorder(()=>{ if(before) target.parentNode.insertBefore(dragEl, target); else target.parentNode.insertBefore(dragEl, target.nextSibling); });
+  }
+  function flipReorder(mutate){
+    const items = [...bookcase.querySelectorAll(".spine, .gv-cell")].filter(n=>!n.dataset.add && n!==dragEl);
+    if(reduce){ mutate(); return; }
+    const first = items.map(n=>[n, n.getBoundingClientRect()]);
+    mutate();
+    first.forEach(([n,f])=>{ const l=n.getBoundingClientRect(); const dx=f.left-l.left, dy=f.top-l.top;
+      if(dx||dy){ n.style.transition="none"; n.style.transform=`translate(${dx}px,${dy}px)`; n.getBoundingClientRect();
+        requestAnimationFrame(()=>{ n.style.transition="transform .18s cubic-bezier(.2,.9,.3,1)"; n.style.transform=""; }); } });
+  }
+  function endDrag(cancelled){
+    const pid = dragStart && dragStart.pointerId;
+    try{ if(pid!=null) bookcase.releasePointerCapture(pid); }catch(_){}
+    bookcase.style.touchAction="";
+    dragActive=false;
+    if(dragClone){ dragClone.remove(); dragClone=null; }
+    if(dragEl) dragEl.classList.remove("drag-placeholder");
+    if(!cancelled && dragMoved) commitReorder();
+    dragEl=null; dragStart=null;
+    dragJustHappened=true; setTimeout(()=>{ dragJustHappened=false; }, 60);   // подавить click-openInfo этого жеста
+  }
+  function commitReorder(){
+    const order = [...bookcase.querySelectorAll(".spine, .gv-cell")].filter(n=>!n.dataset.add).map(n=>parseInt(n.dataset.i,10)).filter(i=>!isNaN(i));
+    if(!order.length) return;
+    const lo=Math.min(...order), hi=Math.max(...order);
+    if(hi-lo+1 !== order.length) return;                 // должен быть непрерывный диапазон текущего шкафа
+    const rearranged = order.map(i=>myBooks[i]);
+    if(rearranged.some(b=>!b)) return;
+    if(order.every((i,k)=>i===lo+k)) return;             // порядок не изменился
+    myBooks.splice(lo, order.length, ...rearranged);
+    saveMine(); syncUp();                                // в localStorage и в облако, как любое изменение
+    reorderUndoSnap = dragOrderSnap;
+    renderCase();
+    showReorderUndo();
+  }
+  function showReorderUndo(){
+    const old=$("#undoBar"); if(old) old.remove();
+    const bar=document.createElement("div"); bar.id="undoBar"; bar.className="undo-bar";
+    bar.innerHTML=`<span>Порядок изменён</span><button type="button" id="undoReorderBtn">Вернуть</button>`;
+    document.body.appendChild(bar);
+    clearTimeout(undoTimer);
+    undoTimer=setTimeout(()=>{ const b=$("#undoBar"); if(b) b.remove(); reorderUndoSnap=null; }, 6000);
+  }
+  document.addEventListener("click",(e)=>{
+    if(!e.target.closest("#undoReorderBtn")) return;
+    if(reorderUndoSnap){ myBooks.splice(0, myBooks.length, ...reorderUndoSnap); saveMine(); syncUp(); reorderUndoSnap=null; renderCase(); }
+    const b=$("#undoBar"); if(b) b.remove(); clearTimeout(undoTimer);
   });
   // переключатель вида полки: корешки / обложки (запоминается)
   { const vt=$("#viewToggle"); if(vt) vt.addEventListener("click", e=>{
