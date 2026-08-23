@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="302" />
+<meta name="app-version" content="303" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -478,7 +478,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .bpq-carousel{display:flex;align-items:flex-start;gap:12px;overflow-x:auto;padding:4px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .bpq-carousel::-webkit-scrollbar{height:0;display:none}
 .bpq-card{flex:0 0 82%;max-width:340px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
-.bpq-card .bpq-q{font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;line-height:1.5;color:var(--ink);white-space:pre-wrap}
+.bpq-card .bpq-q{font-family:"Fraunces",serif;font-style:italic;font-size:15.5px;line-height:1.5;color:var(--ink);white-space:pre-wrap;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:6;overflow:hidden}
+.bpq-card.expanded .bpq-q{-webkit-line-clamp:unset;overflow:visible}
+.bpq-more{margin-top:8px;background:none;border:none;padding:0;color:var(--accent);font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline;align-self:flex-start}
 .bpq-scroll .cat-arrow{top:50%;transform:translateY(-50%)}
 .bp-rev{background:#fffdf9;border:1px solid var(--line);border-radius:16px;padding:15px 17px;margin-bottom:13px;box-shadow:var(--shadow)}
 .bp-rev-top{display:flex;align-items:center;gap:11px;margin-bottom:9px}
@@ -3634,7 +3636,8 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
             (many?`<button class="cat-arrow left" data-dir="-1" aria-label="влево">‹</button>`:``)+
             `<div class="bpq-carousel">`+ quotes.slice(0,60).map(({q,who})=>`<div class="bpq-card"><span class="bpq-q">«${esc(q)}»</span>${who?`<div class="ir-quote-who">— ${esc(who)}</div>`:""}</div>`).join("") +`</div>`+
             (many?`<button class="cat-arrow right" data-dir="1" aria-label="вправо">›</button>`:``)+
-          `</div>`; }
+          `</div>`;
+          markQuoteClamps(qBox); }
       }
     };
     // 1) сразу рисуем из кэша (рецензии всех вариантов написания)
@@ -3833,8 +3836,21 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   { const _bpr=$("#bpReviews"); if(_bpr) _bpr.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
   // «читать дальше» — раскрыть свёрнутую аннотацию/рецензию
   { const _bp=$("#bookPage"); if(_bp) _bp.addEventListener("click", e=>{ const m=e.target.closest(".bp-more"); if(!m) return; const cl=m.parentElement.querySelector(".clamped"); if(cl){ cl.classList.remove("clamped"); m.remove(); } }); }
-  // стрелки карусели цитат (на компьютере; на телефоне просто листаем пальцем).
-  { const _q=$("#bpQuotes"); if(_q) _q.addEventListener("click", e=>{ const ar=e.target.closest(".cat-arrow"); if(!ar) return; const row=ar.parentElement.querySelector(".bpq-carousel"); if(!row) return; row.scrollLeft += (+ar.dataset.dir)*Math.round(row.clientWidth*0.85); }); }
+  // длинные цитаты обрезаются до среднего размера — помечаем кнопкой «читать дальше»
+  function markQuoteClamps(box){ if(!box) return; requestAnimationFrame(()=>{
+    box.querySelectorAll(".bpq-card").forEach(card=>{
+      if(card.classList.contains("expanded")) return;
+      const q=card.querySelector(".bpq-q"); if(!q) return;
+      if(q.scrollHeight - q.clientHeight > 4 && !card.querySelector(".bpq-more")){
+        const b=document.createElement("button"); b.className="bpq-more"; b.type="button"; b.textContent="читать дальше"; card.appendChild(b);
+      }
+    });
+  }); }
+  // стрелки карусели цитат + раскрытие длинной цитаты («читать дальше»).
+  { const _q=$("#bpQuotes"); if(_q) _q.addEventListener("click", e=>{
+      const more=e.target.closest(".bpq-more");
+      if(more){ const card=more.closest(".bpq-card"); if(card){ const ex=card.classList.toggle("expanded"); more.textContent=ex?"свернуть":"читать дальше"; } return; }
+      const ar=e.target.closest(".cat-arrow"); if(!ar) return; const row=ar.parentElement.querySelector(".bpq-carousel"); if(!row) return; row.scrollLeft += (+ar.dataset.dir)*Math.round(row.clientWidth*0.85); }); }
   { const _rf=$("#reviewsFeed"); if(_rf) _rf.addEventListener("click", e=>{ const el=e.target.closest("[data-code]"); if(el) viewPoemAuthor(el.dataset.code, el.dataset.name); }); }
   // состояние кнопки «в хотелки» на странице книги: на полке → нет кнопки; в хотелках → «в хотелках»; иначе → можно добавить
   function setBpWishState(){
