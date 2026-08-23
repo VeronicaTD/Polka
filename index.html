@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="304" />
+<meta name="app-version" content="305" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -814,6 +814,8 @@ main,footer{position:relative;z-index:1}
 .close{position:absolute;top:16px;right:18px;background:none;border:none;font-size:24px;color:var(--ink-soft);line-height:1}
 .bookinfo .row{display:flex;gap:16px;align-items:flex-start}
 .bookinfo .big-spine{width:70px;height:170px;border-radius:3px 6px 6px 3px;flex-shrink:0;box-shadow:var(--shadow)}
+.bookinfo h3{padding-right:66px;cursor:pointer}
+.bookinfo h3:hover{color:var(--accent-deep)}
 .bookinfo .meta{color:var(--ink-soft);font-size:14px;margin:4px 0 10px}
 .bookinfo .note{background:var(--paper-2);border-radius:10px;padding:12px 14px;font-size:14.5px;font-style:italic;color:var(--ink);margin-top:4px}
 #infoComment,#infoQuotes{margin-top:14px}
@@ -3050,6 +3052,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   $("#readBookmate").addEventListener("click", ()=>{ if(infoBook) copyForSearch(infoBook.t); });
   $("#readWish").addEventListener("click", ()=>{ if(infoBook){ addToMyWish(infoBook.t, infoBook.a); closeModals(); } });
   { const _ct=$("#infoCoverTap"); if(_ct) _ct.addEventListener("click", e=>{ if(e.target.closest("#infoCoverEdit")) return; if(infoBook) openBookPage(infoBook.t, infoBook.a, quotesOf(infoBook)); }); }   // тап по обложке → страница книги (аннотация, обложка, рецензии людей, цитаты)
+  { const _tt=$("#infoTitle"); if(_tt) _tt.addEventListener("click", ()=>{ if(infoBook) openBookPage(infoBook.t, infoBook.a, quotesOf(infoBook)); }); }   // тап по названию → тоже страница книги
 
   /* ---- подборки книг + рецензии читателей ---- */
   const CATALOG = {
