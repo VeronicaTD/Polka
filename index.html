@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="309" />
+<meta name="app-version" content="311" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -435,6 +435,29 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .view-toggle{display:flex;gap:4px;justify-content:center;margin:2px auto 24px;background:var(--paper-2);border-radius:20px;padding:3px;width:max-content;max-width:92%}
 .view-toggle button{border:none;background:transparent;color:var(--ink-soft);font-size:13px;font-weight:600;padding:6px 14px;border-radius:16px;cursor:pointer;white-space:nowrap;transition:background .18s,color .18s}
 .view-toggle button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.shelf-toolbar{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:8px;margin:2px auto 24px;max-width:96%}
+.shelf-toolbar .view-toggle{margin:0}
+.shelf-tools{display:flex;align-items:center;gap:6px;position:relative;flex:0 0 auto}
+.st-round{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:0 0 auto}
+.st-round:hover{border-color:var(--accent);color:var(--ink)}
+.st-round svg{display:block}
+.shelf-search{display:none;align-items:center;gap:6px;flex:1 1 auto;min-width:0;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;height:34px;box-sizing:border-box;padding:0 6px 0 12px;animation:ssIn .26s ease}
+.shelf-toolbar.searching .shelf-search{display:flex}
+.shelf-toolbar.searching .view-toggle{display:none}
+.shelf-toolbar.searching #shelfSearchBtn{display:none}
+.shelf-search .ss-ic{color:var(--ink-soft);display:flex;flex:0 0 auto}
+.shelf-search input{border:none;background:transparent;color:var(--ink);font-size:14px;outline:none;min-width:0;flex:1 1 auto;height:100%}
+.shelf-search input::placeholder{color:var(--ink-soft)}
+.shelf-search>button{border:none;background:transparent;color:var(--ink-soft);font-size:20px;cursor:pointer;line-height:1;padding:0 2px;flex:0 0 auto}
+.shelf-search>button:hover{color:var(--ink)}
+@keyframes ssIn{from{opacity:0;transform:scaleX(.7);transform-origin:left center}to{opacity:1;transform:none}}
+.sort-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px -10px rgba(0,0,0,.4);padding:5px;min-width:186px}
+.sort-menu button{display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--ink);font-size:14px;padding:9px 12px;border-radius:8px;cursor:pointer}
+.sort-menu button:hover{background:var(--paper-2)}
+.sort-menu button.on{color:var(--accent-deep);font-weight:700}
+.shelf-empty{text-align:center;color:var(--ink-soft);padding:38px 16px;font-size:15px;line-height:1.5}
+.shelf-empty button{margin-top:12px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:18px;padding:7px 16px;cursor:pointer;font-size:13px}
+.shelf-empty button:hover{border-color:var(--accent)}
 .cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 7px;padding:4px 2px 10px}
 .gv-cell{cursor:pointer;text-align:center;min-width:0}
 .cover-grid .cat-cover{width:100%;height:auto;aspect-ratio:2/3;border-radius:2px 6px 6px 2px;padding:5px}
@@ -1084,9 +1107,20 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
 
   <section class="tabs" id="tabs"></section>
 
-  <div class="view-toggle" id="viewToggle" style="display:none">
-    <button type="button" data-vw="spines">📚 Корешки</button>
-    <button type="button" data-vw="covers">🖼 Обложки</button>
+  <div class="shelf-toolbar" id="shelfToolbar" style="display:none">
+    <div class="view-toggle" id="viewToggle">
+      <button type="button" data-vw="spines">📚 Корешки</button>
+      <button type="button" data-vw="covers">🖼 Обложки</button>
+    </div>
+    <div class="shelf-search" id="shelfSearchField">
+      <span class="ss-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.2-4.2"></path></svg></span>
+      <input type="text" id="shelfSearchInput" placeholder="Название или автор" autocomplete="off" spellcheck="false">
+      <button type="button" id="shelfSearchClear" aria-label="Свернуть">×</button>
+    </div>
+    <div class="shelf-tools">
+      <button type="button" class="st-round" id="shelfSearchBtn" aria-label="Поиск"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.2-4.2"></path></svg></button>
+      <button type="button" class="st-round" id="shelfSortBtn" aria-label="Сортировка"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5v14M7 19l-3-3M7 19l3-3M17 19V5M17 5l-3 3M17 5l3 3"></path></svg></button>
+    </div>
   </div>
 
   <section id="caseWrap">
@@ -2018,6 +2052,9 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   let myEmail = localStorage.getItem("polka_email") || "";   // почта для восстановления доступа (пишется в колонку shelves.email, обратно не читается — приватность)
   let myWishlist = []; try{ myWishlist = JSON.parse(localStorage.getItem("polka_wishlist") || "[]"); }catch(e){ myWishlist = []; }
   let myView = (localStorage.getItem("polka_view")==="covers") ? "covers" : "spines";   // вид полки: корешки / обложки (запоминается)
+  let shelfSearch = "";                                                                  // поисковый запрос по полке (сбрасывается при уходе с экрана)
+  let shelfSort = (()=>{ try{ return localStorage.getItem("polka_shelf_sort")||"added"; }catch(e){ return "added"; } })();  // сортировка полки (запоминается)
+  let lastShelfView = null;                                                              // отслеживаем смену владельца полки → сброс поиска
   const saveWish = () => { myWishlist.forEach(capBook); try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} syncUp(); };
   /* ---- счётчик «дней с книгой» (стрик) ---- */
   let myStreak=0, myTotal=0, myLastMark="", myPause=false;
@@ -2592,22 +2629,58 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   }
 
   /* шкаф: книги натурального размера, упаковываются по ширине полки слева направо */
+  // ===== поиск + сортировка полки =====
+  const SORT_LABELS = { added:"Как добавлены", date:"По дате прочтения", rating:"По оценке", title:"По алфавиту", author:"По автору" };
+  const SORT_FNS = {
+    added: null,
+    date:   (a,b)=>{ const x=a.sd||"", y=b.sd||""; if(!x&&!y) return 0; if(!x) return 1; if(!y) return -1; return y<x?-1:(y>x?1:0); },  // sd (ГГГГ-ММ-ДД) новые сверху; без даты — в конец
+    rating: (a,b)=>{ const d=(b.r||0)-(a.r||0); return d || (a.t||"").localeCompare(b.t||"", "ru"); },                                  // оценка ↓, при равной — по алфавиту
+    title:  (a,b)=> (a.t||"").localeCompare(b.t||"", "ru"),
+    author: (a,b)=>{ const x=a.a||"", y=b.a||""; if(!x&&!y) return 0; if(!x) return 1; if(!y) return -1; return x.localeCompare(y,"ru"); } // без автора — в конец
+  };
+  // фильтрует по подстроке (название+автор) и сортирует; НЕ трогает исходный массив, у каждого элемента сохраняем исходный индекс i
+  function displayOrder(list){
+    const q = shelfSearch.trim().toLowerCase();
+    let arr = list.map((b,i)=>({b,i}));
+    if(q) arr = arr.filter(o => ((o.b.t||"")+" "+(o.b.a||"")).toLowerCase().indexOf(q) !== -1);
+    const fn = SORT_FNS[shelfSort];
+    if(fn) arr = arr.sort((p,r)=> fn(p.b, r.b));   // Array.sort стабилен → равные сохраняют исходный порядок
+    return arr;
+  }
+  function updateSortLabel(){ const l=$("#shelfSortLbl"); if(l) l.textContent = SORT_LABELS[shelfSort] || SORT_LABELS.added; }
+  function collapseShelfSearch(){ const tb=$("#shelfToolbar"), inp=$("#shelfSearchInput"); if(inp) inp.value=""; if(tb) tb.classList.remove("searching"); }   // назад к иконкам, поле сворачивается
+  function openShelfSearch(){ const tb=$("#shelfToolbar"), inp=$("#shelfSearchInput"); if(tb) tb.classList.add("searching"); if(inp) inp.focus(); }              // поле разворачивается на месте, переключатель уезжает
+
   function renderCase(){
-    const books = currentList();
+    // смена владельца полки (моя ↔ друг) → сбрасываем поиск, чтобы не «залипал»
+    if(view !== lastShelfView){ lastShelfView = view; shelfSearch=""; collapseShelfSearch(); }
+    const fullList = currentList();
+    const shown = displayOrder(fullList);
+    const searching = !!shelfSearch.trim();
     const me = isMe();
-    // переключатель «корешки / обложки» — показываем, когда на полке есть книги
-    { const vt=$("#viewToggle"); if(vt){ vt.style.display = books.length ? "flex" : "none";
-        vt.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.vw===myView)); } }
+    // тулбар (вид + поиск + сортировка) — показываем, когда на полке ЕСТЬ книги (независимо от поиска)
+    { const tb=$("#shelfToolbar"); if(tb) tb.style.display = fullList.length ? "flex" : "none"; }
+    { const vt=$("#viewToggle"); if(vt) vt.querySelectorAll("[data-vw]").forEach(x=>x.classList.toggle("on", x.dataset.vw===myView)); }
+    updateSortLabel();
+    // поиск ничего не нашёл
+    if(searching && !shown.length){
+      { const cw=$("#caseWrap"); if(cw) cw.classList.remove("covers-mode"); }
+      bookcase.innerHTML = `<div class="shelf-empty">Ничего не нашлось. Попробуй другое слово 🌙<br><button type="button" id="shelfSearchReset">× сбросить</button></div>`;
+      { const cp=$("#casePrev"); if(cp) cp.classList.remove("show"); }
+      { const cn=$("#caseNext"); if(cn) cn.classList.remove("show"); }
+      { const ind=$("#caseInd"); if(ind) ind.style.display="none"; }
+      return;
+    }
     // в режиме «обложки» прячем декор-плашки (★ моя полка ★ / бантик) — они спозиционированы под корешки и налезают на сетку
-    { const cw=$("#caseWrap"); if(cw) cw.classList.toggle("covers-mode", myView==="covers" && books.length>0); }
-    if(myView==="covers" && books.length){
+    { const cw=$("#caseWrap"); if(cw) cw.classList.toggle("covers-mode", myView==="covers" && shown.length>0); }
+    if(myView==="covers" && shown.length){
       // колонки — от РАЗМЕРА экрана (как корешки): на телефоне ~4, на планшете/компьютере больше
       const gcGap=7, gcMin=76, gcPad=4;   // gcMin подобран так, чтобы на телефоне помещалось 4, на планшете/ПК — больше
       const gw = Math.max(120, bookcase.clientWidth - gcPad*2);
       const cols = Math.max(3, Math.floor((gw + gcGap) / (gcMin + gcGap)));
       const PER_PAGE = cols * 5;   // 5 «полок» на шкаф, дальше — новый шкаф
-      const cells = books.map((b,i)=>coverCellHTML(b,i));
-      if(me) cells.push(`<div class="gv-cell" data-add="1"><div class="cat-cover" style="background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-size:30px;border:2px dashed var(--line)">+</div><div class="gv-t" style="color:var(--ink-soft)">добавить</div></div>`);
+      const cells = shown.map(({b,i})=>coverCellHTML(b,i));   // i — исходный индекс в currentList → тап открывает верную книгу
+      if(me && !searching) cells.push(`<div class="gv-cell" data-add="1"><div class="cat-cover" style="background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-size:30px;border:2px dashed var(--line)">+</div><div class="gv-t" style="color:var(--ink-soft)">добавить</div></div>`);
       const pages=[]; for(let i=0;i<cells.length;i+=PER_PAGE) pages.push(cells.slice(i,i+PER_PAGE));
       if(!pages.length) pages.push([]);
       casePage = Math.min(Math.max(0,casePage), pages.length-1);
@@ -2623,14 +2696,14 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     const gap = 5, addW = phone()?30:40;
 
     let shelvesAll = [];
-    if(!books.length){
+    if(!shown.length){
       const _ld=!me&&friend()&&friend().loading; const ph = `<span class="placeholder">${_ld?"Загружаю полку… 📚":(me?"Поставьте сюда первый прочитанный томик →":"Полка пока пустая 🤍")}</span>`;
-      const add = me?`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`:"";
+      const add = (me && !searching)?`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`:"";
       shelvesAll = [ph + add];
     } else {
-      // натуральные размеры книг
-      const cells = books.map((b,i)=>{ const d=spineDims(b,i); return { html: spineHTML(b,i,d), w:d.w }; });
-      if(me) cells.push({ html:`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`, w:addW });
+      // натуральные размеры книг (i — исходный индекс в currentList → верный тап/цвет/габариты)
+      const cells = shown.map(({b,i})=>{ const d=spineDims(b,i); return { html: spineHTML(b,i,d), w:d.w }; });
+      if(me && !searching) cells.push({ html:`<button class="add-slot" id="quickAdd" title="Добавить книгу" style="width:${addW}px">+</button>`, w:addW });
       // сколько влезает по ширине — столько и ставим, остальное на следующую полку
       const rows=[]; let row=[], used=0;
       for(const c of cells){
@@ -2818,7 +2891,8 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
 
   /* мои цитаты */
   const FP_STARS = `<svg class="d-star s1" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s2" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s3" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s4" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s5" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s6" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-star s7" viewBox="0 0 200 200"><use href="#pstar"/></svg><svg class="d-spark k1" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k2" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k3" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k4" viewBox="0 0 100 100"><use href="#spark"/></svg><svg class="d-spark k5" viewBox="0 0 100 100"><use href="#spark"/></svg>`;
-  function openPage(id){ const el=$("#"+id); if(el && !el.querySelector(".fp-decor")){ const d=document.createElement("div"); d.className="fp-decor"; d.setAttribute("aria-hidden","true"); d.innerHTML=FP_STARS; el.insertBefore(d, el.firstChild); } el.classList.add("open"); }
+  function openPage(id){ if(shelfSearch){ shelfSearch=""; collapseShelfSearch(); casePage=0; renderCase(); }   // уход с полки на другой экран → сброс поиска (не «залипает»)
+    const el=$("#"+id); if(el && !el.querySelector(".fp-decor")){ const d=document.createElement("div"); d.className="fp-decor"; d.setAttribute("aria-hidden","true"); d.innerHTML=FP_STARS; el.insertBefore(d, el.firstChild); } el.classList.add("open"); }
   let qpBooks = [];   // книги текущего раздела цитат — чтобы по тапу открыть страницу книги с её цитатами
   // любимые цитаты (синхронизируются между устройствами)
   let quoteFav; try{ quoteFav=new Set(JSON.parse(localStorage.getItem("polka_quotefav")||"[]")); }catch(e){ quoteFav=new Set(); }
@@ -4243,6 +4317,30 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       myView=b.dataset.vw; try{ localStorage.setItem("polka_view", myView); }catch(err){}
       slideDir=0; casePage=0; renderCase();
     }); }
+
+  // ===== поиск по полке =====
+  { const sb=$("#shelfSearchBtn"); if(sb) sb.addEventListener("click", ()=> openShelfSearch()); }
+  { const inp=$("#shelfSearchInput"); let _t=null; if(inp) inp.addEventListener("input", (e)=>{
+      const v=e.target.value; clearTimeout(_t);
+      _t=setTimeout(()=>{ shelfSearch=v; casePage=0; slideDir=0; renderCase(); }, 150);   // задержка 150мс, чтобы при 200+ книгах не дёргалось на каждую букву
+    }); }
+  { const cl=$("#shelfSearchClear"); if(cl) cl.addEventListener("click", ()=>{ collapseShelfSearch(); shelfSearch=""; casePage=0; renderCase(); }); }   // × сворачивает поле обратно к иконке
+
+  // ===== сортировка полки =====
+  { const btn=$("#shelfSortBtn"); if(btn) btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      const existing=$("#sortMenu"); if(existing){ existing.remove(); return; }
+      const tools=btn.parentElement; if(!tools) return;
+      tools.insertAdjacentHTML("beforeend", `<div class="sort-menu" id="sortMenu">`+
+        Object.keys(SORT_LABELS).map(k=>`<button type="button" data-sort="${k}" class="${k===shelfSort?'on':''}">${SORT_LABELS[k]}</button>`).join("")+`</div>`);
+    }); }
+  document.addEventListener("click", (e)=>{
+    const opt=e.target.closest("#sortMenu button[data-sort]");
+    if(opt){ shelfSort=opt.dataset.sort; try{ localStorage.setItem("polka_shelf_sort", shelfSort); }catch(_){}
+      updateSortLabel(); casePage=0; slideDir=0; renderCase(); const m=$("#sortMenu"); if(m) m.remove(); return; }
+    if(e.target.closest("#shelfSearchReset")){ const inp=$("#shelfSearchInput"); if(inp) inp.value=""; shelfSearch=""; casePage=0; renderCase(); return; }
+    const m=$("#sortMenu"); if(m && !e.target.closest("#shelfSortBtn")) m.remove();   // клик мимо меню → закрыть
+  });
 
   function renderAll(){ renderTabs(); renderProfile(); renderPicker(); renderCase(); maybeShowSummaryPlaque(); maybeHomescreenBanner(); if(localStorage.getItem("polka_registered")) hideSplash(); }
 
