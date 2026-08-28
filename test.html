@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="317" />
+<meta name="app-version" content="318" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -976,6 +976,45 @@ body[data-theme="comic"] .arc-nav button{ background:var(--ink); color:var(--pap
 /* кнопка «совместное» — синяя */
 body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ background:var(--accent); color:#F2E4CC; border-color:var(--accent) }
 /* ═══════════════ конец темы «Комикс» ═══════════════ */
+
+/* ═══════════════ ТЕМА «СУМЕРКИ» (Twilight, туманный лес) — изолированный блок (удаляется целиком) ═══════════════ */
+body[data-theme="twilight"]{
+  --paper:#141c18; --paper-2:#202a25; --ink:#e7e0d0; --ink-soft:#a6afa2; --line:#2d3a33;
+  --accent:#9a6460; --accent-deep:#7c4a47; --gold:#a89058; --wood-1:#3a2c22; --wood-2:#20170e;
+  --star-1:#9a6460; --star-2:#a89058; --star-3:#5f7a68;
+  background:
+    radial-gradient(130% 70% at 50% -8%, rgba(70,92,80,.30), transparent 60%),
+    linear-gradient(180deg,#0f1712 0%,#141c18 42%,#0c120e 100%) !important;
+  background-attachment:fixed !important;
+}
+#twilightDecor{ display:none }
+body[data-theme="twilight"] #twilightDecor{ display:block }
+#twilightDecor>*{ position:fixed; z-index:0; pointer-events:none }
+#twilightDecor .tw-moon{ top:132px; right:22px; width:76px; height:76px; border-radius:50%;
+  background:radial-gradient(circle at 38% 36%, #edefe1, #c2cab6 66%, #93a08e);
+  box-shadow:0 0 42px 14px rgba(214,224,204,.20); opacity:.92 }
+#twilightDecor .tw-fog{ left:0; right:0; opacity:.55 }
+#twilightDecor .tw-fog.f1{ top:24%; height:210px; background:radial-gradient(ellipse 80% 60% at 30% 50%, rgba(185,200,190,.13), transparent 70%) }
+#twilightDecor .tw-fog.f2{ bottom:16%; height:230px; background:radial-gradient(ellipse 92% 60% at 72% 50%, rgba(175,192,186,.12), transparent 70%) }
+#twilightDecor .tw-pines{ left:0; bottom:0; width:100%; height:auto }
+#twilightDecor .tw-pines.far{ color:#16231b; opacity:.75; transform:translateY(6px) }
+#twilightDecor .tw-pines.near{ color:#0a110d; opacity:.95 }
+#twilightDecor .tw-signs{ top:224px; right:12px; display:flex; flex-direction:column; gap:6px; transform:rotate(-4deg); opacity:.9 }
+#twilightDecor .tw-sign{ background:#243a2b; border:2px solid #d6dcc6; border-radius:4px; color:#eef1e4;
+  font-family:var(--display); font-size:11.5px; font-weight:600; letter-spacing:.4px; padding:4px 9px; white-space:nowrap;
+  box-shadow:0 5px 12px rgba(0,0,0,.5) }
+#twilightDecor .tw-paw{ color:#0c130f; opacity:.5; width:34px; height:auto }
+#twilightDecor .tw-paw.p1{ bottom:150px; left:14px; transform:rotate(-18deg) }
+#twilightDecor .tw-paw.p2{ bottom:190px; left:46px; transform:rotate(-8deg); opacity:.42 }
+#twilightDecor .tw-paw.p3{ bottom:232px; left:22px; transform:rotate(-24deg); opacity:.34 }
+#twilightDecor .tw-paw.p4{ bottom:274px; left:54px; transform:rotate(-12deg); opacity:.26 }
+#twilightDecor .tw-star{ height:auto; color:var(--gold); opacity:.5 }
+#twilightDecor .tw-star.a{ top:200px; left:20%; width:20px }
+#twilightDecor .tw-star.b{ top:150px; left:44%; width:14px; opacity:.4 }
+#twilightDecor .tw-star.c{ top:300px; right:30%; width:16px; opacity:.38 }
+/* переключатель вида под тему */
+body[data-theme="twilight"] .view-toggle button.on{ background:var(--accent); color:#f4ede0 }
+/* ═══════════════ конец темы «Сумерки» ═══════════════ */
 </style>
 </head>
 <body>
@@ -1030,6 +1069,26 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   <img class="cm-bolt b5" src="bolt.png" alt="" aria-hidden="true">
   <img class="cm-bolt b6" src="bolt.png" alt="" aria-hidden="true">
   <svg class="cm-skyline" viewBox="0 0 1200 140" preserveAspectRatio="none"><path d="M0 140 L0 96 L34 96 L34 70 L74 70 L74 104 L104 104 L104 54 L120 54 L120 40 L134 40 L134 54 L150 54 L150 104 L196 104 L196 78 L232 78 L232 48 L268 48 L268 90 L300 90 L300 66 L300 30 L312 30 L312 66 L352 66 L352 100 L392 100 L392 60 L430 60 L430 88 L470 88 L470 44 L508 44 L508 96 L548 96 L548 72 L586 72 L586 104 L626 104 L626 52 L664 52 L664 84 L704 84 L704 62 L742 62 L742 100 L782 100 L782 46 L800 46 L800 32 L814 32 L814 46 L830 46 L830 94 L872 94 L872 68 L910 68 L910 100 L950 100 L950 56 L988 56 L988 88 L1028 88 L1028 74 L1066 74 L1066 102 L1106 102 L1106 58 L1146 58 L1146 90 L1200 90 L1200 140 Z"/></svg>
+</div>
+
+<!-- украшения темы «Сумерки» (видны только при data-theme=twilight) -->
+<div id="twilightDecor" aria-hidden="true">
+  <div class="tw-fog f1"></div>
+  <div class="tw-fog f2"></div>
+  <div class="tw-moon"></div>
+  <div class="tw-signs">
+    <div class="tw-sign">Forks 9 →</div>
+    <div class="tw-sign">← La Push 6</div>
+  </div>
+  <svg class="tw-star a" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="tw-star b" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="tw-star c" viewBox="0 0 200 200"><use href="#pstar"/></svg>
+  <svg class="tw-paw p1" viewBox="0 0 40 44"><g fill="currentColor"><ellipse cx="20" cy="31" rx="11" ry="9"/><ellipse cx="9" cy="16" rx="3.4" ry="5"/><ellipse cx="17" cy="10" rx="3.6" ry="5.4"/><ellipse cx="25" cy="10" rx="3.6" ry="5.4"/><ellipse cx="33" cy="16" rx="3.4" ry="5"/></g></svg>
+  <svg class="tw-paw p2" viewBox="0 0 40 44"><g fill="currentColor"><ellipse cx="20" cy="31" rx="11" ry="9"/><ellipse cx="9" cy="16" rx="3.4" ry="5"/><ellipse cx="17" cy="10" rx="3.6" ry="5.4"/><ellipse cx="25" cy="10" rx="3.6" ry="5.4"/><ellipse cx="33" cy="16" rx="3.4" ry="5"/></g></svg>
+  <svg class="tw-paw p3" viewBox="0 0 40 44"><g fill="currentColor"><ellipse cx="20" cy="31" rx="11" ry="9"/><ellipse cx="9" cy="16" rx="3.4" ry="5"/><ellipse cx="17" cy="10" rx="3.6" ry="5.4"/><ellipse cx="25" cy="10" rx="3.6" ry="5.4"/><ellipse cx="33" cy="16" rx="3.4" ry="5"/></g></svg>
+  <svg class="tw-paw p4" viewBox="0 0 40 44"><g fill="currentColor"><ellipse cx="20" cy="31" rx="11" ry="9"/><ellipse cx="9" cy="16" rx="3.4" ry="5"/><ellipse cx="17" cy="10" rx="3.6" ry="5.4"/><ellipse cx="25" cy="10" rx="3.6" ry="5.4"/><ellipse cx="33" cy="16" rx="3.4" ry="5"/></g></svg>
+  <svg class="tw-pines far" viewBox="0 0 1200 200" preserveAspectRatio="none"><path fill="currentColor" d="M0 200 L0 90 L28 100 L44 46 L62 98 L88 82 L112 34 L138 90 L162 76 L188 100 L214 44 L240 94 L266 80 L292 100 L318 40 L344 92 L370 78 L396 100 L422 48 L448 94 L474 80 L500 100 L526 42 L552 92 L578 78 L604 100 L630 46 L656 94 L682 80 L708 100 L734 40 L760 92 L786 78 L812 100 L838 48 L864 94 L890 80 L916 100 L942 42 L968 92 L994 78 L1020 100 L1046 46 L1072 94 L1098 80 L1124 100 L1150 44 L1176 92 L1200 84 L1200 200 Z"/></svg>
+  <svg class="tw-pines near" viewBox="0 0 1200 200" preserveAspectRatio="none"><path fill="currentColor" d="M0 200 L0 130 L24 138 L40 96 L58 140 L82 122 L104 84 L128 136 L150 120 L176 140 L202 92 L226 134 L252 120 L278 140 L304 88 L330 132 L356 118 L382 140 L408 94 L434 134 L460 120 L486 140 L512 90 L538 132 L564 118 L590 140 L616 96 L642 134 L668 120 L694 140 L720 88 L746 132 L772 118 L798 140 L824 94 L850 134 L876 120 L902 140 L928 92 L954 132 L980 118 L1006 140 L1032 96 L1058 134 L1084 120 L1110 140 L1136 90 L1162 132 L1188 118 L1200 132 L1200 200 Z"/></svg>
 </div>
 
 <header>
@@ -1939,7 +1998,11 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   const spineBg = b => validColor(b.c) || PALETTE[b.g] || "linear-gradient(95deg,#444,#222)";
   // тема «Комикс» — корешки/плашки в цветах темы (ротация по индексу; данные книги b.c не трогаем, это только отображение)
   const COMIC_SPINES = ["linear-gradient(160deg,#B4322F,#8a2222)","linear-gradient(160deg,#2b5480,#1E3A5F)","linear-gradient(160deg,#ecdcb8,#d6c096)","linear-gradient(160deg,#9E2B2B,#6f1c1c)","linear-gradient(160deg,#31578a,#22406a)"];
-  function themedBg(b,i){ if(document.body.getAttribute("data-theme")==="comic"){ const n=COMIC_SPINES.length; return COMIC_SPINES[((i||0)%n+n)%n]; } return spineBg(b); }
+  const TWILIGHT_SPINES = ["linear-gradient(160deg,#3f5445,#2c3d32)","linear-gradient(160deg,#7a3f3a,#572a26)","linear-gradient(160deg,#59683c,#41502b)","linear-gradient(160deg,#33405a,#242f47)","linear-gradient(160deg,#5c4868,#42344d)","linear-gradient(160deg,#3a5566,#293f4c)"];
+  function themedBg(b,i){ const th=document.body.getAttribute("data-theme");
+    if(th==="comic"){ const n=COMIC_SPINES.length; return COMIC_SPINES[((i||0)%n+n)%n]; }
+    if(th==="twilight"){ const n=TWILIGHT_SPINES.length; return TWILIGHT_SPINES[((i||0)%n+n)%n]; }
+    return spineBg(b); }
   /* цвет текста на корешке: тёмный на светлых обложках, белый на тёмных */
   function pickFg(grad){
     const s = String(grad); let r,g,b, m;
@@ -4979,7 +5042,8 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     {id:"night",   name:"Ночь", c1:"#051F45", c2:"#F2C4CD"},
     {id:"tiffany", name:"Тиффани", c1:"#99D5C9", c2:"#2D0320"},
     {id:"matcha",  name:"Матча", c1:"#BAD797", c2:"#670626"},
-    {id:"comic",   name:"Комикс", c1:"#8E2B2B", c2:"#D9A441"}
+    {id:"comic",   name:"Комикс", c1:"#8E2B2B", c2:"#D9A441"},
+    {id:"twilight",name:"Сумерки", c1:"#141c18", c2:"#9a6460"}
   ];
   let myTheme = localStorage.getItem("polka_theme") || "coffee";
   if(myTheme!=="coffee" && !THEMES.some(t=>t.id===myTheme)) myTheme = "coffee";   // убрали тему (напр. «мяту») → откат на кофе
