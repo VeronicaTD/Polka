@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="314" />
+<meta name="app-version" content="315" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4159,12 +4159,11 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   function maybeShowSummaryPlaque(){
     const el=$("#summaryPlaque"); if(!el) return;
     let show=false, ym="", n=0;
-    const force = /[?&]plaque\b/.test(location.search);   // ?plaque — превью плашки в любой день (для проб)
     if(isMe()){ const day=new Date().getDate();
-      if(force || day>=29) ym=curYM();               // конец месяца (29–31) → итоги текущего месяца, который закрывается
-      else if(day<=5) ym=prevYM(curYM());            // начало месяца (1–5) → итоги прошлого
+      if(day>=28) ym=curYM();               // конец месяца (28–31) → итоги текущего месяца, который закрывается
+      else if(day<=5) ym=prevYM(curYM());   // начало месяца (1–5) → итоги прошлого
       if(ym){ n=monthBooks(ym).length;
-        if((force || n>0) && (force || !localStorage.getItem("polka_sum_dismiss_"+ym))) show=true; } }
+        if(n>0 && !localStorage.getItem("polka_sum_dismiss_"+ym)) show=true; } }
     if(show){ el.dataset.ym=ym; $("#spTitle").textContent="Распакуй итоги "+ymGen(ym); $("#spSub").textContent=n+" "+plural(n,"книга","книги","книг")+" за месяц — посмотри и поделись"; el.style.display="flex"; }
     else el.style.display="none";
   }
