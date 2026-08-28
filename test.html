@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="316" />
+<meta name="app-version" content="317" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4161,7 +4161,7 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     const el=$("#summaryPlaque"); if(!el) return;
     let show=false, ym="", n=0;
     if(isMe()){ const day=new Date().getDate();
-      if(day>=28) ym=curYM();               // конец месяца (28–31) → итоги текущего месяца, который закрывается
+      if(day>=29) ym=curYM();               // конец месяца (29–31) → итоги текущего месяца, который закрывается
       else if(day<=5) ym=prevYM(curYM());   // начало месяца (1–5) → итоги прошлого
       if(ym){ n=monthBooks(ym).length;
         if(n>0) show=true; } }   // показываем каждый раз при входе, даже если раньше нажимали ×

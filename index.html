@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="313" />
+<meta name="app-version" content="317" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -663,6 +663,8 @@ body[data-theme="night"] .it-rate{background:rgba(255,255,255,.09)}
 .sum-plaque .sp-txt span{font-size:12px;color:var(--ink-soft);line-height:1.3}
 .sum-plaque .sp-go{font-size:24px;color:var(--accent);flex:0 0 auto}
 .sum-plaque .sp-x{position:absolute;top:5px;right:9px;font-size:17px;color:var(--ink-soft);line-height:1;padding:2px 5px}
+/* плашка итогов — справа от фотографии (внутри шапки профиля) */
+.profile .sum-plaque{flex:1 1 200px;min-width:0;width:auto;max-width:380px;margin:0;align-self:center}
 #itShareModal{z-index:200}   /* выше страницы «Итоги» (fullpage z-index 120) */
 .q-row{position:relative;display:flex;align-items:flex-start;gap:14px;padding:20px 18px 16px;margin:0 4px 20px;
   background:var(--paper-2);border-radius:3px;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);
@@ -1078,6 +1080,12 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
   <section class="profile">
     <div class="polaroid"><div class="ava" id="ava">М</div><div class="my-stickers" id="myStickers"></div></div>
     <button class="match-stat" id="matchStat" style="display:none" type="button" title="разбор совпадения"><b id="matchPct">0%</b><span>мэтч 💫</span></button>
+    <button class="sum-plaque" id="summaryPlaque" type="button" style="display:none">
+      <span class="sp-ic">🎁</span>
+      <span class="sp-txt"><b id="spTitle">Распакуй итоги</b><span id="spSub">книг за месяц</span></span>
+      <span class="sp-go">›</span>
+      <span class="sp-x" id="spClose" role="button" aria-label="Закрыть">×</span>
+    </button>
     <div class="pmeta">
       <div class="pname-row" id="pnameRow">
         <span class="pname-wrap"><h1 id="pName">Моя полка</h1><button class="edit-profile" id="editProfile" title="Редактировать профиль" aria-label="Редактировать профиль">✎</button></span>
@@ -1097,13 +1105,6 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
       <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span class="rd-lbl">читаю</span></div>
     </div>
   </section>
-
-  <button class="sum-plaque" id="summaryPlaque" type="button" style="display:none">
-    <span class="sp-ic">🕯</span>
-    <span class="sp-txt"><b id="spTitle">Итоги готовы</b><span id="spSub">книг за месяц</span></span>
-    <span class="sp-go">›</span>
-    <span class="sp-x" id="spClose" role="button" aria-label="Закрыть">×</span>
-  </button>
 
   <div class="hs-banner" id="homescreenBanner" style="display:none">
     <button class="hs-x" id="hsClose" aria-label="Закрыть">×</button>
@@ -4160,13 +4161,15 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
     const el=$("#summaryPlaque"); if(!el) return;
     let show=false, ym="", n=0;
     if(isMe()){ const day=new Date().getDate();
-      if(day<=7){ ym=prevYM(curYM()); n=monthBooks(ym).length;
-        if(n>0 && !localStorage.getItem("polka_sum_dismiss_"+ym)) show=true; } }
-    if(show){ el.dataset.ym=ym; $("#spTitle").textContent="Итоги "+ymGen(ym)+" готовы"; $("#spSub").textContent=n+" "+plural(n,"книга","книги","книг")+" за месяц, можно посмотреть и поделиться"; el.style.display="flex"; }
+      if(day>=29) ym=curYM();               // конец месяца (29–31) → итоги текущего месяца, который закрывается
+      else if(day<=5) ym=prevYM(curYM());   // начало месяца (1–5) → итоги прошлого
+      if(ym){ n=monthBooks(ym).length;
+        if(n>0) show=true; } }   // показываем каждый раз при входе, даже если раньше нажимали ×
+    if(show){ el.dataset.ym=ym; $("#spTitle").textContent="Распакуй итоги "+ymGen(ym); $("#spSub").textContent=n+" "+plural(n,"книга","книги","книг")+" за месяц — посмотри и поделись"; el.style.display="flex"; }
     else el.style.display="none";
   }
   { const el=$("#summaryPlaque"); if(el) el.addEventListener("click", e=>{ const ym=el.dataset.ym||prevYM(curYM());
-      if(e.target.closest("#spClose")){ try{ localStorage.setItem("polka_sum_dismiss_"+ym,"1"); }catch(err){} el.style.display="none"; return; }
+      if(e.target.closest("#spClose")){ el.style.display="none"; return; }   // прячем только на этот раз — при следующем входе покажется снова
       openSummary(ym); }); }
   /* ============ УВЕДОМЛЕНИЯ (веб-пуш) ============ */
   const VAPID_PUBLIC = "BAQn1MUZM1JRRld3nGEqZxKIQGY9iWZuZ1z9hBOIXU80e1rgfWOrg9dHYzh2nkD9ufxiFS912yiX7oMQm9EvfIs";
