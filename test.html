@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="326" />
+<meta name="app-version" content="327" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#FFF8F1">
-<script>/* статус-бар iOS: цвет читается ПРИ ЗАПУСКЕ, поэтому ставим его до отрисовки из сохранённой темы */try{var _t=localStorage.getItem("polka_theme");var _sb={twilight:"#4d5c56",night:"#051F45",comic:"#8E2B2B"}[_t];if(_sb){document.querySelector('meta[name=theme-color]').setAttribute("content",_sb);}}catch(e){}</script>
+<script>/* статус-бар iOS: читается ПРИ ЗАПУСКЕ. theme-color в standalone iOS игнорит — управляем через apple-*-status-bar-style. Для «Сумерек» делаем прозрачный бар, чтобы зелёный хедер просвечивал за часами */try{var _t=localStorage.getItem("polka_theme");var _sb={twilight:"#4d5c56",night:"#051F45",comic:"#8E2B2B"}[_t];if(_sb){document.querySelector('meta[name=theme-color]').setAttribute("content",_sb);}if(_t==="twilight"){var _m=document.createElement("meta");_m.setAttribute("name","apple-mobile-web-app-status-bar-style");_m.setAttribute("content","black-translucent");document.head.appendChild(_m);document.documentElement.setAttribute("data-sb","translucent");}}catch(e){}</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -1005,6 +1005,10 @@ body[data-theme="twilight"] .decor{ display:none }   /* убираем прив�
 #twilightDecor .tw-signs{ top:112px; right:10px; display:flex; gap:6px; transform:rotate(2deg); opacity:.96 }   /* таблички в один ряд — влезают над машиной, обе читаемы */
 #twilightDecor .tw-truck{ top:134px; right:-16px; width:184px; filter:brightness(.92) drop-shadow(0 8px 14px rgba(0,0,0,.55)); opacity:.98 }
 @media (max-height:700px){ #twilightDecor .tw-truck{ width:160px; top:calc(126px + env(safe-area-inset-top)) } #twilightDecor .tw-signs{ top:calc(104px + env(safe-area-inset-top)) } #twilightDecor .tw-news{ top:calc(30px + env(safe-area-inset-top)) } }
+/* прозрачный статус-бар: экран стал выше на вырез — опускаем украшения на ту же высоту, чтобы не залезли под часы/иконки */
+html[data-sb="translucent"] #twilightDecor .tw-news{ top:calc(36px + env(safe-area-inset-top)) }
+html[data-sb="translucent"] #twilightDecor .tw-signs{ top:calc(112px + env(safe-area-inset-top)) }
+html[data-sb="translucent"] #twilightDecor .tw-truck{ top:calc(134px + env(safe-area-inset-top)) }
 #twilightDecor .tw-sign{ background:#243a2b; border:2px solid #d6dcc6; border-radius:4px; color:#eef1e4; font-family:var(--display); font-size:11.5px; font-weight:600; letter-spacing:.4px; padding:4px 9px; white-space:nowrap; box-shadow:0 5px 12px rgba(0,0,0,.5) }
 #twilightDecor .tw-hoa{ bottom:14%; left:18px; font-family:var(--display); font-size:24px; font-weight:700; color:#9a6460; opacity:.45; transform:rotate(-8deg); letter-spacing:2px; text-shadow:0 2px 6px rgba(0,0,0,.5) }
 /* переключатель вида под тему */
@@ -1014,6 +1018,8 @@ body[data-theme="twilight"] .hand-note{ background:#4c5b55; color:#eef2ef; borde
 body[data-theme="twilight"] .tab.active{ background:#4c5b55; color:#eef2ef; border-color:#697a72 }
 /* верхний бар «Polka» — полупрозрачный зелёный туман с блюром, чтобы не тёмным пятном */
 body[data-theme="twilight"] header{ background:rgba(48,61,56,.5); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); border-bottom-color:rgba(92,108,100,.35) }
+/* прозрачный статус-бар iOS (black-translucent): зелёный хедер заходит ЗА часы, контент шапки опускаем под вырез */
+html[data-sb="translucent"] header{ padding-top:env(safe-area-inset-top) }
 body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ background:rgba(60,74,68,.5); border-color:rgba(92,108,100,.4) }
 /* ═══════════════ конец темы «Сумерки» ═══════════════ */
 </style>
