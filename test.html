@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="324" />
+<meta name="app-version" content="325" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1007,8 +1007,12 @@ body[data-theme="twilight"] .decor{ display:none }   /* убираем прив�
 #twilightDecor .tw-hoa{ bottom:14%; left:18px; font-family:var(--display); font-size:24px; font-weight:700; color:#9a6460; opacity:.45; transform:rotate(-8deg); letter-spacing:2px; text-shadow:0 2px 6px rgba(0,0,0,.5) }
 /* переключатель вида под тему */
 body[data-theme="twilight"] .view-toggle button.on{ background:var(--accent); color:#f4ede0 }
-/* «★ моя полка ★» — светлая записка, чтобы не выделялась тёмным пятном */
-body[data-theme="twilight"] .hand-note{ background:#e7ebe7; color:#28302e; border-color:#f4f6f3; outline-color:#c6cec9 }
+/* «★ моя полка ★» и активная вкладка — под зелёный туман фона, не белым/чёрным пятном */
+body[data-theme="twilight"] .hand-note{ background:#4c5b55; color:#eef2ef; border-color:#697a72; outline-color:#3a4642 }
+body[data-theme="twilight"] .tab.active{ background:#4c5b55; color:#eef2ef; border-color:#697a72 }
+/* верхний бар «Polka» — полупрозрачный зелёный туман с блюром, чтобы не тёмным пятном */
+body[data-theme="twilight"] header{ background:rgba(48,61,56,.5); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); border-bottom-color:rgba(92,108,100,.35) }
+body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ background:rgba(60,74,68,.5); border-color:rgba(92,108,100,.4) }
 /* ═══════════════ конец темы «Сумерки» ═══════════════ */
 </style>
 </head>
