@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="322" />
+<meta name="app-version" content="323" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -979,22 +979,30 @@ body[data-theme="comic"] #coreadBtn, body[data-theme="comic"] .co-pill{ backgrou
 
 /* ═══════════════ ТЕМА «СУМЕРКИ» (Twilight, туманный лес) — изолированный блок (удаляется целиком) ═══════════════ */
 body[data-theme="twilight"]{
-  --paper:#141c18; --paper-2:#202a25; --ink:#e7e0d0; --ink-soft:#a6afa2; --line:#2d3a33;
-  --accent:#9a6460; --accent-deep:#7c4a47; --gold:#a89058; --wood-1:#3a2c22; --wood-2:#20170e;
-  --star-1:#9a6460; --star-2:#a89058; --star-3:#5f7a68;
-  background-image: linear-gradient(rgba(13,18,14,.55),rgba(9,13,10,.72)), url("tw-forest.jpg") !important;
-  background-size: cover, cover !important;
-  background-position: center center, center center !important;
-  background-repeat: no-repeat, no-repeat !important;
-  background-attachment: fixed, fixed !important;
+  --paper:#1a2628; --paper-2:#243133; --ink:#e6ece9; --ink-soft:#a8b6b5; --line:#33433f;
+  --accent:#9a6460; --accent-deep:#7c4a47; --gold:#a89058; --wood-1:#33413e; --wood-2:#1e2a2b;
+  --star-1:#9a6460; --star-2:#8fa2a0; --star-3:#5f7a78;
+  background:transparent !important;   /* фон вынесен в слои ::before (картинка+цветокор) и ::after (туман) */
+}
+/* лес — отдельный слой, чтобы можно было цветокорить: холодная выбеленная дымка вместо ночного ельника */
+body[data-theme="twilight"]::before{
+  content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:#22333a url("tw-forest.jpg") center/cover no-repeat;
+  filter:saturate(.35) contrast(.82) brightness(1.18) hue-rotate(-8deg);
+}
+/* туман поверх леса — светлее сверху, глубже снизу; убирает чёрные провалы, тянет в сине-серый */
+body[data-theme="twilight"]::after{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(180deg, rgba(150,172,176,.30) 0%, rgba(96,124,128,.34) 45%, rgba(24,38,40,.55) 100%);
 }
 #twilightDecor{ display:none }
 body[data-theme="twilight"] #twilightDecor{ display:block }
 body[data-theme="twilight"] .decor{ display:none }   /* убираем привычные фоновые звёзды */
 #twilightDecor>*{ position:fixed; z-index:0; pointer-events:none }
-#twilightDecor .tw-news{ top:42px; right:-10px; width:198px; transform:rotate(4deg); opacity:.97 }
-#twilightDecor .tw-signs{ top:176px; right:12px; display:flex; flex-direction:column; gap:7px; transform:rotate(3deg); opacity:.96 }
-#twilightDecor .tw-truck{ top:214px; right:-20px; width:236px; filter:brightness(.92) drop-shadow(0 8px 14px rgba(0,0,0,.55)); opacity:.98 }
+#twilightDecor .tw-news{ top:36px; right:-10px; width:190px; transform:rotate(4deg); opacity:.97 }
+#twilightDecor .tw-signs{ top:112px; right:10px; display:flex; gap:6px; transform:rotate(2deg); opacity:.96 }   /* таблички в один ряд — влезают над машиной, обе читаемы */
+#twilightDecor .tw-truck{ top:134px; right:-16px; width:184px; filter:brightness(.92) drop-shadow(0 8px 14px rgba(0,0,0,.55)); opacity:.98 }
+@media (max-height:700px){ #twilightDecor .tw-truck{ width:160px; top:calc(126px + env(safe-area-inset-top)) } #twilightDecor .tw-signs{ top:calc(104px + env(safe-area-inset-top)) } #twilightDecor .tw-news{ top:calc(30px + env(safe-area-inset-top)) } }
 #twilightDecor .tw-sign{ background:#243a2b; border:2px solid #d6dcc6; border-radius:4px; color:#eef1e4; font-family:var(--display); font-size:11.5px; font-weight:600; letter-spacing:.4px; padding:4px 9px; white-space:nowrap; box-shadow:0 5px 12px rgba(0,0,0,.5) }
 #twilightDecor .tw-hoa{ bottom:14%; left:18px; font-family:var(--display); font-size:24px; font-weight:700; color:#9a6460; opacity:.45; transform:rotate(-8deg); letter-spacing:2px; text-shadow:0 2px 6px rgba(0,0,0,.5) }
 /* переключатель вида под тему */
