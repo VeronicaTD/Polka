@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="325" />
+<meta name="app-version" content="326" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#FFF8F1">
+<script>/* статус-бар iOS: цвет читается ПРИ ЗАПУСКЕ, поэтому ставим его до отрисовки из сохранённой темы */try{var _t=localStorage.getItem("polka_theme");var _sb={twilight:"#4d5c56",night:"#051F45",comic:"#8E2B2B"}[_t];if(_sb){document.querySelector('meta[name=theme-color]').setAttribute("content",_sb);}}catch(e){}</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -982,6 +983,7 @@ body[data-theme="twilight"]{
   --paper:#1a2628; --paper-2:#243133; --ink:#e6ece9; --ink-soft:#a8b6b5; --line:#33433f;
   --accent:#9a6460; --accent-deep:#7c4a47; --gold:#a89058; --wood-1:#33413e; --wood-2:#1e2a2b;
   --star-1:#9a6460; --star-2:#8fa2a0; --star-3:#5f7a78;
+  --statusbar:#4d5c56;   /* цвет статус-бара телефона — под тон зелёного хедера, а не near-чёрный --paper */
   background:transparent !important;   /* фон вынесен в слои ::before (картинка+цветокор) и ::after (туман) */
 }
 /* лес — отдельный слой, чтобы можно было цветокорить: холодная выбеленная дымка вместо ночного ельника */
@@ -5043,7 +5045,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     try{ localStorage.setItem("polka_theme", id); }catch(e){}
     // верхняя плашка телефона (статус-бар браузера) в цвет фона темы
     try{
-      const bar = getComputedStyle(document.body).getPropertyValue("--paper").trim();
+      const st = getComputedStyle(document.body);
+      const bar = (st.getPropertyValue("--statusbar").trim() || st.getPropertyValue("--paper").trim());
       // удаляем все старые meta и создаём новую — так iOS/Safari перечитывает цвет статус-бара
       document.querySelectorAll('meta[name="theme-color"]').forEach(x=>x.remove());
       const m = document.createElement("meta"); m.setAttribute("name","theme-color");
