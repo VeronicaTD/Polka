@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="328" />
+<meta name="app-version" content="329" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1478,7 +1478,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   <h3 id="crPagesTitle">Сколько страниц в твоём издании?</h3>
   <p class="mp" id="crPagesBook"></p>
   <div class="field"><input id="crPagesInput" type="number" inputmode="numeric" min="1" max="9999" placeholder="например, 480" style="width:100%;box-sizing:border-box" /></div>
-  <div class="modal-foot"><button class="btn ghost" data-close style="justify-content:center;display:flex">Отмена</button><button class="btn" id="crPagesGo" style="justify-content:center;display:flex">Предложить</button></div>
+  <p class="mp" id="crPagesNote" style="margin:-4px 0 10px;display:none"></p>
+  <div class="modal-foot"><button class="btn ghost" id="crPagesSkip" type="button" style="justify-content:center;display:none">Пропустить</button><button class="btn" id="crPagesGo" style="justify-content:center;display:flex">Сохранить</button></div>
 </div>
 
 <!-- СОВМЕСТНОЕ ЧТЕНИЕ: своя реакция текстом -->
@@ -2110,10 +2111,11 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   const READING_MAX = 3;
   function asReadingArr(rd){
     if(Array.isArray(rd)) return rd.filter(x=>x && x.t).slice(0,READING_MAX)
-      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[]), sd:x.sd||""}));
+      .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[]), sd:x.sd||"",
+        pg:x.pg||0, cur:x.cur||0, lg:Array.isArray(x.lg)?x.lg.slice(-180):[]}));   // pg=страниц в издании, cur=текущая страница, lg=[[день,страница],…] (день = число дней от 1970, последние 180)
     const s=String(rd||"").trim(); if(!s) return [];
     const parts=s.split(" — ");   // старый формат мог быть «Название — Автор»
-    return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:"", r:0, fav:false, note:"", qt:[]}];
+    return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:"", r:0, fav:false, note:"", qt:[], pg:0, cur:0, lg:[]}];
   }
   function readReadingLS(){ const raw=localStorage.getItem("polka_reading"); if(raw==null) return [];
     try{ return asReadingArr(JSON.parse(raw)); }catch(e){ return asReadingArr(raw); } }
@@ -3172,9 +3174,10 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       const rb=myReading[choice];
       if(rb){ if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[],d:curYM()}); saveMine(); } myReading.splice(choice,1); }
     }
-    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||"", sd:todayISO()});
+    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||"", sd:todayISO(), pg:0, cur:0, lg:[]});
     const wi=myWishlist.findIndex(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a)); if(wi>-1) myWishlist.splice(wi,1);
     saveReadingLS(); saveWish(); syncUp(); closeWishAct(); renderAll(); toast("Читаешь сейчас 📖");
+    askBookPages(myReading[myReading.length-1]);   // спросить число страниц (с «Пропустить»)
   });
   $("#waShelf").addEventListener("click", ()=>{
     if(!requireBookSlot()) return;
@@ -4641,8 +4644,63 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return false; }
     if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a||""))){ toast("Эту книгу уже читаешь"); return false; }
     // читаемая книга — полноценный объект книги (цитаты/оценка/цвет пишутся во время чтения, а не после)
-    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[], sd:todayISO()});
-    saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return true;
+    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[], sd:todayISO(), pg:0, cur:0, lg:[]});
+    saveReadingLS(); syncUp(); renderReadingEditor(); renderAll();
+    askBookPages(myReading[myReading.length-1]);   // сразу спрашиваем «сколько страниц» (с «Пропустить»)
+    return true;
+  }
+  /* ---- прогресс чтения: страницы, лог отметок, перенос на полку ---- */
+  function dayNum(d){ d=d||new Date(); return Math.floor((d.getTime() - d.getTimezoneOffset()*60000)/86400000); }   // число дней от 1970-01-01 по локальной дате
+  function logMark(b, day, page){ if(!Array.isArray(b.lg)) b.lg=[]; const li=b.lg.findIndex(e=>Array.isArray(e)&&e[0]===day); if(li>-1) b.lg[li][1]=page; else b.lg.push([day,page]); if(b.lg.length>180) b.lg=b.lg.slice(-180); }   // одна запись в день (перезапись), последние 180
+  function progressHTML(b){
+    const cur=b.cur||0, pg=b.pg||0;
+    if(!cur) return "";
+    if(pg>0){ const pct=Math.min(100, Math.round(cur/pg*100)); const w=Math.min(100, cur/pg*100);
+      return `<div style="height:4px;border-radius:999px;background:var(--line);overflow:hidden;margin:1px 0 3px"><div style="height:100%;width:${w}%;background:var(--accent);border-radius:999px;transition:width .4s ease"></div></div><div style="color:var(--ink-soft);font-size:12px">${cur} / ${pg} · ${pct}%</div>`;
+    }
+    return `<div style="color:var(--ink-soft);font-size:12px">страница ${cur}</div>`;
+  }
+  // перенос читаемой книги на полку — та же ветка, что у кнопки «✓ прочитал» (одна функция для кнопки и автофиниша)
+  function finishReading(i){
+    const b=myReading[i]; if(!b) return;
+    if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a))){
+      myBooks.push({t:b.t, a:b.a||"неизвестный автор", g:b.g||"Проза", c:b.c||COLORS[myBooks.length%COLORS.length], cover:b.cover||"", fav:false, r:0, note:"", qt:[], d:curYM()}); saveMine(); }
+    myReading.splice(i,1); saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); toast("Перенёс на полку 📚");
+  }
+  // спросить/поменять число страниц в издании (не обязательно — есть «Пропустить»)
+  function askBookPages(book, onDone){
+    if(!book){ if(onDone) onDone(); return; }
+    askPages({ title:"Сколько страниц в твоём издании?", bookLabel:book.t, value:book.pg||"", okText:"Сохранить", skip:true,
+      onOk:(pages)=>{ book.pg = pages>0?pages:0; saveReadingLS(); syncUp(); closeAskPages(); renderAll(); if(onDone) onDone(); },
+      onSkip:()=>{ closeAskPages(); if(onDone) onDone(); } });
+  }
+  // отметить текущую страницу читаемой книги (дельту считаем сами)
+  function markPageFlow(book, onDone){
+    if(!book) return;
+    const note = book.pg>0 ? ("было: "+(book.cur||0)+" из "+book.pg) : (book.cur>0 ? ("было: страница "+book.cur) : "");
+    askPages({ title:"Я на странице", bookLabel:book.t, value:book.cur||"", okText:"Сохранить", note,
+      onOk:(pages)=>{
+        if(pages<1){ toast("Укажи страницу"); return false; }
+        if(book.pg>0 && pages>book.pg){ toast("В издании "+book.pg+" стр."); return false; }
+        const apply=()=>{
+          const prev = book.cur||0, delta = pages - prev;
+          book.cur = pages;
+          logMark(book, dayNum(), pages);
+          doStreakMark();                 // сама проверит, отмечен ли день — второй раз за сутки не засчитает
+          saveReadingLS(); syncUp(); closeAskPages(); renderAll(); if(onDone) onDone();
+          if(delta>0) toast("+"+delta+" "+plural(delta,"страница","страницы","страниц")+" сегодня 🤍");
+          else toast("Отмечено ✓");
+          if(book.pg>0 && prev<book.pg && book.cur>=book.pg){   // пересекли конец издания → предложить перенос (один раз)
+            askConfirm("Дочитала «"+book.t+"»? Переносим на полку", "Да, дочитала").then(ok=>{ if(ok){ const j=myReading.indexOf(book); if(j>-1){ finishReading(j); if(onDone) onDone(); } } });
+          }
+        };
+        if(pages < (book.cur||0)){   // вернулась назад — не запрещаем, а переспрашиваем
+          closeAskPages();
+          askConfirm("Вернулась назад? Так бывает", "Да, вернулась").then(ok=>{ if(ok) apply(); });
+          return;   // модалку уже закрыли; onOk ничего больше не делает
+        }
+        apply();
+      }});
   }
   bkAutocomplete($("#pReadingInput"), $("#pReadingSuggest"), v=>{   // выбор из подсказки
     if(addReadingBook(v.title, (v.authors&&v.authors[0])||"", genreFromBook(v))) $("#pReadingInput").value="";
@@ -4670,10 +4728,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   { const _rl=$("#pReadingList"); if(_rl) _rl.addEventListener("click", e=>{
     const rm=e.target.closest("[data-rm]"), dn=e.target.closest("[data-done]");
     if(rm){ const i=+rm.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); return; }
-    if(dn){ const i=+dn.dataset.done; const b=myReading[i]; if(!b) return;
-      if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a))){
-        myBooks.push({t:b.t, a:b.a||"неизвестный автор", g:b.g||"Проза", c:b.c||COLORS[myBooks.length%COLORS.length], cover:b.cover||"", fav:false, r:0, note:"", qt:[], d:curYM()}); saveMine(); }
-      myReading.splice(i,1); saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); toast("Перенёс на полку 📚"); return; }
+    if(dn){ const i=+dn.dataset.done; finishReading(i); return; }
   }); }
 
   /* ---- инфо о книге (можно редактировать свои) ---- */
@@ -4937,11 +4992,21 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       const arr = mine ? myReading : asReadingArr(friend().reading);
       let h = `<p style="margin:0 0 12px;font-weight:700">📖 Сейчас читаю${mine?` <span style="font-weight:400;color:var(--ink-soft);font-size:13px">— до 3</span>`:""}</p>`
         + `<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:12px">`;
-      h += arr.length ? arr.map((b,i)=>`<div class="rdl-row" ${mine?`data-open="${i}"`:""} style="display:flex;align-items:center;gap:9px;padding:6px 0;text-align:left;${mine?"cursor:pointer":""}">
+      h += arr.length ? arr.map((b,i)=>{
+          const top = `<div class="rdl-row" ${mine?`data-open="${i}"`:""} style="display:flex;align-items:center;gap:9px;padding:6px 0 2px;text-align:left;${mine?"cursor:pointer":""}">
             <span style="width:13px;height:20px;border-radius:2px 3px 3px 2px;background:${spineBg(b)};flex:0 0 auto"></span>
             <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span>
             ${mine?`<button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>`:""}
-          </div>`).join("")
+          </div>`;
+          if(!mine) return top;
+          const prog = progressHTML(b);
+          const pagesLbl = (b.pg>0) ? ("📄 "+b.pg+" стр.") : "📄 указать страницы";
+          const actions = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px">
+            <button type="button" class="btn" data-mark="${i}" style="flex:0 0 auto;padding:7px 13px;justify-content:center;font-size:13px">📖 я на странице</button>
+            <button type="button" class="btn ghost" data-pages="${i}" style="flex:0 0 auto;padding:7px 13px;justify-content:center;font-size:13px">${pagesLbl}</button>
+          </div>`;
+          return top + (prog?`<div style="padding-left:22px">${prog}</div>`:"") + `<div style="padding-left:22px">${actions}</div>`;
+        }).join("")
         : `<p class="mp" style="margin:0">${mine?"Пока пусто — добавь книгу ниже 👇":"Пока ничего не читает"}</p>`;
       h += `</div>`;
       if(mine){
@@ -4954,6 +5019,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       box.querySelector(".confirm-no").addEventListener("click", done);
       box.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",(e)=>{ e.stopPropagation(); const i=+b.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); render(); }));
       box.querySelectorAll("[data-open]").forEach(r=>r.addEventListener("click",()=>{ done(); openInfo(+r.dataset.open, true); }));   // тап по книге → полная карточка (цвет/оценка/цитаты/на полку)
+      box.querySelectorAll("[data-mark]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.mark]; if(b) markPageFlow(b, render); }));   // 📖 я на странице
+      box.querySelectorAll("[data-pages]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.pages]; if(b) askBookPages(b, render); }));   // 📄 указать/поменять число страниц
       if(mine && arr.length<READING_MAX){
         const inp=box.querySelector("#rdlInput"), sug=box.querySelector("#rdlSuggest"), addBtn=box.querySelector("#rdlAdd");
         if(inp && sug){ bkAutocomplete(inp, sug, v=>{ if(addReadingBook(v.title,(v.authors&&v.authors[0])||"",genreFromBook(v))) render(); });
@@ -5552,7 +5619,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const crItem = e.target.closest(".cr-invite");   // приглашение на совместное чтение
     if(crItem){
       const cid=crItem.dataset.crid, ctitle=crItem.dataset.crtitle;
-      if(e.target.closest(".cr-accept")){ crItem.remove(); crInvites=crInvites.filter(c=>c.id!==cid); updateReqBadge(); if(!$("#reqList").children.length) closeModals(); crOpenPages(ctitle, {mode:"accept", id:cid}); return; }
+      if(e.target.closest(".cr-accept")){ crItem.remove(); crInvites=crInvites.filter(c=>c.id!==cid); updateReqBadge(); if(!$("#reqList").children.length) closeModals(); crAcceptPages(cid, ctitle); return; }
       if(e.target.closest(".cr-decline")){ await crRespond(cid,false,0); crInvites=crInvites.filter(c=>c.id!==cid); crItem.remove(); updateReqBadge(); if(!$("#reqList").children.length) closeModals(); return; }
       return;
     }
@@ -5677,31 +5744,47 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   });
   $("#crProposeSources").addEventListener("click", e=>{ const r=e.target.closest(".cr-src"); if(r) crPickBook(r.dataset.t, r.dataset.a); });
   bkAutocomplete($("#crSearchInput"), $("#crSearchSuggest"), v=>{ crPickBook(v.title, (v.authors&&v.authors[0])||""); });
-  function crOpenPages(book, ctx, title){ crPagesCtx=ctx; $("#coreadProposeModal").classList.remove("open"); if(title) $("#crPagesTitle").textContent=title; $("#crPagesGo").textContent=(ctx&&ctx.mode==="propose")?"Предложить":"Готово"; $("#crPagesBook").textContent="«"+book+"»"; $("#crPagesInput").value=(ctx&&ctx.mode==="markpage"&&crdCur)?String(crdCur.my_page||""):""; overlay.classList.add("open"); $("#coreadPagesModal").classList.add("open"); setTimeout(()=>$("#crPagesInput").focus(),60); }
-  function crPickBook(t,a){ crProposeBook={t:capTitle(t), a:capAuthor(a)}; crOpenPages(crProposeBook.t, {mode:"propose"}, "Сколько страниц в твоём издании?"); }
-  $("#crPagesGo").addEventListener("click", async ()=>{
+  // универсальная модалка «страницы» (одна разметка на всё: совместное чтение И прогресс своей книги)
+  let askPagesOpts=null;
+  function closeAskPages(){ const m=$("#coreadPagesModal"); if(m) m.classList.remove("open"); if(!document.querySelector(".modal.open, .fullpage.open")) overlay.classList.remove("open"); }
+  function askPages(opts){
+    askPagesOpts = opts||{};
+    $("#crPagesTitle").textContent = opts.title || "Сколько страниц в твоём издании?";
+    $("#crPagesBook").textContent  = opts.bookLabel ? ("«"+opts.bookLabel+"»") : "";
+    $("#crPagesGo").textContent    = opts.okText || "Сохранить";
+    $("#crPagesInput").value       = (opts.value!=null && opts.value!=="") ? String(opts.value) : "";
+    { const n=$("#crPagesNote"); if(n){ n.textContent=opts.note||""; n.style.display=opts.note?"":"none"; } }
+    { const s=$("#crPagesSkip"); if(s) s.style.display = opts.skip ? "flex" : "none"; }
+    { const p=$("#coreadProposeModal"); if(p) p.classList.remove("open"); }
+    overlay.classList.add("open"); $("#coreadPagesModal").classList.add("open");
+    setTimeout(()=>{ const i=$("#crPagesInput"); if(i){ i.focus(); try{ i.select(); }catch(e){} } }, 60);
+  }
+  $("#crPagesGo").addEventListener("click", ()=>{
     const pages=parseInt($("#crPagesInput").value,10)||0;
-    if(pages<1){ toast("Укажи число страниц"); return; }
-    const ctx=crPagesCtx; crPagesCtx=null;
-    if(ctx && ctx.mode==="markpage"){
-      if(!crdCur){ closeModalsKeepPage(); return; }
-      const ok=await crPage(crdCur.id, pages); closeModalsKeepPage();
-      if(ok){ crdCur.my_page=pages; renderCoreadDetail(); toast("Отмечено ✓"); } else toast("Не получилось 😔");
-      return;
-    }
-    if(ctx && ctx.mode==="accept"){
-      const ok=await crRespond(ctx.id, true, pages);
-      if(!ok){ closeModals(); toast("Не получилось 😔"); return; }
-      closeModals(); toast("Принято! Читаете вместе 📖"); refreshReqBadge();
-      try{ const all=await crList(); const c=all.find(x=>x.id===ctx.id);
-        if(c){ if(c.partner_code && !savedFriends.some(f=>f.code===c.partner_code)) await addFriendByCode(c.partner_code); openCoreadDetail(c); } }catch(e){}
-      return;
-    }
-    if(!crProposeBook || !crFriend){ closeModalsKeepPage(); return; }
-    const id=await crInvite(crFriend.code, crProposeBook.t, crProposeBook.a, pages);
-    crProposeBook=null; closeModalsKeepPage();
-    if(id){ toast("Приглашение отправлено! 📖"); renderCoread(); } else toast("Не получилось отправить 😔");
+    const o=askPagesOpts||{};
+    if(o.onOk){ const keep=o.onOk(pages); if(keep===false) return; }   // onOk сам закрывает (или вернёт false, чтобы оставить открытым при невалидном вводе)
   });
+  { const sk=$("#crPagesSkip"); if(sk) sk.addEventListener("click", ()=>{ const o=askPagesOpts||{}; if(o.onSkip) o.onSkip(); else closeAskPages(); }); }
+  // --- совместное чтение теперь тоже через askPages (без второй копии) ---
+  function crPickBook(t,a){ crProposeBook={t:capTitle(t), a:capAuthor(a)};
+    { const p=$("#coreadProposeModal"); if(p) p.classList.remove("open"); }
+    askPages({ title:"Сколько страниц в твоём издании?", bookLabel:crProposeBook.t, okText:"Предложить", onOk:(pages)=>{
+      if(pages<1){ toast("Укажи число страниц"); return false; }
+      if(!crProposeBook || !crFriend){ closeModalsKeepPage(); return; }
+      (async()=>{ const id=await crInvite(crFriend.code, crProposeBook.t, crProposeBook.a, pages); crProposeBook=null; closeModalsKeepPage();
+        if(id){ toast("Приглашение отправлено! 📖"); renderCoread(); } else toast("Не получилось отправить 😔"); })();
+    }});
+  }
+  function crAcceptPages(cid, ctitle){
+    askPages({ title:"Сколько страниц в твоём издании?", bookLabel:ctitle, okText:"Готово", onOk:(pages)=>{
+      if(pages<1){ toast("Укажи число страниц"); return false; }
+      (async()=>{ const ok=await crRespond(cid, true, pages);
+        if(!ok){ closeModals(); toast("Не получилось 😔"); return; }
+        closeModals(); toast("Принято! Читаете вместе 📖"); refreshReqBadge();
+        try{ const all=await crList(); const c=all.find(x=>x.id===cid);
+          if(c){ if(c.partner_code && !savedFriends.some(f=>f.code===c.partner_code)) await addFriendByCode(c.partner_code); openCoreadDetail(c); } }catch(e){} })();
+    }});
+  }
   // клик по активной карточке → экран одного чтения
   { const _ca=$("#coreadActive"); if(_ca) _ca.addEventListener("click", async e=>{
       const cancelSent=e.target.closest(".cr-cancel-sent");
@@ -5759,7 +5842,13 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(ok){ toast("Цитата добавлена ✍️"); crdRefresh(); } else toast("Не получилось 😔");
   });
   $("#crdBack").addEventListener("click", ()=>{ $("#coreadDetail").classList.remove("open"); renderCoread(); });
-  $("#crdMarkBtn").addEventListener("click", ()=>{ if(crdCur) crOpenPages(crdCur.title, {mode:"markpage"}, "На какой ты странице?"); });
+  $("#crdMarkBtn").addEventListener("click", ()=>{ if(!crdCur) return;
+    askPages({ title:"На какой ты странице?", bookLabel:crdCur.title, okText:"Готово", value:(crdCur.my_page||""), onOk:(pages)=>{
+      if(pages<1){ toast("Укажи страницу"); return false; }
+      (async()=>{ const ok=await crPage(crdCur.id, pages); closeModalsKeepPage();
+        if(ok){ crdCur.my_page=pages; renderCoreadDetail(); toast("Отмечено ✓"); } else toast("Не получилось 😔"); })();
+    }});
+  });
   $("#crdPartnerAva").addEventListener("click", ()=>{ if(crdCur && crdCur.partner_code){ $("#coreadDetail").classList.remove("open"); addFriendByCode(crdCur.partner_code); } });
   async function crdSendReaction(text){ if(!crdCur||!text) return; const ok=await crReact(crdCur.id, text); if(ok){ crdCur.my_reaction=text; toast("Реакция отправлена 💌"); } else toast("Не получилось 😔"); }
   $("#crdReact").addEventListener("click", e=>{ const b=e.target.closest(".crd-rbtn"); if(!b) return; if(b.id==="crdReactCustom"){ $("#crReactInput").value=""; overlay.classList.add("open"); $("#coreadReactModal").classList.add("open"); setTimeout(()=>$("#crReactInput").focus(),60); return; } crdSendReaction(b.dataset.r); });
