@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="337" />
+<meta name="app-version" content="338" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2373,6 +2373,21 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function savePagesLS(){ try{ if(myPages.length>400) myPages=myPages.slice(-400); localStorage.setItem("polka_pages", JSON.stringify(myPages)); }catch(e){} }
   // прибавить прочитанные страницы за сегодня в общий журнал (только положительную дельту)
   function addPagesToday(delta){ if(!(delta>0)) return; const d=dayNum(); const i=myPages.findIndex(e=>Array.isArray(e)&&e[0]===d); if(i>-1) myPages[i][1]+=delta; else myPages.push([d,delta]); savePagesLS(); }
+  // РАЗОВЫЙ перенос журнала из lg читаемых книг (при первом запуске v337; книги, уехавшие на полку, не вернуть — их логи утеряны, это норма)
+  function migratePagesFromLg(){
+    try{
+      if(localStorage.getItem("polka_pages_migrated")) return;                                   // уже переносили
+      if(Array.isArray(myPages) && myPages.length>0){ localStorage.setItem("polka_pages_migrated","1"); return; }   // журнал не пуст — не перетираем
+      const byDay={};
+      (myReading||[]).forEach(b=>{ const lg=Array.isArray(b.lg)?b.lg:[];
+        for(let i=1;i<lg.length;i++){ if(!Array.isArray(lg[i])||!Array.isArray(lg[i-1])) continue;
+          const d=lg[i][0], delta=(lg[i][1]||0)-(lg[i-1][1]||0);                                  // разница между соседними отметками → день поздней отметки
+          if(delta>0) byDay[d]=(byDay[d]||0)+delta; } });
+      const arr=Object.keys(byDay).map(d=>[+d, byDay[d]]).sort((a,c)=>a[0]-c[0]);
+      if(arr.length){ myPages = arr.slice(-400); savePagesLS(); syncUp(); }
+      localStorage.setItem("polka_pages_migrated","1");                                            // ставим флаг в любом случае — не повторяем
+    }catch(e){}
+  }
   /* свои загруженные стикеры (картинки) */
   let customStickers = [];
   try { customStickers = JSON.parse(localStorage.getItem("polka_custom") || "[]"); } catch(e){ customStickers = []; }
@@ -5480,6 +5495,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       if(myPass) localStorage.setItem("polka_pass",myPass); else localStorage.removeItem("polka_pass");
     }catch(e){}
     bootLoaded=true;   // явный вход в аккаунт — данные загружены, запись разрешена
+    migratePagesFromLg();   // разовый перенос журнала из lg — ПОСЛЕ bootLoaded, чтобы syncUp записал в облако
     setUrlLogin();
     view="me"; closeModals(); renderAll(); hideSplash(); toast("С возвращением, "+myName.split(" ")[0]+"!");
     loadFriends((p && Array.isArray(p.fr)) ? p.fr : []);
@@ -5577,6 +5593,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
         myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp);
         setPaidCache(!!row.paid);   // оплата — из колонки на сервере (авторитетно): если сервер говорит «не оплачено», кэш сбрасывается (подделка в консоли не переживёт перезагрузку)
         bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
+        migratePagesFromLg();   // разовый перенос журнала из lg — ПОСЛЕ bootLoaded, чтобы syncUp записал в облако
         renderAll();
       }catch(e){} }
     } else {
@@ -5637,7 +5654,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
     myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
     if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-    myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp);
+    myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp); migratePagesFromLg();
     if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
     setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
