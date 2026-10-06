@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="331" />
+<meta name="app-version" content="332" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1172,6 +1172,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
       <div id="streakStat" style="display:none"><b id="stStreakN">🕯 0</b><span id="stStreakLbl">дней подряд</span></div>
+      <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span class="rd-lbl">читает</span></div>
     </div>
     <div id="readingNow" style="display:none"></div>
   </section>
@@ -2592,6 +2593,15 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       } }
     // блок «Сейчас читаю» на главном экране (прогресс + отметка) — только у себя
     renderReadingNow();
+    // на чужом профиле — прежняя мини-полка «читает» в ряду счётчиков (тап → их список с прогрессом)
+    { const stat=$("#readingStat"), ms=$("#miniShelf");
+      if(stat && ms){
+        if(!isMe()){
+          const rd = asReadingArr(friend().reading);
+          if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; }
+          else { ms.innerHTML=""; stat.style.display="none"; }
+        } else { ms.innerHTML=""; stat.style.display="none"; }   // у себя — скрыто (есть #readingNow)
+      } }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     const meV = isMe();
     // нижний ряд кнопок — только когда я в гостях (цитаты/хотелки друга)
@@ -5017,8 +5027,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
             <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span>
             ${mine?`<button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>`:""}
           </div>`;
-          if(!mine) return top;
           const prog = progressHTML(b);
+          if(!mine) return top + (prog?`<div style="padding-left:22px;padding-bottom:6px">${prog}</div>`:"");   // чужой прогресс — только показ (если отмечают), без кнопок
           const actions = `<div style="margin:4px 0 12px">
             <button type="button" class="btn ghost" data-mark="${i}" style="padding:7px 13px;justify-content:center;font-size:13px">📖 я на странице</button>
           </div>`;
@@ -5070,6 +5080,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     back.addEventListener("click", e=>{ if(e.target===back) done(); });
     render();
   }
+  { const _rs=$("#readingStat"); if(_rs) _rs.addEventListener("click", ()=> showReadingList(isMe()) ); }   // мини-полка «читает» на чужом профиле → их список с прогрессом
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 160, url=>{ tempPhoto=url; paintPhoto(); }, true);
