@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="334" />
+<meta name="app-version" content="335" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4683,15 +4683,15 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(!active.length){ box.style.display="none"; box.innerHTML=""; return; }   // гость / нет книг / все отложены → блока нет совсем
     box.style.display="";
     box.innerHTML = active.map(({b,i})=>`<div class="rn-row">
-        <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть страницу книги «${esc(b.t)}»">
+        <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть карточку книги «${esc(b.t)}»">
           <span class="rn-spine" style="background:${spineBg(b)}"></span>
           <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressHTML(b)}</div>
         </div>
         <button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>
       </div>`).join("") + `<button type="button" class="rn-all" id="rnAll">все книги →</button>`;
-    // тап по корешку/названию/прогрессу → страница книги (как #rdlBookPage в списке)
+    // тап по корешку/названию/прогрессу → редактируемая карточка книги (цвет/оценка/цитаты/на полку) — как тап по книге в списке
     box.querySelectorAll("[data-openbook]").forEach(el=>{
-      const open=()=>{ const b=myReading[+el.dataset.openbook]; if(b) openBookPage(b.t, b.a); };
+      const open=()=>{ openInfo(+el.dataset.openbook, true); };   // fromReading=true → карточка читаемой книги
       el.addEventListener("click", open);
       el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
     });
