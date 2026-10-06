@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="335" />
+<meta name="app-version" content="336" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1330,6 +1330,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   </div>
   <div class="field"><label>✉️ Привязать почту</label><input id="pEmailInput" type="email" placeholder="you@example.com" autocomplete="off" inputmode="email" maxlength="120" /><div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Если потеряешь код полки — по почте автор поможет вернуть доступ. Входа по почте нет.</div></div>
   <div class="field"><label class="pub-toggle" style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="pPublic" style="width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent)"><span>👥 Показывать мою полку в разделе «Читатели»</span></label><div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Другие читатели увидят вашу полку и совпадения по книгам. Выключите — сразу пропадёте из раздела.</div></div>
+  <div class="field"><label class="pub-toggle" style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" id="pShareProgress" style="width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent)"><span>📖 Показывать друзьям, на какой я странице</span></label><div class="mp" style="margin-top:5px;font-size:12px;line-height:1.4">Друзья будут видеть процент прочитанного в ваших книгах. Точные страницы не показываем.</div></div>
   <div class="field"><label>Код вашей полки</label>
     <textarea class="codebox" id="myCode" readonly></textarea>
     <button class="linklike" id="copyCode" type="button">📋 Скопировать код полки</button>
@@ -1741,6 +1742,14 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   <p class="mp" style="font-size:12px;color:var(--ink-soft);margin-top:14px">Передумаете — можно выключить в профиле в любой момент.</p>
 </div>
 
+<!-- разовое предупреждение: друзья видят прогресс -->
+<div class="modal" id="spNoticeModal" role="dialog" aria-modal="true" aria-label="Прогресс для друзей">
+  <h3>📖 Друзья видят твой прогресс</h3>
+  <p class="mp">Друзья теперь видят, на какой ты странице (только процент, без точных страниц). Можно выключить в профиле.</p>
+  <button class="btn" id="spNoticeOk" style="width:100%;display:flex;justify-content:center;margin-top:6px">Понятно</button>
+  <button class="linklike" id="spNoticeOff" type="button" style="display:block;text-align:center;width:100%;margin-top:12px">Выключить</button>
+</div>
+
 <script>
 // авто-обновление: если на сервере версия новее — тихо перезагружаемся на свежую (без переустановки иконки)
 (async function(){
@@ -2149,7 +2158,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   try{ const s=JSON.parse(localStorage.getItem("polka_streak")||"null"); if(s){ myStreak=s.s||0; myTotal=s.t||0; myLastMark=s.l||""; myPause=!!s.p; } }catch(e){}
   function saveStreakLS(){ try{ localStorage.setItem("polka_streak", JSON.stringify({s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0})); }catch(e){} }
   function loadStreakFrom(cp){ if(cp && cp.st){ myStreak=cp.st.s||0; myTotal=cp.st.t||0; myLastMark=cp.st.l||""; myPause=!!cp.st.p; saveStreakLS(); }
-    if(cp && typeof cp.public!=="undefined"){ myPublic=!!cp.public; try{ localStorage.setItem("polka_public", myPublic?"1":"0"); }catch(e){} } }   // флаг «Читатели» — облако источник истины
+    if(cp && typeof cp.public!=="undefined"){ myPublic=!!cp.public; try{ localStorage.setItem("polka_public", myPublic?"1":"0"); }catch(e){} }   // флаг «Читатели» — облако источник истины
+    if(cp && typeof cp.sp!=="undefined"){ myShareProgress=!!cp.sp; try{ localStorage.setItem("polka_shareprogress", myShareProgress?"1":"0"); }catch(e){} } }   // флаг «прогресс друзьям» — облако источник истины
   function ymd(d){ d=d||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function daysBetween(a,b){ try{ return Math.round((new Date(a+"T00:00:00") - new Date(b+"T00:00:00"))/86400000); }catch(e){ return 999; } }
   function streakState(){
@@ -2356,6 +2366,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   const isOwner = () => CLOUD() && myCode && String(myCode).toUpperCase()===OWNER_CODE;
   let myPass = localStorage.getItem("polka_pass") || "";   // пароль полки — ХРАНИТСЯ ЛОКАЛЬНО на устройстве для автовхода/записи; на сервере только bcrypt-хеш
   let myPublic = localStorage.getItem("polka_public")==="1";   // показывать полку в разделе «Читатели» (флаг public в блобе, индекс 12)
+  let myShareProgress = (localStorage.getItem("polka_shareprogress")!=="0");   // показывать друзьям прогресс чтения (sp, индекс 13); ДЕФОЛТ — включено
   /* свои загруженные стикеры (картинки) */
   let customStickers = [];
   try { customStickers = JSON.parse(localStorage.getItem("polka_custom") || "[]"); } catch(e){ customStickers = []; }
@@ -2395,13 +2406,13 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk), bk.unread?1:0, bk.d||""]);   // 9=«не прочитано», 10=месяц прочтения «ГГГГ-ММ»
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null, p.public?1:0]));   // rd=«сейчас читаю»; pm=закладки стихов; qf=любимые цитаты; st(индекс 11)=стрик {s,t,l,p}; public(индекс 12)=показывать в разделе «Читатели»
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null, p.public?1:0, (typeof p.sp==="undefined")?1:(p.sp?1:0)]));   // st(11)=стрик; public(12)=«Читатели»; sp(13)=показывать друзьям прогресс (дефолт 1/включено)
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null, public:!!a[12],
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null, public:!!a[12], sp:(typeof a[13]==="undefined")?1:(a[13]?1:0),
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[], unread:isNum?!!x[9]:false, d:isNum?(x[10]||""):"" }; }) };
@@ -2415,7 +2426,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0});
   }
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
@@ -2434,7 +2445,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
-    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic});
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0});
     try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; syncActivity(); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
@@ -2598,11 +2609,11 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     // на чужом профиле — прежняя мини-полка «читает» в ряду счётчиков (тап → их список с прогрессом)
     { const stat=$("#readingStat"), ms=$("#miniShelf");
       if(stat && ms){
-        if(!isMe()){
-          const rd = asReadingArr(friend().reading).filter(b=>!b.pz);   // отложенные (pz) — личное, друзьям не показываем
+        if(!isMe() && friend() && !friend().sp){   // друг БЕЗ sp → мини-полка «читает» (как раньше); с sp=1 показывается блок #readingNow с процентами
+          const rd = asReadingArr(friend().reading).filter(b=>!b.pz);   // отложенные (pz) — личное, не показываем
           if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; }
           else { ms.innerHTML=""; stat.style.display="none"; }
-        } else { ms.innerHTML=""; stat.style.display="none"; }   // у себя — скрыто (есть #readingNow)
+        } else { ms.innerHTML=""; stat.style.display="none"; }   // у себя или друг с sp → мини-полка скрыта
       } }
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     const meV = isMe();
@@ -3975,7 +3986,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(cached && row.data===cached.raw) return;
     let p; try{ p=decodeCode(row.data); }catch(e){ if(!cached) toast("Профиль повреждён"); return; }
     const books=Array.isArray(p)?p:(p&&p.b); if(!Array.isArray(books)){ if(!cached) toast("Это не профиль"); return; }
-    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code, st:(p&&p.st)||null};
+    const g={name:(p&&p.n)||name||"Читатель", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||photo||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], code:code, st:(p&&p.st)||null, sp:(p&&typeof p.sp!=="undefined")?p.sp:1};
     profileCache[code]={g, raw:row.data};
     if(!cached || view==="guest") showGuest(g);
   }
@@ -4676,27 +4687,59 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     }
     return `<div style="color:var(--ink-soft);font-size:12px">страница ${cur}</div>`;
   }
-  // блок «Сейчас читаю» на главном экране — одна строка на книгу (корешок/название/прогресс/«отметить»), только у себя; отложенные (pz) НЕ показываем
+  // прогресс для ЧУЖОЙ полки — ТОЛЬКО процент (без точных страниц и без «страница N»)
+  function progressFriendHTML(b){
+    const cur=b.cur||0, pg=b.pg||0;
+    if(!cur || !pg) return "";   // без pg процент не посчитать, точные страницы друзьям не показываем
+    const pct=Math.min(100, Math.round(cur/pg*100)); const w=Math.min(100, cur/pg*100);
+    return `<div style="height:4px;border-radius:999px;background:var(--line);overflow:hidden;margin:1px 0 3px"><div style="height:100%;width:${w}%;background:var(--accent);border-radius:999px;transition:width .4s ease"></div></div><div style="color:var(--ink-soft);font-size:12px">${pct}%</div>`;
+  }
+  // темп чтения: страниц в КАЛЕНДАРНЫЙ день по последним 7 отметкам (пропущенные дни честно роняют темп)
+  function pace(b){
+    const lg = Array.isArray(b.lg) ? b.lg.slice(-7) : [];
+    if(lg.length<3) return null;                       // меньше 3 точек — гадание, молчим
+    let d = lg[lg.length-1][0] - lg[0][0];             // разница В ДНЯХ (не в числе отметок)
+    if(d<1) d=1;
+    const p = (lg[lg.length-1][1] - lg[0][1]) / d;
+    if(p<1) return null;                               // меньше страницы в день — молчим, без «400 дней»
+    return p;
+  }
+  // прогноз «осталось N страниц — это ещё ~M дней» (только у себя)
+  function forecastHTML(b){
+    const pg=b.pg||0, cur=b.cur||0; if(!pg) return "";
+    const left = pg - cur; if(left<=0) return "";
+    const p = pace(b); if(p===null) return "";
+    const days = Math.ceil(left / p);
+    return `<div style="color:var(--ink-soft);font-size:12px;margin-top:2px">осталось ${left} ${plural(left,"страница","страницы","страниц")} — это ещё ~${days} ${plural(days,"день","дня","дней")}</div>`;
+  }
+  // блок «Сейчас читаю» на главном экране — у себя (прогресс/темп/«отметить») и у друга с sp=1 (только процент). Отложенные (pz) НЕ показываем нигде
   function renderReadingNow(){
     const box=$("#readingNow"); if(!box) return;
-    const active = isMe() ? myReading.map((b,i)=>({b,i})).filter(x=>!x.b.pz) : [];
-    if(!active.length){ box.style.display="none"; box.innerHTML=""; return; }   // гость / нет книг / все отложены → блока нет совсем
+    const me = isMe();
+    let src = [];
+    if(me){ src = myReading; }
+    else { const f=friend(); if(!f || !f.sp){ box.style.display="none"; box.innerHTML=""; return; } src = asReadingArr(f.reading); }   // друг без sp → блока нет (остаётся мини-полка «читает»)
+    const rows = src.map((b,i)=>({b,i})).filter(x=>!x.b.pz);
+    if(!rows.length){ box.style.display="none"; box.innerHTML=""; return; }   // нет активных книг → блока нет
     box.style.display="";
-    box.innerHTML = active.map(({b,i})=>`<div class="rn-row">
-        <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть карточку книги «${esc(b.t)}»">
+    box.innerHTML = rows.map(({b,i})=>`<div class="rn-row">
+        <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть книгу «${esc(b.t)}»">
           <span class="rn-spine" style="background:${spineBg(b)}"></span>
-          <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressHTML(b)}</div>
+          <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${me?(progressHTML(b)+forecastHTML(b)):progressFriendHTML(b)}</div>
         </div>
-        <button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>
-      </div>`).join("") + `<button type="button" class="rn-all" id="rnAll">все книги →</button>`;
-    // тап по корешку/названию/прогрессу → редактируемая карточка книги (цвет/оценка/цитаты/на полку) — как тап по книге в списке
+        ${me?`<button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>`:""}
+      </div>`).join("") + (me?`<button type="button" class="rn-all" id="rnAll">все книги →</button>`:"");
+    // тап по строке: у себя → редактируемая карточка (openInfo), у друга → страница книги (openBookPage)
     box.querySelectorAll("[data-openbook]").forEach(el=>{
-      const open=()=>{ openInfo(+el.dataset.openbook, true); };   // fromReading=true → карточка читаемой книги
+      const idx=+el.dataset.openbook;
+      const open = me ? (()=>openInfo(idx, true)) : (()=>{ const f=friend(); const b=f && asReadingArr(f.reading)[idx]; if(b) openBookPage(b.t, b.a); });
       el.addEventListener("click", open);
       el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
     });
-    box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));   // отметка — только модалка ввода (stopPropagation, чтобы не провалилось в строку)
-    { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }   // «все книги →» — старый список с добавлением/удалением/отложить
+    if(me){
+      box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));   // отметка — только модалка (stopPropagation)
+      { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }
+    }
   }
   // перенос читаемой книги на полку — та же ветка, что у кнопки «✓ прочитал» (одна функция для кнопки и автофиниша)
   function finishReading(i){
@@ -5008,7 +5051,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   const profileModal = $("#profileModal"); let tempPhoto="";
   function paintPhoto(){ const p=$("#photoPrev"); if(tempPhoto){ p.style.backgroundImage=`url(${tempPhoto})`; p.textContent=""; } else { p.style.backgroundImage="none"; p.textContent=(myName[0]||"М"); } }
   function openProfile(){
-    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pEmailInput").value=myEmail; { const pp=$("#pPublic"); if(pp) pp.checked=myPublic; } tempPhoto=myPhoto; paintPhoto(); growAll("#profileModal textarea");
+    $("#pNameInput").value=myName; $("#pQuoteInput").value=myQuote; $("#pEmailInput").value=myEmail; { const pp=$("#pPublic"); if(pp) pp.checked=myPublic; } { const sp=$("#pShareProgress"); if(sp) sp.checked=myShareProgress; } tempPhoto=myPhoto; paintPhoto(); growAll("#profileModal textarea");
     { const _i=$("#pReadingInput"); if(_i){ _i.value=""; const _s=$("#pReadingSuggest"); if(_s){ _s.hidden=true; _s.innerHTML=""; } } }
     renderReadingEditor();   // список «сейчас читаю» — управляется вживую (добавление/убрать/прочитал сохраняются сразу)
     $("#myCode").value = myShareCode();
@@ -5041,8 +5084,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
             <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}${(mine&&b.pz)?` <span style="color:var(--ink-soft);font-size:12px">· отложена</span>`:""}</span>
             ${mine?`<button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>`:""}
           </div>`;
-          const prog = progressHTML(b);
-          if(!mine) return top + (prog?`<div style="padding-left:22px;padding-bottom:6px">${prog}</div>`:"");   // чужой прогресс — только показ (если отмечают), без кнопок
+          const prog = mine ? progressHTML(b) : (friend()&&friend().sp ? progressFriendHTML(b) : "");   // у друга — только процент и только если он делится (sp)
+          if(!mine) return top + (prog?`<div style="padding-left:22px;padding-bottom:6px">${prog}</div>`:"");   // без кнопок
           const actions = `<div style="margin:4px 0 12px;display:flex;gap:8px;flex-wrap:wrap">
             <button type="button" class="btn ghost" data-mark="${i}" style="padding:7px 13px;justify-content:center;font-size:13px">📖 я на странице</button>
             <button type="button" class="btn ghost" data-defer="${i}" style="padding:7px 13px;justify-content:center;font-size:13px">${b.pz?"↑ вернуть в чтение":"↓ отложить"}</button>
@@ -5111,6 +5154,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   $("#saveProfile").addEventListener("click", ()=>{
     myName=$("#pNameInput").value.trim()||"Моя полка"; myQuote=$("#pQuoteInput").value.trim(); myEmail=$("#pEmailInput").value.trim().toLowerCase(); myPhoto=tempPhoto;   // «сейчас читаю» уже сохранён вживую (renderReadingEditor)
     { const pp=$("#pPublic"); if(pp){ myPublic=pp.checked; try{ localStorage.setItem("polka_public", myPublic?"1":"0"); localStorage.setItem("polka_public_asked","1"); }catch(e){} } }   // переключатель «Читатели» → флаг public (syncUp ниже сразу применит)
+    { const sp=$("#pShareProgress"); if(sp){ myShareProgress=sp.checked; try{ localStorage.setItem("polka_shareprogress", myShareProgress?"1":"0"); localStorage.setItem("polka_sp_notified","1"); }catch(e){} } }   // переключатель «прогресс друзьям» → флаг sp
     try{ localStorage.setItem("polka_name",myName); localStorage.setItem("polka_quote",myQuote); localStorage.setItem("polka_email",myEmail);
       if(myPhoto) localStorage.setItem("polka_photo",myPhoto); else localStorage.removeItem("polka_photo"); }
     catch(e){ toast("Фото слишком большое для памяти браузера"); }
@@ -5211,7 +5255,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(used && savedFriends.some(f=>f.code===used)){ if(opts.silent) return; const ex=savedFriends.find(f=>f.code===used); view=ex.id; casePage=0; closeModals(); renderAll(); toast("Эта полка уже у вас"); return; }
     const id = used ? ("fr"+used) : ("fr"+Date.now().toString(36));
     const name=(p && p.n) ? p.n : "Полка друга";
-    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null};
+    const friendObj={id, code:used, name, color:FRIEND_COLORS[savedFriends.length % FRIEND_COLORS.length], quote:(p && p.q)||"", books, stickers:(p && p.s)||[], photo:(p && p.ph)||"", reading:asReadingArr(p && p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null, sp:(p&&typeof p.sp!=="undefined")?p.sp:1};
     savedFriends.push(friendObj);
     try{ localStorage.setItem("polka_friends", JSON.stringify(savedFriends)); }catch(e){}
     DEMO_FRIENDS[id]=friendObj; if(!opts.silent) delete DEMO_FRIENDS.guest; syncUp();
@@ -5234,7 +5278,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     let p; try{ p = decodeCode(data); }catch(e){ return toast("Полка повреждена"); }
     const books = Array.isArray(p) ? p : (p && p.b);
     if(!Array.isArray(books)) return toast("Не похоже на полку");
-    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null};
+    const g = {id:"guest", code, name:(p&&p.n)||"Полка", color:"#b8493a", quote:(p&&p.q)||"", books, stickers:(p&&p.s)||[], photo:(p&&p.ph)||"", reading:asReadingArr(p&&p.rd), wishlist:(p&&Array.isArray(p.wl))?p.wl:[], st:(p&&p.st)||null, sp:(p&&typeof p.sp!=="undefined")?p.sp:1};
     showGuest(g);
   }
 
@@ -5293,7 +5337,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function createShelf(name){
     myName = name || "Моя полка";
     myBooks = []; myQuote = ""; myStickers = []; myReading = []; myWishlist = []; myPhoto = ""; myEmail = "";   // новая полка — полностью пустая
-    myStreak=0; myTotal=0; myLastMark=""; myPause=false; saveStreakLS(); myPublic=false;
+    myStreak=0; myTotal=0; myLastMark=""; myPause=false; saveStreakLS(); myPublic=false; myShareProgress=true;   // прогресс друзьям — по умолчанию включено
     try{ localStorage.removeItem("polka_email"); }catch(e){}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
@@ -5309,6 +5353,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       if(myCode) localStorage.setItem("polka_code",myCode); else localStorage.removeItem("polka_code");
       localStorage.removeItem("polka_pass");   // пароль задастся в welGo через set_password
       localStorage.removeItem("polka_public"); localStorage.removeItem("polka_public_asked");   // новая полка: приватна, окно «Читатели» спросим при 5 книгах
+      localStorage.removeItem("polka_shareprogress"); localStorage.removeItem("polka_sp_notified");   // прогресс друзьям — дефолт включён, плашку покажем при друге+книге
     }catch(e){}
     setPaidCache(false);   // новая полка бесплатная; оплату проставит сервер при активации кода (paid в колонке)
     syncUp().then(ok=>{ if(CLOUD() && !ok) toast("Облако недоступно — полка сохранена только в браузере"); });
@@ -5398,6 +5443,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     loadFriends((p && Array.isArray(p.fr)) ? p.fr : []);
     if(offerPw && !publicPending()) setTimeout(()=>promptSetPassword("offer"), 900);   // предложить пароль, но не когда ждёт окно «Читатели»
     setTimeout(maybeAskPublic, 2000);   // окно про раздел «Читатели» (если 5+ книг и ещё не спрашивали)
+    setTimeout(maybeNotifyShareProgress, 2600);   // разовая плашка «друзья видят прогресс» (после окна «Читатели», чтобы не наложились)
   }
   // ---- пароль полки: задать (существующим) / сменить / ввести заново на другом устройстве ----
   let pwMode="offer";   // offer | change | reauth
@@ -5448,6 +5494,19 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   }
   { const y=$("#publicYes"); if(y) y.addEventListener("click", ()=>{ myPublic=true; try{ localStorage.setItem("polka_public","1"); localStorage.setItem("polka_public_asked","1"); }catch(e){} syncUp(); closeModals(); toast("Готово! Ваша полка в разделе «Читатели» 👥"); }); }
   { const n=$("#publicNo"); if(n) n.addEventListener("click", ()=>{ myPublic=false; try{ localStorage.setItem("polka_public","0"); localStorage.setItem("polka_public_asked","1"); }catch(e){} closeModals(); }); }
+  // разовое предупреждение: друзья видят прогресс (НЕ вопрос — уведомление; дефолт включён). Показываем раз, при наличии друга и книги в чтении
+  function maybeNotifyShareProgress(){
+    if(!CLOUD() || !myCode) return;
+    if(localStorage.getItem("polka_sp_notified")) return;                 // уже показывали
+    if(!myShareProgress) { try{ localStorage.setItem("polka_sp_notified","1"); }catch(e){} return; }   // уже выключено — не тревожим
+    if(!(savedFriends||[]).length) return;                               // нет друзей — нечего предупреждать
+    if(!(myReading||[]).some(b=>!b.pz)) return;                          // нет активной книги в чтении
+    if(document.querySelector(".modal.open")) return;                    // не мешаем другому окну — покажем при следующем заходе
+    try{ localStorage.setItem("polka_sp_notified","1"); }catch(e){}       // ОДИН раз
+    overlay.classList.add("open"); $("#spNoticeModal").classList.add("open");
+  }
+  { const ok=$("#spNoticeOk"); if(ok) ok.addEventListener("click", closeModals); }
+  { const off=$("#spNoticeOff"); if(off) off.addEventListener("click", ()=>{ myShareProgress=false; try{ localStorage.setItem("polka_shareprogress","0"); }catch(e){} syncUp(); closeModals(); toast("Выключено — друзья не видят прогресс"); }); }
   /* при загрузке: проверяем, существует ли полка в облаке; если удалена — сбрасываем устройство */
   async function bootCloud(){
     if(!CLOUD() || !localStorage.getItem("polka_registered")) return;
@@ -5495,6 +5554,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       }
     }
     setTimeout(maybeAskPublic, 2200);   // окно про раздел «Читатели» (существующим 5+ книг покажется при ближайшем заходе)
+    setTimeout(maybeNotifyShareProgress, 2800);   // разовая плашка «друзья видят прогресс»
   }
   const restoreMode = /[?&#]restore(\b|=)/.test(location.href);
   const loginMatch = location.href.match(/[?#]login=([^&#]+)/);
@@ -5556,7 +5616,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const list = Array.from(new Set((codes||[]).filter(c=>c && c!==myCode)));
     const built = await Promise.all(list.map(async fc=>{
       try{ const row=await sbFetch(fc); if(!row||!row.data) return null; const fp=decodeCode(row.data); const fb=Array.isArray(fp)?fp:(fp&&fp.b); if(!Array.isArray(fb)) return null;
-        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[], st:(fp&&fp.st)||null}; }catch(e){ return null; }
+        return {id:"fr"+fc, code:fc, name:(fp&&fp.n)||"Полка друга", quote:(fp&&fp.q)||"", books:fb, stickers:(fp&&fp.s)||[], photo:(fp&&fp.ph)||"", reading:asReadingArr(fp&&fp.rd), wishlist:(fp&&Array.isArray(fp.wl))?fp.wl:[], st:(fp&&fp.st)||null, sp:(fp&&typeof fp.sp!=="undefined")?fp.sp:1}; }catch(e){ return null; }
     }));
     Object.keys(DEMO_FRIENDS).forEach(k=>delete DEMO_FRIENDS[k]);
     savedFriends = [];
