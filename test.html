@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="333" />
+<meta name="app-version" content="334" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -297,7 +297,9 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 /* блок «Сейчас читаю» на главном экране (под счётчиками) */
 .profile{flex-wrap:wrap}   /* чтобы #readingNow переносился на отдельную строку под профилем */
 #readingNow{flex:1 1 100%;width:100%;margin-top:14px;display:flex;flex-direction:column;gap:2px}
-.rn-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.rn-row{display:flex;align-items:center;gap:12px;padding:6px 0}
+.rn-tap{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.rn-tap:active{opacity:.85}
 .rn-spine{width:13px;height:20px;border-radius:2px 3px 3px 2px;flex:0 0 auto}
 .rn-body{flex:1;min-width:0}
 .rn-title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -4681,11 +4683,19 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(!active.length){ box.style.display="none"; box.innerHTML=""; return; }   // гость / нет книг / все отложены → блока нет совсем
     box.style.display="";
     box.innerHTML = active.map(({b,i})=>`<div class="rn-row">
-        <span class="rn-spine" style="background:${spineBg(b)}"></span>
-        <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressHTML(b)}</div>
+        <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть страницу книги «${esc(b.t)}»">
+          <span class="rn-spine" style="background:${spineBg(b)}"></span>
+          <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressHTML(b)}</div>
+        </div>
         <button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>
       </div>`).join("") + `<button type="button" class="rn-all" id="rnAll">все книги →</button>`;
-    box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",()=>{ const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));   // отметка обновляет этот же блок на месте
+    // тап по корешку/названию/прогрессу → страница книги (как #rdlBookPage в списке)
+    box.querySelectorAll("[data-openbook]").forEach(el=>{
+      const open=()=>{ const b=myReading[+el.dataset.openbook]; if(b) openBookPage(b.t, b.a); };
+      el.addEventListener("click", open);
+      el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+    });
+    box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));   // отметка — только модалка ввода (stopPropagation, чтобы не провалилось в строку)
     { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }   // «все книги →» — старый список с добавлением/удалением/отложить
   }
   // перенос читаемой книги на полку — та же ветка, что у кнопки «✓ прочитал» (одна функция для кнопки и автофиниша)
