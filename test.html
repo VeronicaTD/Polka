@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="330" />
+<meta name="app-version" content="331" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -294,6 +294,15 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .streak-sub{display:block;font-size:11px;color:var(--muted);opacity:.85;margin-top:1px}
 #streakStat.clickable{cursor:pointer;border-radius:10px;transition:.15s}
 #streakStat.clickable:hover{opacity:.75}
+/* блок «Сейчас читаю» на главном экране (под счётчиками) */
+.profile{flex-wrap:wrap}   /* чтобы #readingNow переносился на отдельную строку под профилем */
+#readingNow{flex:1 1 100%;width:100%;margin-top:14px;display:flex;flex-direction:column;gap:2px}
+.rn-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.rn-spine{width:13px;height:20px;border-radius:2px 3px 3px 2px;flex:0 0 auto}
+.rn-body{flex:1;min-width:0}
+.rn-title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rn-mark{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 15px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.rn-all{align-self:flex-start;background:none;border:none;color:var(--accent);font-weight:600;font-size:13px;padding:8px 0 0;cursor:pointer}
 /* окно отметки чтения */
 #markModal{text-align:center}
 #markModal.mk-compact .mk-emoji{margin-top:-2px}
@@ -1163,8 +1172,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       <div><b id="stTotal">0</b><span>прочитано</span></div>
       <div><b id="stFav">0</b><span>любимых</span></div>
       <div id="streakStat" style="display:none"><b id="stStreakN">🕯 0</b><span id="stStreakLbl">дней подряд</span></div>
-      <div id="readingStat" style="display:none"><div class="mini-shelf" id="miniShelf"></div><span class="rd-lbl">читаю</span></div>
     </div>
+    <div id="readingNow" style="display:none"></div>
   </section>
 
   <div class="hs-banner" id="homescreenBanner" style="display:none">
@@ -2581,15 +2590,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
           } else { ss.style.display="none"; ss.classList.remove("clickable"); }
         }
       } }
-    // мини-полка «читаю» в ряду счётчиков (я → мои книги, в гостях → книги друга)
-    { const rd = isMe() ? myReading : asReadingArr(friend().reading);
-      const stat=$("#readingStat"), ms=$("#miniShelf");
-      if(stat && ms){
-        { const l=stat.querySelector(".rd-lbl"); if(l) l.textContent = isMe() ? "читаю" : "читает"; }   // у друга — «читает»
-        if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; }
-        else if(isMe()){ ms.innerHTML=`<span class="ms-empty">＋</span>`; stat.style.display=""; }   // пустая полка с плюсом — добавить первую книгу прямо тут
-        else { ms.innerHTML=""; stat.style.display="none"; }
-      } }
+    // блок «Сейчас читаю» на главном экране (прогресс + отметка) — только у себя
+    renderReadingNow();
     const hn = $("#handNote"); if(hn) hn.textContent = isMe() ? "★ моя полка ★" : "★ в гостях ★";
     const meV = isMe();
     // нижний ряд кнопок — только когда я в гостях (цитаты/хотелки друга)
@@ -4662,6 +4664,19 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     }
     return `<div style="color:var(--ink-soft);font-size:12px">страница ${cur}</div>`;
   }
+  // блок «Сейчас читаю» на главном экране — одна строка на книгу (корешок/название/прогресс/«отметить»), только у себя
+  function renderReadingNow(){
+    const box=$("#readingNow"); if(!box) return;
+    if(!isMe() || !myReading.length){ box.style.display="none"; box.innerHTML=""; return; }   // в гостях и при пустом списке — блока нет
+    box.style.display="";
+    box.innerHTML = myReading.map((b,i)=>`<div class="rn-row">
+        <span class="rn-spine" style="background:${spineBg(b)}"></span>
+        <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressHTML(b)}</div>
+        <button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>
+      </div>`).join("") + `<button type="button" class="rn-all" id="rnAll">все книги →</button>`;
+    box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",()=>{ const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));   // отметка обновляет этот же блок на месте
+    { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }   // «все книги →» — старый список с добавлением/удалением
+  }
   // перенос читаемой книги на полку — та же ветка, что у кнопки «✓ прочитал» (одна функция для кнопки и автофиниша)
   function finishReading(i){
     const b=myReading[i]; if(!b) return;
@@ -5055,7 +5070,6 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     back.addEventListener("click", e=>{ if(e.target===back) done(); });
     render();
   }
-  { const _rs=$("#readingStat"); if(_rs) _rs.addEventListener("click", ()=> showReadingList(isMe()) ); }
   $("#photoInput").addEventListener("change", e=>{
     const f=e.target.files && e.target.files[0]; if(!f) return;
     imgToDataURL(f, 160, url=>{ tempPhoto=url; paintPhoto(); }, true);
