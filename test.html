@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="336" />
+<meta name="app-version" content="337" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2159,7 +2159,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function saveStreakLS(){ try{ localStorage.setItem("polka_streak", JSON.stringify({s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0})); }catch(e){} }
   function loadStreakFrom(cp){ if(cp && cp.st){ myStreak=cp.st.s||0; myTotal=cp.st.t||0; myLastMark=cp.st.l||""; myPause=!!cp.st.p; saveStreakLS(); }
     if(cp && typeof cp.public!=="undefined"){ myPublic=!!cp.public; try{ localStorage.setItem("polka_public", myPublic?"1":"0"); }catch(e){} }   // флаг «Читатели» — облако источник истины
-    if(cp && typeof cp.sp!=="undefined"){ myShareProgress=!!cp.sp; try{ localStorage.setItem("polka_shareprogress", myShareProgress?"1":"0"); }catch(e){} } }   // флаг «прогресс друзьям» — облако источник истины
+    if(cp && typeof cp.sp!=="undefined"){ myShareProgress=!!cp.sp; try{ localStorage.setItem("polka_shareprogress", myShareProgress?"1":"0"); }catch(e){} }   // флаг «прогресс друзьям» — облако источник истины
+    if(cp && Array.isArray(cp.dp)){ myPages = cp.dp.slice(-400); savePagesLS(); } }   // журнал страниц по дням — облако источник истины
   function ymd(d){ d=d||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function daysBetween(a,b){ try{ return Math.round((new Date(a+"T00:00:00") - new Date(b+"T00:00:00"))/86400000); }catch(e){ return 999; } }
   function streakState(){
@@ -2367,6 +2368,11 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   let myPass = localStorage.getItem("polka_pass") || "";   // пароль полки — ХРАНИТСЯ ЛОКАЛЬНО на устройстве для автовхода/записи; на сервере только bcrypt-хеш
   let myPublic = localStorage.getItem("polka_public")==="1";   // показывать полку в разделе «Читатели» (флаг public в блобе, индекс 12)
   let myShareProgress = (localStorage.getItem("polka_shareprogress")!=="0");   // показывать друзьям прогресс чтения (sp, индекс 13); ДЕФОЛТ — включено
+  let myPages = [];   // общий журнал прочитанного по дням [[день,страниц]] (dp, индекс 14) — переживает перенос книги на полку/удаление
+  try{ const _mp=JSON.parse(localStorage.getItem("polka_pages")||"[]"); if(Array.isArray(_mp)) myPages=_mp; }catch(e){}
+  function savePagesLS(){ try{ if(myPages.length>400) myPages=myPages.slice(-400); localStorage.setItem("polka_pages", JSON.stringify(myPages)); }catch(e){} }
+  // прибавить прочитанные страницы за сегодня в общий журнал (только положительную дельту)
+  function addPagesToday(delta){ if(!(delta>0)) return; const d=dayNum(); const i=myPages.findIndex(e=>Array.isArray(e)&&e[0]===d); if(i>-1) myPages[i][1]+=delta; else myPages.push([d,delta]); savePagesLS(); }
   /* свои загруженные стикеры (картинки) */
   let customStickers = [];
   try { customStickers = JSON.parse(localStorage.getItem("polka_custom") || "[]"); } catch(e){ customStickers = []; }
@@ -2406,13 +2412,13 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk), bk.unread?1:0, bk.d||""]);   // 9=«не прочитано», 10=месяц прочтения «ГГГГ-ММ»
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null, p.public?1:0, (typeof p.sp==="undefined")?1:(p.sp?1:0)]));   // st(11)=стрик; public(12)=«Читатели»; sp(13)=показывать друзьям прогресс (дефолт 1/включено)
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null, p.public?1:0, (typeof p.sp==="undefined")?1:(p.sp?1:0), (Array.isArray(p.dp)?p.dp:[])]));   // st(11)=стрик; public(12)=«Читатели»; sp(13)=прогресс друзьям; dp(14)=журнал страниц по дням [[день,страниц]]
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null, public:!!a[12], sp:(typeof a[13]==="undefined")?1:(a[13]?1:0),
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null, public:!!a[12], sp:(typeof a[13]==="undefined")?1:(a[13]?1:0), dp:(Array.isArray(a[14])?a[14]:[]),
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[], unread:isNum?!!x[9]:false, d:isNum?(x[10]||""):"" }; }) };
@@ -2426,7 +2432,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0, dp:myPages});
   }
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
@@ -2445,7 +2451,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
-    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0});
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0, dp:myPages});
     try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; syncActivity(); return true; }
     catch(e){ console.warn("syncUp error", e); return false; }
   }
@@ -4102,8 +4108,11 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const books=itMonthList(ym);
     const favs=books.filter(isFav).length;
     const quotes=books.reduce((s,b)=> s+(Array.isArray(b.qt)?b.qt.length:0), 0);
+    const mp=monthPages(ym);
+    const pagesCounter = mp>0 ? `<div><b>${mp}</b><span>${plural(mp,"страница","страницы","страниц")}</span></div>` : "";   // 4-й счётчик только при наличии данных
     const head=`<div class="it-head"><div class="it-year">${ymY(ym)}</div><div class="it-title">Итоги ${ymGen(ym)}</div><div class="it-ruler"></div>`+
-      `<div class="it-counters"><div><b>${books.length}</b><span>${plural(books.length,"книга","книги","книг")}</span></div><div><b>${favs}</b><span>любимых</span></div><div><b>${quotes}</b><span>${plural(quotes,"цитата","цитаты","цитат")}</span></div></div></div>`;
+      `<div class="it-counters"><div><b>${books.length}</b><span>${plural(books.length,"книга","книги","книг")}</span></div><div><b>${favs}</b><span>любимых</span></div><div><b>${quotes}</b><span>${plural(quotes,"цитата","цитаты","цитат")}</span></div>${pagesCounter}</div>`+
+      monthBarsHTML(ym)+`</div>`;   // столбики по дням — под счётчиками, внутри it-head (попадают в картинку шеринга)
     let mid;
     if(!books.length){
       const anyDated=(myBooks||[]).some(b=>b&&b.d);
@@ -4129,7 +4138,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       return `<div class="arc-cell zero"><div class="arc-n">0</div><div class="arc-m">${MONTH_NOM[idx]}</div></div>`;
     }).join("");
     body.innerHTML=`<div class="arc-nav"><button id="arcPrev" ${y<=minY?"disabled":""} aria-label="раньше">‹</button><b>${y}</b><button id="arcNext" ${y>=cy?"disabled":""} aria-label="позже">›</button></div>`+
-      `<div class="arc-grid">${cells}</div><div class="arc-total">за ${y} год ${yearTotal} ${plural(yearTotal,"книга","книги","книг")}</div>`;
+      `<div class="arc-grid">${cells}</div><div class="arc-total">за ${y} год ${yearTotal} ${plural(yearTotal,"книга","книги","книг")}${(()=>{const yp=yearPages(y);return yp>0?`<br>и ${yp} ${plural(yp,"страница","страницы","страниц")}`:"";})()}</div>`;
   }
   function renderSummaryPage(){
     $("#summaryHeadTitle").textContent = summaryView==="archive"?"Архив 🗓":"Итоги 🕯";
@@ -4233,12 +4242,25 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       ctx.fillStyle=ink; ctx.font="600 88px Fraunces, serif"; ctx.fillText("Итоги "+ymGen(ym), W/2, TOP+96);
       const rulY=TOP+152; ctx.strokeStyle=line; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(W/2-80,rulY); ctx.lineTo(W/2+80,rulY); ctx.stroke(); ctx.fillStyle=accent; ctx.beginPath(); ctx.arc(W/2,rulY,7,0,7); ctx.fill();   // линейка с точкой
       const favs=books.filter(isFav).length, quotes=books.reduce((s,b)=>s+(Array.isArray(b.qt)?b.qt.length:0),0);
-      ctx.fillStyle=inkSoft; ctx.font="400 36px Fredoka, sans-serif";
-      ctx.fillText(`${books.length} ${plural(books.length,"книга","книги","книг")}   ·   ${favs} любимых   ·   ${quotes} ${plural(quotes,"цитата","цитаты","цитат")}`, W/2, TOP+218);
+      const mpc=monthPages(ym);
+      ctx.fillStyle=inkSoft; ctx.font="400 36px Fredoka, sans-serif"; ctx.textAlign="center";
+      ctx.fillText(`${books.length} ${plural(books.length,"книга","книги","книг")}   ·   ${favs} любимых   ·   ${quotes} ${plural(quotes,"цитата","цитаты","цитат")}${mpc>0?`   ·   ${mpc} ${plural(mpc,"страница","страницы","страниц")}`:""}`, W/2, TOP+218);
+      // столбики по дням месяца — рисуем на canvas (DOM сюда не попадает), под счётчиками
+      let gridTop=TOP+300;
+      if(mpc>0){
+        const arr=pagesByDayOfMonth(ym), n=arr.length-1, max=Math.max.apply(null,arr.slice(1));
+        const bw=760, bx=(W-bw)/2, byTop=TOP+262, bh=96, gap=4, colW=(bw-gap*(n-1))/n;
+        for(let d=1;d<=n;d++){ const v=arr[d], h=v>0?Math.max(5,Math.round(v/max*bh)):5, x=bx+(d-1)*(colW+gap), y=byTop+bh-h;
+          ctx.fillStyle=(v>0?accent:line); ctx.fillRect(x, y, Math.max(colW,1), h); }
+        ctx.fillStyle=inkSoft; ctx.font="400 24px Fredoka, sans-serif";
+        ctx.textAlign="left"; ctx.fillText("1", bx, byTop+bh+32);
+        ctx.textAlign="right"; ctx.fillText(String(n), bx+bw, byTop+bh+32); ctx.textAlign="center";
+        gridTop = byTop+bh+78;
+      }
       const shown=Math.min(9,books.length), pick=books.slice(0,shown);
       const domCovers=[...document.querySelectorAll("#summaryBody .it-grid .it-cover")].map(cv=>{ const im=cv.querySelector(".cc-img"); return (im&&im.complete&&im.naturalWidth)?(im.currentSrc||im.src):""; });   // реальная обложка с экрана (в т.ч. живьём подтянутая из Google) — ground truth
       const imgs=await Promise.all(pick.map((b,i)=>loadImgCross(itProxy(domCovers[i]||summaryCoverRaw(b)))));
-      const cols=3, gapX=36, gapY=98, marg=112, cw=Math.floor((W-marg*2-gapX*(cols-1))/cols), ch=Math.round(cw*3/2), gridTop=TOP+300;
+      const cols=3, gapX=36, gapY=98, marg=112, cw=Math.floor((W-marg*2-gapX*(cols-1))/cols), ch=Math.round(cw*3/2);
       pick.forEach((b,i)=>{ const cx=marg+(i%cols)*(cw+gapX), cy=gridTop+Math.floor(i/cols)*(ch+gapY); drawSummaryCover(ctx,cx,cy,cw,ch,b,imgs[i],gold,line); drawSummaryStars(ctx,cx+cw/2,cy+ch+42,b.r||0,gold,line); });
       const bottomY=gridTop+Math.ceil(shown/cols)*(ch+gapY);
       if(books.length>shown){ ctx.fillStyle=inkSoft; ctx.font="400 34px Fredoka, sans-serif"; ctx.textAlign="center"; ctx.fillText("и ещё "+(books.length-shown)+" "+plural(books.length-shown,"книга","книги","книг"), W/2, bottomY+28); }
@@ -4678,6 +4700,25 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   }
   /* ---- прогресс чтения: страницы, лог отметок, перенос на полку ---- */
   function dayNum(d){ d=d||new Date(); return Math.floor((d.getTime() - d.getTimezoneOffset()*60000)/86400000); }   // число дней от 1970-01-01 по локальной дате
+  // day (число дней от 1970) → календарная дата через UTC-геттеры (day*86400000 = локальная полночь в UTC)
+  function dayToYM(day){ const dt=new Date(day*86400000); return dt.getUTCFullYear()+"-"+String(dt.getUTCMonth()+1).padStart(2,"0"); }
+  function dayToDom(day){ return new Date(day*86400000).getUTCDate(); }   // число месяца
+  function daysInMonth(ym){ const p=String(ym).split("-"); const y=+p[0], m=+p[1]; return new Date(y, m, 0).getDate(); }
+  function monthPages(ym){ let s=0; (myPages||[]).forEach(e=>{ if(Array.isArray(e) && dayToYM(e[0])===ym) s+=(e[1]||0); }); return s; }   // сумма страниц за месяц
+  function pagesByDayOfMonth(ym){ const n=daysInMonth(ym); const arr=new Array(n+1).fill(0); (myPages||[]).forEach(e=>{ if(Array.isArray(e) && dayToYM(e[0])===ym){ const d=dayToDom(e[0]); if(d>=1&&d<=n) arr[d]+=(e[1]||0); } }); return arr; }   // [_,день1..деньN]
+  function yearPages(y){ let s=0; (myPages||[]).forEach(e=>{ if(Array.isArray(e) && dayToYM(e[0]).slice(0,4)===String(y)) s+=(e[1]||0); }); return s; }
+  // столбики по дням месяца для «Итогов» (чистый CSS, без библиотек)
+  function monthBarsHTML(ym){
+    const arr=pagesByDayOfMonth(ym); const n=arr.length-1; const max=Math.max.apply(null, arr.slice(1));
+    if(max<=0) return "";
+    let bars="";
+    for(let d=1; d<=n; d++){ const v=arr[d]; const h = v>0 ? Math.max(2, Math.round(v/max*48)) : 2;
+      bars += `<div style="flex:1;height:${h}px;background:${v>0?'var(--accent)':'var(--line)'};border-radius:2px 2px 0 0"></div>`; }
+    return `<div class="it-bars" style="margin:14px auto 0;max-width:420px">
+        <div style="display:flex;align-items:flex-end;gap:2px;height:48px">${bars}</div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-soft);margin-top:3px"><span>1</span><span>${n}</span></div>
+      </div>`;
+  }
   function logMark(b, day, page){ if(!Array.isArray(b.lg)) b.lg=[]; const li=b.lg.findIndex(e=>Array.isArray(e)&&e[0]===day); if(li>-1) b.lg[li][1]=page; else b.lg.push([day,page]); if(b.lg.length>180) b.lg=b.lg.slice(-180); }   // одна запись в день (перезапись), последние 180
   function progressHTML(b){
     const cur=b.cur||0, pg=b.pg||0;
@@ -4769,6 +4810,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
           const prev = book.cur||0, delta = pages - prev;
           book.cur = pages;
           logMark(book, dayNum(), pages);
+          addPagesToday(delta);           // общий журнал страниц за день (только + дельта; назад не вычитаем) — переживёт перенос книги на полку
           doStreakMark();                 // сама проверит, отмечен ли день — второй раз за сутки не засчитает
           saveReadingLS(); syncUp(); closeAskPages(); renderAll(); if(onDone) onDone();
           if(delta>0) toast("+"+delta+" "+plural(delta,"страница","страницы","страниц")+" сегодня 🤍");
@@ -5061,7 +5103,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   $("#editProfile").addEventListener("click", openProfile);
   $("#logoutBtn").addEventListener("click", ()=>{
     if(!confirm("Выйти из профиля? Ваша полка останется в облаке — вернётесь по своему коду.")) return;
-    ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email","polka_pages"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     location.href = location.pathname;   // на чистый адрес → окно входа
   });
   // тап по всему блоку «читаю» → окошко: список (+ добавить/убрать), тап по книге → её мини-страница (цвет / на полку / страница книги)
@@ -5337,7 +5379,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function createShelf(name){
     myName = name || "Моя полка";
     myBooks = []; myQuote = ""; myStickers = []; myReading = []; myWishlist = []; myPhoto = ""; myEmail = "";   // новая полка — полностью пустая
-    myStreak=0; myTotal=0; myLastMark=""; myPause=false; saveStreakLS(); myPublic=false; myShareProgress=true;   // прогресс друзьям — по умолчанию включено
+    myStreak=0; myTotal=0; myLastMark=""; myPause=false; saveStreakLS(); myPublic=false; myShareProgress=true; myPages=[]; savePagesLS();   // прогресс друзьям — по умолчанию включено; журнал страниц пуст
     try{ localStorage.removeItem("polka_email"); }catch(e){}
     savedFriends = []; favFriends = new Set();                                                    // без чужих друзей/любимок
     Object.keys(DEMO_FRIENDS).forEach(k=>{ if(k!=="guest") delete DEMO_FRIENDS[k]; });
@@ -5516,7 +5558,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       try{ row = await sbFetch(myCode); }catch(e){ fetched=false; }   // сеть недоступна — не трогаем
       if(fetched && !row){
         // полку удалили в облаке → стираем профиль на устройстве
-        ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+        ["polka_registered","polka_code","polka_pass","polka_books","polka_name","polka_quote","polka_reading","polka_photo","polka_stickers","polka_paid","polka_friends","polka_email","polka_pages"].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
         toast("Эта полка была удалена");
         setTimeout(()=>location.reload(), 1300);
         return;
