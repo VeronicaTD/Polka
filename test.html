@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="332" />
+<meta name="app-version" content="333" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2124,10 +2124,10 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function asReadingArr(rd){
     if(Array.isArray(rd)) return rd.filter(x=>x && x.t).slice(0,READING_MAX)
       .map(x=>({t:String(x.t), a:x.a||"", g:x.g||"Проза", c:x.c||COLORS[0], cover:x.cover||"", r:x.r||0, fav:!!x.fav, note:x.note||"", qt:Array.isArray(x.qt)?x.qt:(x.qt?[x.qt]:[]), sd:x.sd||"",
-        pg:x.pg||0, cur:x.cur||0, lg:Array.isArray(x.lg)?x.lg.slice(-180):[]}));   // pg=страниц в издании, cur=текущая страница, lg=[[день,страница],…] (день = число дней от 1970, последние 180)
+        pg:x.pg||0, cur:x.cur||0, lg:Array.isArray(x.lg)?x.lg.slice(-180):[], pz:x.pz?1:0}));   // pg=страниц в издании, cur=текущая страница, lg=[[день,страница],…] (последние 180); pz=1 отложена (не «пауза» — то про стрик)
     const s=String(rd||"").trim(); if(!s) return [];
     const parts=s.split(" — ");   // старый формат мог быть «Название — Автор»
-    return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:"", r:0, fav:false, note:"", qt:[], pg:0, cur:0, lg:[]}];
+    return [{t:(parts[0]||s).trim(), a:(parts[1]||"").trim(), g:"Проза", c:COLORS[0], cover:"", r:0, fav:false, note:"", qt:[], pg:0, cur:0, lg:[], pz:0}];
   }
   function readReadingLS(){ const raw=localStorage.getItem("polka_reading"); if(raw==null) return [];
     try{ return asReadingArr(JSON.parse(raw)); }catch(e){ return asReadingArr(raw); } }
@@ -2597,7 +2597,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     { const stat=$("#readingStat"), ms=$("#miniShelf");
       if(stat && ms){
         if(!isMe()){
-          const rd = asReadingArr(friend().reading);
+          const rd = asReadingArr(friend().reading).filter(b=>!b.pz);   // отложенные (pz) — личное, друзьям не показываем
           if(rd.length){ ms.innerHTML=miniShelfHTML(rd); stat.style.display=""; }
           else { ms.innerHTML=""; stat.style.display="none"; }
         } else { ms.innerHTML=""; stat.style.display="none"; }   // у себя — скрыто (есть #readingNow)
@@ -3188,7 +3188,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       const rb=myReading[choice];
       if(rb){ if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[],d:curYM()}); saveMine(); } myReading.splice(choice,1); }
     }
-    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||"", sd:todayISO(), pg:0, cur:0, lg:[]});
+    myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||"", sd:todayISO(), pg:0, cur:0, lg:[], pz:0});
     const wi=myWishlist.findIndex(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a)); if(wi>-1) myWishlist.splice(wi,1);
     saveReadingLS(); saveWish(); syncUp(); closeWishAct(); renderAll(); toast("Читаешь сейчас 📖");
     askBookPages(myReading[myReading.length-1]);   // спросить число страниц (с «Пропустить»)
@@ -4658,7 +4658,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(myReading.length>=READING_MAX){ toast("Уже 3 книги в «сейчас читаю»"); return false; }
     if(myReading.some(x=>bookKey(x.t,x.a)===bookKey(t,a||""))){ toast("Эту книгу уже читаешь"); return false; }
     // читаемая книга — полноценный объект книги (цитаты/оценка/цвет пишутся во время чтения, а не после)
-    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[], sd:todayISO(), pg:0, cur:0, lg:[]});
+    myReading.push({t, a:a||"", g:g||"Проза", c:COLORS[myReading.length%COLORS.length], cover:"", r:0, fav:false, note:"", qt:[], sd:todayISO(), pg:0, cur:0, lg:[], pz:0});
     saveReadingLS(); syncUp(); renderReadingEditor(); renderAll();
     askBookPages(myReading[myReading.length-1]);   // сразу спрашиваем «сколько страниц» (с «Пропустить»)
     return true;
@@ -4674,18 +4674,19 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     }
     return `<div style="color:var(--ink-soft);font-size:12px">страница ${cur}</div>`;
   }
-  // блок «Сейчас читаю» на главном экране — одна строка на книгу (корешок/название/прогресс/«отметить»), только у себя
+  // блок «Сейчас читаю» на главном экране — одна строка на книгу (корешок/название/прогресс/«отметить»), только у себя; отложенные (pz) НЕ показываем
   function renderReadingNow(){
     const box=$("#readingNow"); if(!box) return;
-    if(!isMe() || !myReading.length){ box.style.display="none"; box.innerHTML=""; return; }   // в гостях и при пустом списке — блока нет
+    const active = isMe() ? myReading.map((b,i)=>({b,i})).filter(x=>!x.b.pz) : [];
+    if(!active.length){ box.style.display="none"; box.innerHTML=""; return; }   // гость / нет книг / все отложены → блока нет совсем
     box.style.display="";
-    box.innerHTML = myReading.map((b,i)=>`<div class="rn-row">
+    box.innerHTML = active.map(({b,i})=>`<div class="rn-row">
         <span class="rn-spine" style="background:${spineBg(b)}"></span>
         <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressHTML(b)}</div>
         <button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>
       </div>`).join("") + `<button type="button" class="rn-all" id="rnAll">все книги →</button>`;
     box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",()=>{ const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));   // отметка обновляет этот же блок на месте
-    { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }   // «все книги →» — старый список с добавлением/удалением
+    { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }   // «все книги →» — старый список с добавлением/удалением/отложить
   }
   // перенос читаемой книги на полку — та же ветка, что у кнопки «✓ прочитал» (одна функция для кнопки и автофиниша)
   function finishReading(i){
@@ -5018,28 +5019,32 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     let editIdx=null;
     const closeBtn=()=>`<div class="confirm-btns"><button class="confirm-no" type="button">Закрыть</button></div>`;
     const renderList=()=>{
-      const arr = mine ? myReading : asReadingArr(friend().reading);
+      const arr = mine ? myReading : asReadingArr(friend().reading).filter(b=>!b.pz);   // у друга отложенные скрыты (личное)
+      const entries = arr.map((b,i)=>({b,i}));
+      if(mine) entries.sort((a,c)=>(a.b.pz?1:0)-(c.b.pz?1:0));   // активные сверху, отложенные снизу (стабильная сортировка)
       let h = `<p style="margin:0 0 12px;font-weight:700">📖 Сейчас читаю${mine?` <span style="font-weight:400;color:var(--ink-soft);font-size:13px">— до 3</span>`:""}</p>`
         + `<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:12px">`;
-      h += arr.length ? arr.map((b,i)=>{
-          const top = `<div class="rdl-row" ${mine?`data-open="${i}"`:""} style="display:flex;align-items:center;gap:9px;padding:6px 0 2px;text-align:left;${mine?"cursor:pointer":""}">
+      h += arr.length ? entries.map(({b,i})=>{
+          const dim = (mine && b.pz) ? "opacity:.55" : "";
+          const top = `<div class="rdl-row" ${mine?`data-open="${i}"`:""} style="display:flex;align-items:center;gap:9px;padding:6px 0 2px;text-align:left;${mine?"cursor:pointer":""}${dim?(";"+dim):""}">
             <span style="width:13px;height:20px;border-radius:2px 3px 3px 2px;background:${spineBg(b)};flex:0 0 auto"></span>
-            <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}</span>
+            <span style="flex:1;min-width:0"><b style="font-weight:600">${esc(b.t)}</b>${b.a?` <span style="color:var(--ink-soft);font-size:12.5px">— ${esc(b.a)}</span>`:""}${(mine&&b.pz)?` <span style="color:var(--ink-soft);font-size:12px">· отложена</span>`:""}</span>
             ${mine?`<button type="button" class="rd-edit-x" data-rm="${i}" title="убрать">×</button>`:""}
           </div>`;
           const prog = progressHTML(b);
           if(!mine) return top + (prog?`<div style="padding-left:22px;padding-bottom:6px">${prog}</div>`:"");   // чужой прогресс — только показ (если отмечают), без кнопок
-          const actions = `<div style="margin:4px 0 12px">
+          const actions = `<div style="margin:4px 0 12px;display:flex;gap:8px;flex-wrap:wrap">
             <button type="button" class="btn ghost" data-mark="${i}" style="padding:7px 13px;justify-content:center;font-size:13px">📖 я на странице</button>
+            <button type="button" class="btn ghost" data-defer="${i}" style="padding:7px 13px;justify-content:center;font-size:13px">${b.pz?"↑ вернуть в чтение":"↓ отложить"}</button>
           </div>`;
-          return top + (prog?`<div style="padding-left:22px">${prog}</div>`:"") + `<div style="padding-left:22px">${actions}</div>`;
+          return top + (prog?`<div style="padding-left:22px;${dim}">${prog}</div>`:"") + `<div style="padding-left:22px">${actions}</div>`;
         }).join("")
         : `<p class="mp" style="margin:0">${mine?"Пока пусто — добавь книгу ниже 👇":"Пока ничего не читает"}</p>`;
       h += `</div>`;
       if(mine){
         h += (arr.length<READING_MAX)
           ? `<div class="bk-search" style="margin-bottom:12px"><div style="display:flex;gap:8px"><input id="rdlInput" placeholder="выбери из подсказок или впиши и нажми ＋" autocomplete="off" style="flex:1;min-width:0;box-sizing:border-box"/><button type="button" id="rdlAdd" class="btn" style="flex:0 0 auto;padding:0 15px;justify-content:center">＋</button></div><div id="rdlSuggest" class="bk-suggest" hidden></div></div>`
-          : `<p class="mp" style="font-size:12px;margin:0 0 12px">Читаешь уже 3 — убери одну, чтобы добавить новую.</p>`;
+          : `<p class="mp" style="font-size:12px;margin:0 0 12px">Уже 3 книги — дочитай или убери одну. Отложенные тоже считаются.</p>`;
       }
       h += closeBtn();
       box.innerHTML=h;
@@ -5047,6 +5052,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       box.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",(e)=>{ e.stopPropagation(); const i=+b.dataset.rm; myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); render(); }));
       box.querySelectorAll("[data-open]").forEach(r=>r.addEventListener("click",()=>{ done(); openInfo(+r.dataset.open, true); }));   // тап по книге → полная карточка (цвет/оценка/цитаты/на полку)
       box.querySelectorAll("[data-mark]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.mark]; if(b) markPageFlow(b, render); }));   // 📖 я на странице (число страниц меняется ссылкой внутри модалки)
+      box.querySelectorAll("[data-defer]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.defer]; if(!b) return; b.pz=b.pz?0:1; saveReadingLS(); syncUp(); renderAll(); render(); toast(b.pz?"Отложена — убрана с главной":"Вернула в чтение 📖"); }));   // ↓ отложить / ↑ вернуть (только вручную)
       if(mine && arr.length<READING_MAX){
         const inp=box.querySelector("#rdlInput"), sug=box.querySelector("#rdlSuggest"), addBtn=box.querySelector("#rdlAdd");
         if(inp && sug){ bkAutocomplete(inp, sug, v=>{ if(addReadingBook(v.title,(v.authors&&v.authors[0])||"",genreFromBook(v))) render(); });
