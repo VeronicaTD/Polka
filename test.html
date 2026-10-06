@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="338" />
+<meta name="app-version" content="339" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4760,13 +4760,17 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(p<1) return null;                               // меньше страницы в день — молчим, без «400 дней»
     return p;
   }
-  // прогноз «осталось N страниц — это ещё ~M дней» (только у себя)
+  // прогноз «осталось N страниц — это ещё ~…» (только у себя); на горизонте года оценка по 7 отметкам недостоверна → переводим в месяцы и отсекаем
   function forecastHTML(b){
     const pg=b.pg||0, cur=b.cur||0; if(!pg) return "";
     const left = pg - cur; if(left<=0) return "";
     const p = pace(b); if(p===null) return "";
     const days = Math.ceil(left / p);
-    return `<div style="color:var(--ink-soft);font-size:12px;margin-top:2px">осталось ${left} ${plural(left,"страница","страницы","страниц")} — это ещё ~${days} ${plural(days,"день","дня","дней")}</div>`;
+    if(days>180) return "";                                              // больше полугода — число ничего не значит, молчим
+    let tail;
+    if(days<=60) tail = "~"+days+" "+plural(days,"день","дня","дней");
+    else { const m=Math.ceil(days/30); tail = "~"+m+" "+plural(m,"месяц","месяца","месяцев"); }   // 61–180 дней → месяцы, округляя вверх
+    return `<div style="color:var(--ink-soft);font-size:12px;margin-top:2px">осталось ${left} ${plural(left,"страница","страницы","страниц")} — это ещё ${tail}</div>`;
   }
   // блок «Сейчас читаю» на главном экране — у себя (прогресс/темп/«отметить») и у друга с sp=1 (только процент). Отложенные (pz) НЕ показываем нигде
   function renderReadingNow(){
