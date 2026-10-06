@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="339" />
+<meta name="app-version" content="340" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -428,6 +428,21 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 /* co-read модалки открываются поверх полноэкранного окна (.fullpage z-index:120) — поднимаем выше него, иначе они прячутся ЗА окном и «ничего не происходит» */
 #coreadProposeModal,#coreadPagesModal,#coreadReactModal,#coreadQuoteModal{z-index:160}
 #coreadPagesModal{z-index:230}   /* выше попапа «Сейчас читаю» (.confirm-back z-index:210), иначе всплывает под ним */
+/* барабаны-счётчик страниц (режим wheel у askPages) */
+.pw-wrap{position:relative;display:flex;justify-content:center;align-items:flex-start;height:132px;margin:8px 0 2px}
+.pw-cols{display:flex;gap:6px;height:132px}
+.pw-col{width:46px;height:132px;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pw-col::-webkit-scrollbar{display:none}
+.pw-pad{height:44px}
+.pw-cell{height:44px;line-height:44px;scroll-snap-align:center;text-align:center;font-family:"Fredoka",sans-serif;font-size:22px;color:var(--ink-soft);opacity:.35;transition:opacity .12s,color .12s,font-size .12s}
+.pw-cell.on{opacity:1;color:var(--ink);font-size:28px;font-weight:700}
+.pw-center{position:absolute;left:0;right:0;top:44px;height:44px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:8px;pointer-events:none;z-index:1}
+.pw-wrap::before,.pw-wrap::after{content:"";position:absolute;left:0;right:0;height:46px;pointer-events:none;z-index:2}
+.pw-wrap::before{top:0;background:linear-gradient(var(--paper),rgba(0,0,0,0))}
+.pw-wrap::after{bottom:0;background:linear-gradient(rgba(0,0,0,0),var(--paper))}
+#pwInput{position:absolute;left:50%;top:44px;transform:translateX(-50%);width:130px;height:44px;box-sizing:border-box;text-align:center;font-family:"Fredoka",sans-serif;font-size:26px;font-weight:700;color:var(--ink);background:var(--paper);border:1px solid var(--accent);border-radius:8px;z-index:3;display:none}
+.pw-cap{text-align:center;font-size:13px;color:var(--ink-soft);min-height:18px;margin:2px 0 8px}
+.pw-cap b{color:var(--ink);font-weight:600}
 .read-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 /* подборки книг */
 .cat-genre{margin:22px 0 8px;font-family:var(--head);font-size:19px;color:var(--ink)}
@@ -1491,7 +1506,11 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   <button class="close" data-close>×</button>
   <h3 id="crPagesTitle">Сколько страниц в твоём издании?</h3>
   <p class="mp" id="crPagesBook"></p>
-  <div class="field"><input id="crPagesInput" type="number" inputmode="numeric" min="1" max="9999" placeholder="например, 480" style="width:100%;box-sizing:border-box" /></div>
+  <div class="field" id="crPagesField"><input id="crPagesInput" type="number" inputmode="numeric" min="1" max="9999" placeholder="например, 480" style="width:100%;box-sizing:border-box" /></div>
+  <div id="crPagesWheel" style="display:none">
+    <div class="pw-wrap"><div class="pw-cols" id="pwCols"></div><div class="pw-center" aria-hidden="true"></div><input id="pwInput" type="number" inputmode="numeric" aria-label="Ввести номер страницы" style="display:none" /></div>
+    <div class="pw-cap" id="pwCaption"></div>
+  </div>
   <p class="mp" id="crPagesNote" style="margin:-4px 0 6px;display:none"></p>
   <button type="button" id="crPagesSub" class="linklike" style="display:none;margin:0 0 12px;cursor:pointer"></button>
   <div class="modal-foot"><button class="btn ghost" id="crPagesSkip" type="button" style="justify-content:center;display:none">Пропустить</button><button class="btn" id="crPagesGo" style="justify-content:center;display:flex">Сохранить</button></div>
@@ -4815,16 +4834,15 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       onOk:(pages)=>{ book.pg = pages>0?pages:0; saveReadingLS(); syncUp(); closeAskPages(); renderAll(); if(onDone) onDone(); },
       onSkip:()=>{ closeAskPages(); if(onDone) onDone(); } });
   }
-  // отметить текущую страницу читаемой книги (дельту считаем сами)
+  // отметить текущую страницу читаемой книги (дельту считаем сами) — ввод барабанами (wheel)
   function markPageFlow(book, onDone){
     if(!book) return;
-    const note = book.pg>0 ? ("было: "+(book.cur||0)+" из "+book.pg) : (book.cur>0 ? ("было: страница "+book.cur) : "");
-    askPages({ title:"Я на странице", bookLabel:book.t, value:book.cur||"", okText:"Сохранить", note,
+    askPages({ title:"Я на странице", bookLabel:book.t, mode:"wheel", value:book.cur||0, wheelMax:book.pg||0, okText:"Сохранить",
       subLabel: book.pg>0 ? ("✎ в издании "+book.pg+" стр.") : "✎ указать, сколько страниц в книге",
       onSub: ()=>{ askBookPages(book, ()=>markPageFlow(book, onDone)); },   // поменять общее число страниц, затем вернуться к отметке
       onOk:(pages)=>{
+        if(book.pg>0 && pages>book.pg) pages=book.pg;   // накрутили больше pg → мягко прижимаем, без ругани
         if(pages<1){ toast("Укажи страницу"); return false; }
-        if(book.pg>0 && pages>book.pg){ toast("В издании "+book.pg+" стр."); return false; }
         const apply=()=>{
           const prev = book.cur||0, delta = pages - prev;
           book.cur = pages;
@@ -5912,23 +5930,63 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   // универсальная модалка «страницы» (одна разметка на всё: совместное чтение И прогресс своей книги)
   let askPagesOpts=null;
   function closeAskPages(){ const m=$("#coreadPagesModal"); if(m) m.classList.remove("open"); if(!document.querySelector(".modal.open, .fullpage.open")) overlay.classList.remove("open"); }
+  // --- барабаны-счётчик (wheel-режим askPages): 3 колонки (сотни/десятки/единицы), 4-я при pg>=1000 ---
+  let pwValue=0, pwBaseCur=0, pwPg=0, pwCols=[];
+  function pwDigitOf(col){ return Math.max(0, Math.min(9, Math.round(col.scrollTop/44))); }
+  function pwRead(){ let v=0; pwCols.forEach(c=>{ v=v*10 + pwDigitOf(c); }); return v; }   // колонки слева направо = старшие→младшие разряды
+  function pwMarkCenters(){ pwCols.forEach(c=>{ const d=pwDigitOf(c); c.querySelectorAll(".pw-cell").forEach(cell=>cell.classList.toggle("on", (+cell.dataset.d)===d)); }); }
+  function pwSetVal(val){ const maxV=Math.pow(10,pwCols.length)-1; val=Math.max(0, Math.min(val, maxV)); pwCols.forEach((c,i)=>{ const place=Math.pow(10, pwCols.length-1-i); c.scrollTop=(Math.floor(val/place)%10)*44; }); pwMarkCenters(); pwValue=pwRead(); }
+  function updatePwCaption(){ const cap=$("#pwCaption"); if(!cap) return; const v=pwValue, cur=pwBaseCur||0; let main;
+    if(v>cur){ const d=v-cur; main="+"+d+" "+plural(d,"страница","страницы","страниц")+" сегодня"; }
+    else if(v===cur) main="без изменений";
+    else { const d=cur-v; main="назад на "+d+" "+plural(d,"страница","страницы","страниц"); }
+    cap.innerHTML = "<b>"+main+"</b>"+(pwPg>0?` <span style="opacity:.7">из ${pwPg}</span>`:"");
+  }
+  function openPwManual(){ const inp=$("#pwInput"); if(!inp) return; inp.value=String(pwValue||0); inp.style.display="block"; inp.focus(); try{ inp.select(); }catch(e){} }
+  { const inp=$("#pwInput"); if(inp){
+      inp.addEventListener("input", ()=>{ const v=parseInt(inp.value,10); if(!isNaN(v)){ pwSetVal(v); updatePwCaption(); } });   // ввёл цифры → барабаны подкрутились
+      inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); inp.blur(); } });
+      inp.addEventListener("blur", ()=>{ inp.style.display="none"; });
+  } }
+  function buildPageWheel(startVal, pg){
+    pwBaseCur = startVal||0; pwPg = pg||0;
+    const digits = (pg>=1000)?4:3;
+    const host=$("#pwCols"); host.innerHTML=""; pwCols=[];
+    for(let k=0;k<digits;k++){ const c=document.createElement("div"); c.className="pw-col";
+      let h='<div class="pw-pad"></div>'; for(let d=0;d<=9;d++) h+=`<div class="pw-cell" data-d="${d}">${d}</div>`; h+='<div class="pw-pad"></div>';
+      c.innerHTML=h; host.appendChild(c); pwCols.push(c);
+      c.addEventListener("scroll", ()=>{ pwMarkCenters(); pwValue=pwRead(); updatePwCaption(); }, {passive:true});   // живо: подсветка центра + подпись
+    }
+    host.querySelectorAll(".pw-cell").forEach(cell=>cell.addEventListener("click", openPwManual));   // тап по цифре → ручной ввод
+    pwSetVal(startVal||0); updatePwCaption();   // стартуем на текущей странице (scrollTop напрямую, без анимации)
+  }
+  function readAskPagesValue(){
+    if($("#crPagesWheel").style.display!=="none"){ const ov=$("#pwInput"); if(ov && ov.style.display!=="none" && ov.value!==""){ const v=parseInt(ov.value,10); if(!isNaN(v)) return v; } return pwValue||0; }
+    return parseInt($("#crPagesInput").value,10)||0;
+  }
   function askPages(opts){
     askPagesOpts = opts||{};
+    const wheel = (opts.mode==="wheel");
     $("#crPagesTitle").textContent = opts.title || "Сколько страниц в твоём издании?";
     $("#crPagesBook").textContent  = opts.bookLabel ? ("«"+opts.bookLabel+"»") : "";
     $("#crPagesGo").textContent    = opts.okText || "Сохранить";
-    $("#crPagesInput").value       = (opts.value!=null && opts.value!=="") ? String(opts.value) : "";
-    { const n=$("#crPagesNote"); if(n){ n.textContent=opts.note||""; n.style.display=opts.note?"":"none"; } }
+    { const f=$("#crPagesField"); if(f) f.style.display = wheel ? "none" : ""; }
+    { const w=$("#crPagesWheel"); if(w) w.style.display = wheel ? "" : "none"; }
+    { const ov=$("#pwInput"); if(ov) ov.style.display="none"; }
+    if(wheel){ buildPageWheel(opts.value||0, opts.wheelMax||0); }
+    else { $("#crPagesInput").value = (opts.value!=null && opts.value!=="") ? String(opts.value) : ""; }
+    { const n=$("#crPagesNote"); if(n){ n.textContent=(wheel?"":(opts.note||"")); n.style.display=(!wheel&&opts.note)?"":"none"; } }
     { const sb=$("#crPagesSub"); if(sb){ sb.textContent=opts.subLabel||""; sb.style.display=opts.subLabel?"":"none"; } }
     { const s=$("#crPagesSkip"); if(s) s.style.display = opts.skip ? "flex" : "none"; }
     { const p=$("#coreadProposeModal"); if(p) p.classList.remove("open"); }
     overlay.classList.add("open"); $("#coreadPagesModal").classList.add("open");
-    setTimeout(()=>{ const i=$("#crPagesInput"); if(i){ i.focus(); try{ i.select(); }catch(e){} } }, 60);
+    if(wheel) setTimeout(()=>{ pwSetVal(opts.value||0); updatePwCaption(); }, 50);   // повторный set после раскрытия модалки — чтобы барабаны точно встали на cur
+    else setTimeout(()=>{ const i=$("#crPagesInput"); if(i){ i.focus(); try{ i.select(); }catch(e){} } }, 60);
   }
   $("#crPagesGo").addEventListener("click", ()=>{
-    const pages=parseInt($("#crPagesInput").value,10)||0;
+    const pages=readAskPagesValue();
     const o=askPagesOpts||{};
-    if(o.onOk){ const keep=o.onOk(pages); if(keep===false) return; }   // onOk сам закрывает (или вернёт false, чтобы оставить открытым при невалидном вводе)
+    if(o.onOk){ const keep=o.onOk(pages); if(keep===false) return; }   // onOk сам закрывает (или вернёт false при невалидном)
   });
   { const sk=$("#crPagesSkip"); if(sk) sk.addEventListener("click", ()=>{ const o=askPagesOpts||{}; if(o.onSkip) o.onSkip(); else closeAskPages(); }); }
   { const sb=$("#crPagesSub"); if(sb) sb.addEventListener("click", ()=>{ const o=askPagesOpts||{}; if(o.onSub) o.onSub(); }); }
