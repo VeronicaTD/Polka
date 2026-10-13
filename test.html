@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="340" />
+<meta name="app-version" content="341" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -641,6 +641,20 @@ header{position:sticky;top:0;z-index:40;background:var(--paper);
 .it-counters > div:first-child{border-left:none}
 .it-counters b{display:block;font-family:"Fraunces",serif;font-size:23px;font-weight:600;color:var(--ink);line-height:1.1}
 .it-counters span{font-size:12px;color:var(--ink-soft)}
+/* неделя с числами (главный блок страниц) */
+.wk-wrap{margin:16px auto 2px;max-width:360px}
+.wk-cap{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:8px}
+.wk-cap b{color:var(--ink);font-weight:600}
+.wk-row{display:flex;align-items:flex-end;gap:6px}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.wk-num{font-size:13px;color:var(--ink);font-weight:600;height:18px;line-height:18px}
+.wk-barbox{height:72px;display:flex;align-items:flex-end;justify-content:center;width:100%}
+.wk-bar{width:62%;max-width:26px;border-radius:4px 4px 0 0;background:var(--accent)}
+.wk-dow{font-size:11px;color:var(--ink-soft);margin-top:5px}
+/* месяц (столбики + тап по дню) */
+.mo-col{cursor:pointer}
+.mo-pop{position:absolute;transform:translateX(-50%);background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:7px 11px;font-size:12.5px;color:var(--ink);white-space:nowrap;z-index:5}
+.mo-pop .linklike{font-size:12px;margin-left:8px}
 .it-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 14px;margin-top:6px}
 .it-cell{min-width:0}
 .it-cover{position:relative;aspect-ratio:2/3;border-radius:4px;overflow:hidden;border:1px solid var(--line);box-shadow:0 10px 20px -12px rgba(40,25,10,.75)}
@@ -2179,7 +2193,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function loadStreakFrom(cp){ if(cp && cp.st){ myStreak=cp.st.s||0; myTotal=cp.st.t||0; myLastMark=cp.st.l||""; myPause=!!cp.st.p; saveStreakLS(); }
     if(cp && typeof cp.public!=="undefined"){ myPublic=!!cp.public; try{ localStorage.setItem("polka_public", myPublic?"1":"0"); }catch(e){} }   // флаг «Читатели» — облако источник истины
     if(cp && typeof cp.sp!=="undefined"){ myShareProgress=!!cp.sp; try{ localStorage.setItem("polka_shareprogress", myShareProgress?"1":"0"); }catch(e){} }   // флаг «прогресс друзьям» — облако источник истины
-    if(cp && Array.isArray(cp.dp)){ myPages = cp.dp.slice(-400); savePagesLS(); } }   // журнал страниц по дням — облако источник истины
+    if(cp && Array.isArray(cp.dp)){ myPages = mergePagesMax(myPages, cp.dp); savePagesLS(); } }   // журнал страниц — СЛИЯНИЕ по максимуму (замена стёрла бы сегодняшние локальные страницы при пулле)
   function ymd(d){ d=d||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function daysBetween(a,b){ try{ return Math.round((new Date(a+"T00:00:00") - new Date(b+"T00:00:00"))/86400000); }catch(e){ return 999; } }
   function streakState(){
@@ -2390,6 +2404,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   let myPages = [];   // общий журнал прочитанного по дням [[день,страниц]] (dp, индекс 14) — переживает перенос книги на полку/удаление
   try{ const _mp=JSON.parse(localStorage.getItem("polka_pages")||"[]"); if(Array.isArray(_mp)) myPages=_mp; }catch(e){}
   function savePagesLS(){ try{ if(myPages.length>400) myPages=myPages.slice(-400); localStorage.setItem("polka_pages", JSON.stringify(myPages)); }catch(e){} }
+  // слить два журнала по МАКСИМУМУ на каждый день (замена стёрла бы сегодняшние локальные страницы при пулле)
+  function mergePagesMax(a, b){ const m={}; (a||[]).forEach(e=>{ if(Array.isArray(e)) m[e[0]]=Math.max(m[e[0]]||0, e[1]||0); }); (b||[]).forEach(e=>{ if(Array.isArray(e)) m[e[0]]=Math.max(m[e[0]]||0, e[1]||0); }); return Object.keys(m).map(d=>[+d, m[d]]).sort((x,y)=>x[0]-y[0]).slice(-400); }
   // прибавить прочитанные страницы за сегодня в общий журнал (только положительную дельту)
   function addPagesToday(delta){ if(!(delta>0)) return; const d=dayNum(); const i=myPages.findIndex(e=>Array.isArray(e)&&e[0]===d); if(i>-1) myPages[i][1]+=delta; else myPages.push([d,delta]); savePagesLS(); }
   // РАЗОВЫЙ перенос журнала из lg читаемых книг (при первом запуске v337; книги, уехавшие на полку, не вернуть — их логи утеряны, это норма)
@@ -2486,13 +2502,16 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
     const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0, dp:myPages});
-    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; syncActivity(); return true; }
+    syncing=true;   // замок 1: пока идёт отправка — pullCloud не трогает myReading (иначе вернёт старую копию)
+    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; lastPushAt=Date.now(); syncActivity(); return true; }   // замок 3: lastCloudData=отправленное → пулл с теми же данными — пустое действие; замок 2: lastPushAt для карантина
     catch(e){ console.warn("syncUp error", e); return false; }
+    finally{ syncing=false; }
   }
 
   /* состояние */
   let view = "me";
   let lastCloudData = null;
+  let syncing = false, lastPushAt = 0;   // замки от отката отметки: syncing — идёт push; lastPushAt — карантин пулла после push
   let casePage = 0;
   let slideDir = 0;
   const SHELVES_PER_CASE = 4;
@@ -4144,9 +4163,10 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const quotes=books.reduce((s,b)=> s+(Array.isArray(b.qt)?b.qt.length:0), 0);
     const mp=monthPages(ym);
     const pagesCounter = mp>0 ? `<div><b>${mp}</b><span>${plural(mp,"страница","страницы","страниц")}</span></div>` : "";   // 4-й счётчик только при наличии данных
+    const weekBlock = (ym===curYM() && weekTotal()>0) ? weekBarsHTML() : "";   // неделя — только на текущем месяце (последние 7 дней «сейчас»)
     const head=`<div class="it-head"><div class="it-year">${ymY(ym)}</div><div class="it-title">Итоги ${ymGen(ym)}</div><div class="it-ruler"></div>`+
       `<div class="it-counters"><div><b>${books.length}</b><span>${plural(books.length,"книга","книги","книг")}</span></div><div><b>${favs}</b><span>любимых</span></div><div><b>${quotes}</b><span>${plural(quotes,"цитата","цитаты","цитат")}</span></div>${pagesCounter}</div>`+
-      monthBarsHTML(ym)+`</div>`;   // столбики по дням — под счётчиками, внутри it-head (попадают в картинку шеринга)
+      weekBlock + monthBarsHTML(ym)+`</div>`;   // неделя (числа) + месяц (тап) — внутри it-head (попадают в картинку шеринга)
     let mid;
     if(!books.length){
       const anyDated=(myBooks||[]).some(b=>b&&b.d);
@@ -4157,6 +4177,25 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const foot=`<div class="it-share-foot"><div class="it-brand">Polka · место, где живут прочитанные истории 🌙</div>${books.length?`<button class="btn" id="itShareBtn" style="display:inline-flex">Поделиться итогами</button>`:""}</div>`;
     body.innerHTML=head+mid+foot;
     hydrateCovers(body);
+    wireMonthBars(body, ym);
+  }
+  let moPopTimer=null;
+  // тап по столбику месяца → поповер «14 октября — N страниц» + «поправить» (гаснет через 2с / по тапу в сторону)
+  function wireMonthBars(body, ym){
+    const row=body.querySelector(".mo-row"), pop=body.querySelector("#moPop"); if(!row||!pop) return;
+    const hidePop=()=>{ pop.style.display="none"; pop.innerHTML=""; if(moPopTimer){ clearTimeout(moPopTimer); moPopTimer=null; } };
+    row.addEventListener("click", e=>{ const col=e.target.closest(".mo-col"); if(!col) return;
+      const d=+col.dataset.moday, v=pagesByDayOfMonth(ym)[d]||0, wrap=col.closest(".it-bars");
+      const left=Math.max(52, Math.min(wrap.clientWidth-52, col.offsetLeft+col.offsetWidth/2));
+      pop.style.left=left+"px"; pop.style.bottom="58px";
+      pop.innerHTML=`${d} ${ymGen(ym)} — ${v} ${plural(v,"страница","страницы","страниц")} <button type="button" class="linklike" id="moFix">поправить</button>`;
+      pop.style.display="block";
+      { const fx=pop.querySelector("#moFix"); if(fx) fx.addEventListener("click", ev=>{ ev.stopPropagation(); if(moPopTimer){ clearTimeout(moPopTimer); moPopTimer=null; }
+          askPages({ title:`Страниц за ${d} ${ymGen(ym)}`, value:(v||""), okText:"Сохранить", onOk:(nv)=>{ setDayPages(ymdToDayNum(ym,d), nv); closeAskPages(); hidePop(); renderMonthSummary(ym); } });
+        }); }
+      if(moPopTimer) clearTimeout(moPopTimer); moPopTimer=setTimeout(hidePop, 2000);
+    });
+    if(!window.__moPopDoc){ window.__moPopDoc=true; document.addEventListener("click", e=>{ const p=document.querySelector("#moPop"); if(p && p.style.display!=="none" && !e.target.closest(".mo-col") && !e.target.closest(".mo-pop")){ p.style.display="none"; p.innerHTML=""; if(moPopTimer){ clearTimeout(moPopTimer); moPopTimer=null; } } }); }
   }
   function renderArchive(){
     const body=$("#summaryBody"); if(!body) return;
@@ -4279,9 +4318,21 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       const mpc=monthPages(ym);
       ctx.fillStyle=inkSoft; ctx.font="400 36px Fredoka, sans-serif"; ctx.textAlign="center";
       ctx.fillText(`${books.length} ${plural(books.length,"книга","книги","книг")}   ·   ${favs} любимых   ·   ${quotes} ${plural(quotes,"цитата","цитаты","цитат")}${mpc>0?`   ·   ${mpc} ${plural(mpc,"страница","страницы","страниц")}`:""}`, W/2, TOP+218);
-      // столбики по дням месяца — рисуем на canvas (DOM сюда не попадает), под счётчиками
+      // блок страниц на canvas (DOM сюда не попадает): неделя с числами для текущего месяца, иначе месячные столбики
       let gridTop=TOP+300;
-      if(mpc>0){
+      if(ym===curYM() && weekTotal()>0){
+        const wk=weekData(), wtot=weekTotal(), wmax=Math.max(1, ...wk.map(x=>x.p));
+        const capY=TOP+266; ctx.fillStyle=inkSoft; ctx.font="400 30px Fredoka, sans-serif"; ctx.textAlign="center";
+        ctx.fillText("За неделю — "+wtot+" "+plural(wtot,"страница","страницы","страниц"), W/2, capY);
+        const bw=630, bx=(W-bw)/2, gap=18, colW=(bw-gap*6)/7, bh=124, baseY=capY+52+bh;
+        wk.forEach((x,i)=>{ const cx=bx+i*(colW+gap)+colW/2;
+          if(x.p>0){ const h=Math.max(10, Math.round(x.p/wmax*bh));
+            ctx.fillStyle=accent; ctx.globalAlpha=x.today?1:.6; ctx.fillRect(cx-colW/2, baseY-h, colW, h); ctx.globalAlpha=1;
+            ctx.fillStyle=ink; ctx.font="600 27px Fredoka, sans-serif"; ctx.fillText(String(x.p), cx, baseY-h-14); }
+          ctx.fillStyle=inkSoft; ctx.font="400 24px Fredoka, sans-serif"; ctx.fillText(x.dow, cx, baseY+34);
+        });
+        gridTop = baseY+96;
+      } else if(mpc>0){
         const arr=pagesByDayOfMonth(ym), n=arr.length-1, max=Math.max.apply(null,arr.slice(1));
         const bw=760, bx=(W-bw)/2, byTop=TOP+262, bh=96, gap=4, colW=(bw-gap*(n-1))/n;
         for(let d=1;d<=n;d++){ const v=arr[d], h=v>0?Math.max(5,Math.round(v/max*bh)):5, x=bx+(d-1)*(colW+gap), y=byTop+bh-h;
@@ -4741,18 +4792,40 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function monthPages(ym){ let s=0; (myPages||[]).forEach(e=>{ if(Array.isArray(e) && dayToYM(e[0])===ym) s+=(e[1]||0); }); return s; }   // сумма страниц за месяц
   function pagesByDayOfMonth(ym){ const n=daysInMonth(ym); const arr=new Array(n+1).fill(0); (myPages||[]).forEach(e=>{ if(Array.isArray(e) && dayToYM(e[0])===ym){ const d=dayToDom(e[0]); if(d>=1&&d<=n) arr[d]+=(e[1]||0); } }); return arr; }   // [_,день1..деньN]
   function yearPages(y){ let s=0; (myPages||[]).forEach(e=>{ if(Array.isArray(e) && dayToYM(e[0]).slice(0,4)===String(y)) s+=(e[1]||0); }); return s; }
-  // столбики по дням месяца для «Итогов» (чистый CSS, без библиотек)
+  // --- страницы по дням: неделя (главный блок с числами) + месяц (с тапом) ---
+  function pagesForDay(day){ let s=0; (myPages||[]).forEach(e=>{ if(Array.isArray(e)&&e[0]===day) s+=(e[1]||0); }); return s; }
+  const DOW_RU=["вс","пн","вт","ср","чт","пт","сб"];
+  function dowLabel(day){ return DOW_RU[new Date(day*86400000).getUTCDay()]; }
+  function weekData(){ const today=dayNum(); const a=[]; for(let i=6;i>=0;i--){ const d=today-i; a.push({day:d, p:pagesForDay(d), dow:dowLabel(d), today:i===0}); } return a; }   // последние 7 дней, правый = сегодня
+  function weekTotal(){ return weekData().reduce((s,x)=>s+x.p,0); }
+  function weekBarsHTML(){
+    const wk=weekData(), total=wk.reduce((s,x)=>s+x.p,0), max=Math.max(1, ...wk.map(x=>x.p));
+    const cols=wk.map(x=>{
+      const h = x.p>0 ? Math.max(6, Math.round(x.p/max*72)) : 0;
+      const bar = x.p>0 ? `<div class="wk-bar" style="height:${h}px;${x.today?'':'opacity:.6'}"></div>` : "";
+      return `<div class="wk-col"><div class="wk-num">${x.p>0?x.p:""}</div><div class="wk-barbox">${bar}</div><div class="wk-dow">${x.dow}</div></div>`;
+    }).join("");
+    return `<div class="wk-wrap"><div class="wk-cap">За неделю — <b>${total}</b> ${plural(total,"страница","страницы","страниц")}</div><div class="wk-row">${cols}</div></div>`;
+  }
+  // столбики по дням месяца (чистый CSS, без библиотек) + тап по дню
   function monthBarsHTML(ym){
     const arr=pagesByDayOfMonth(ym); const n=arr.length-1; const max=Math.max.apply(null, arr.slice(1));
     if(max<=0) return "";
     let bars="";
     for(let d=1; d<=n; d++){ const v=arr[d]; const h = v>0 ? Math.max(2, Math.round(v/max*48)) : 2;
-      bars += `<div style="flex:1;height:${h}px;background:${v>0?'var(--accent)':'var(--line)'};border-radius:2px 2px 0 0"></div>`; }
-    return `<div class="it-bars" style="margin:14px auto 0;max-width:420px">
-        <div style="display:flex;align-items:flex-end;gap:2px;height:48px">${bars}</div>
+      bars += `<div class="mo-col" data-moday="${d}" style="flex:1;height:48px;display:flex;align-items:flex-end;min-width:0"><div style="width:100%;height:${h}px;background:${v>0?'var(--accent)':'var(--line)'};border-radius:2px 2px 0 0"></div></div>`; }
+    return `<div class="it-bars" style="position:relative;margin:18px auto 0;max-width:420px">
+        <div class="mo-row" style="display:flex;align-items:flex-end;gap:2px;height:48px">${bars}</div>
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-soft);margin-top:3px"><span>1</span><span>${n}</span></div>
+        <div class="mo-pop" id="moPop" style="display:none"></div>
       </div>`;
   }
+  // число дней от 1970 для (ym, число месяца)
+  function ymdToDayNum(ym, dom){ const p=String(ym).split("-"); return Math.floor(Date.UTC(+p[0], +p[1]-1, dom)/86400000); }
+  // записать/поправить/удалить страницы за конкретный день (0 — удалить запись)
+  function setDayPages(day, val){ val=Math.max(0, Math.round(val||0)); const i=myPages.findIndex(e=>Array.isArray(e)&&e[0]===day);
+    if(val<=0){ if(i>-1) myPages.splice(i,1); } else { if(i>-1) myPages[i][1]=val; else myPages.push([day,val]); }
+    myPages.sort((a,b)=>a[0]-b[0]); savePagesLS(); syncUp(); }
   function logMark(b, day, page){ if(!Array.isArray(b.lg)) b.lg=[]; const li=b.lg.findIndex(e=>Array.isArray(e)&&e[0]===day); if(li>-1) b.lg[li][1]=page; else b.lg.push([day,page]); if(b.lg.length>180) b.lg=b.lg.slice(-180); }   // одна запись в день (перезапись), последние 180
   function progressHTML(b){
     const cur=b.cur||0, pg=b.pg||0;
@@ -4843,13 +4916,13 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       onOk:(pages)=>{
         if(book.pg>0 && pages>book.pg) pages=book.pg;   // накрутили больше pg → мягко прижимаем, без ругани
         if(pages<1){ toast("Укажи страницу"); return false; }
-        const apply=()=>{
+        const apply=async()=>{
           const prev = book.cur||0, delta = pages - prev;
           book.cur = pages;
           logMark(book, dayNum(), pages);
           addPagesToday(delta);           // общий журнал страниц за день (только + дельта; назад не вычитаем) — переживёт перенос книги на полку
           doStreakMark();                 // сама проверит, отмечен ли день — второй раз за сутки не засчитает
-          saveReadingLS(); syncUp(); closeAskPages(); renderAll(); if(onDone) onDone();
+          saveReadingLS(); closeAskPages(); await syncUp(); renderAll(); if(onDone) onDone();   // await — детерминированный порядок: сначала push, потом перерисовка (pullCloud не откатит)
           if(delta>0) toast("+"+delta+" "+plural(delta,"страница","страницы","страниц")+" сегодня 🤍");
           else toast("Отмечено ✓");
           if(book.pg>0 && prev<book.pg && book.cur>=book.pg){   // пересекли конец издания → предложить перенос (один раз)
@@ -5662,6 +5735,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   }
   /* автоподтягивание: тихо проверяем облако и обновляем полку, если изменилось на другом устройстве */
   async function pullCloud(){
+    if(syncing) return;                                   // замок 1: идёт отправка — не перезатираем своей старой копией из облака
+    if(Date.now()-lastPushAt < 5000) return;              // замок 2: карантин 5с после push — серверу нужно время отдать свежее
     if(restoreMode) return;                               // в режиме восстановления облако не тянем
     if(!bootLoaded) return;                               // ещё не загрузили реальные данные — не трогаем
     if(!CLOUD() || !myCode || !localStorage.getItem("polka_registered")) return;
