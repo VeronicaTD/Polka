@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="342" />
+<meta name="app-version" content="343" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -4739,48 +4739,45 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       box.hidden=false;
     };
     const UNAVAIL="Поиск книг временно недоступен. Впиши название и автора сама — книга добавится как надо ✍️";
-    const fetchVol=async(query, ac)=>{   // {ok,items} либо {ok:false,kind:'quota'|'server'|'net'}; ретрай на 5xx (у Google бывает перемежающийся 503 backendFailed)
-      const url=`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:"");
-      for(let attempt=0; attempt<4; attempt++){
+    // поиск книг через Open Library (openlibrary.org) — без ключа, без биллинга, без Google (у Google Books ключ стал отдавать 503 ~постоянно)
+    const fetchVol=async(query, ac)=>{   // {ok,items:[{title,authors,pageCount,imageLinks}]} либо {ok:false,kind:'server'|'net'}; ретрай на 5xx
+      const url="https://openlibrary.org/search.json?limit=25&fields=title,author_name,cover_i,number_of_pages_median,first_publish_year&q="+encodeURIComponent(query);
+      for(let attempt=0; attempt<3; attempt++){
         let r;
         try{ r=await fetch(url, ac?{signal:ac.signal}:undefined); }
-        catch(e){ if(e&&e.name==="AbortError") throw e; console.warn("GBooks network error", e); return {ok:false,kind:"net"}; }
-        if(r.ok){ let d; try{ d=await r.json(); }catch(e){ return {ok:false,kind:"server",status:r.status}; } return {ok:true, items:(d.items||[]).map(it=>it.volumeInfo)}; }
-        if(r.status===403 || r.status===429){ let t=""; try{ t=await r.text(); }catch(e){} console.warn("GBooks quota", r.status, t.slice(0,200)); return {ok:false,kind:"quota",status:r.status}; }
-        console.warn("GBooks server error", r.status);   // 5xx — перемежающийся сбой бэкенда, ретраим
+        catch(e){ if(e&&e.name==="AbortError") throw e; console.warn("OpenLibrary network error", e); return {ok:false,kind:"net"}; }
+        if(r.ok){ let d; try{ d=await r.json(); }catch(e){ return {ok:false,kind:"server"}; }
+          const items=(d.docs||[]).map(doc=>({ title:doc.title||"", authors:doc.author_name||[], pageCount:doc.number_of_pages_median||0,
+            imageLinks: doc.cover_i ? {thumbnail:"https://covers.openlibrary.org/b/id/"+doc.cover_i+"-M.jpg"} : undefined })).filter(v=>v.title);
+          return {ok:true, items};
+        }
+        console.warn("OpenLibrary server error", r.status);
         if(ac && ac.signal.aborted) throw {name:"AbortError"};
-        if(attempt<3) await new Promise(x=>setTimeout(x, 300*(attempt+1)));
+        if(attempt<2) await new Promise(x=>setTimeout(x, 300*(attempt+1)));
       }
-      return {ok:false,kind:"server",status:503};
+      return {ok:false,kind:"server"};
     };
     const handleErr=(res)=>{
-      if(res.kind==="quota"){ gbooksBlockedUntil=Date.now()+10*60*1000; if(!hasShown()) msg(UNAVAIL); }   // 403/429 → не стучимся 10 минут
-      else if(res.kind==="net"){ if(!hasShown()) msg("Нет связи — впиши название сама"); }
-      else { if(!hasShown()) msg(UNAVAIL); }   // 5xx после ретраев
+      if(res.kind==="net"){ if(!hasShown()) msg("Нет связи — впиши название сама"); }
+      else { if(!hasShown()) msg(UNAVAIL); }
     };
-    // отмена устаревших запросов — ТОЛЬКО через AbortController. Поиск ДВУХСТУПЕНЧАТЫЙ.
+    // отмена устаревших запросов — ТОЛЬКО через AbortController. Один запрос (Open Library ищет хорошо и без ступеней).
     const search=async(q)=>{
       const ck=q.toLowerCase();
       if(gbooksCache.has(ck)){ const cached=gbooksCache.get(ck); if(cached.length) showList(cached); else if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }   // кэш сессии — без сети
-      if(Date.now() < gbooksBlockedUntil){ if(!hasShown()) msg(UNAVAIL); return; }   // бэкофф после квоты
       if(curAbort){ try{ curAbort.abort(); }catch(e){} }
       const ac=(typeof AbortController!=="undefined")?new AbortController():null; curAbort=ac;
       if(!hasShown()) msg("Ищу…");
       try{
-        let res=await fetchVol("intitle:"+q, ac);     // ступень 1 — строгий intitle:
+        const res=await fetchVol(q, ac);
         if(ac && ac.signal.aborted) return;
-        if(!res.ok){ handleErr(res); return; }        // ошибка сервера/квоты — честное сообщение, НЕ «ничего не нашли»
+        if(!res.ok){ handleErr(res); return; }         // ошибка сервера/сети — честное сообщение, НЕ «ничего не нашли»
         let list=dedup(res.items).filter(v=>!BK_JUNK.test(v.title));
-        if(!list.length){
-          res=await fetchVol(q, ac);                  // ступень 2 — обычный запрос (по классике стабильнее)
-          if(ac && ac.signal.aborted) return;
-          if(!res.ok){ handleErr(res); return; }
-          const all=dedup(res.items); list=all.filter(v=>!BK_JUNK.test(v.title)); if(!list.length) list=all;
-        }
-        gbooksCache.set(ck, list);                     // кэшируем результат (в т.ч. пустой = факт «не нашли»)
+        if(!list.length) list=dedup(res.items);         // если фильтр всё убрал — без фильтра
+        gbooksCache.set(ck, list);                      // кэшируем результат (в т.ч. пустой = «не нашли»)
         if(!list.length){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }
         showList(list);
-      }catch(e){ if(e && e.name==="AbortError") return; console.warn("GBooks search error", e); if(!hasShown()) msg("Нет связи — впиши название сама"); }
+      }catch(e){ if(e && e.name==="AbortError") return; console.warn("search error", e); if(!hasShown()) msg("Нет связи — впиши название сама"); }
     };
     input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<3){ if(curAbort){ try{ curAbort.abort(); }catch(e){} } box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 700); });
     box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; box._items=null; if(curAbort){ try{ curAbort.abort(); }catch(e){} } });
