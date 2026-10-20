@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="341" />
+<meta name="app-version" content="342" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -3258,7 +3258,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       const choice = await chooseReadingToShelf();
       if(choice==null) return;   // отменили — ничего не делаем
       const rb=myReading[choice];
-      if(rb){ if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[],d:curYM()}); saveMine(); } myReading.splice(choice,1); }
+      if(rb){ putOnShelf(rb); saveMine(); myReading.splice(choice,1); }   // освобождаем слот — переносим СО ВСЕМ (цитаты/оценка)
     }
     myReading.push({t:w.t, a:w.a||"", g:"Проза", c:COLORS[myReading.length%COLORS.length], cover:w.cover||"", sd:todayISO(), pg:0, cur:0, lg:[], pz:0});
     const wi=myWishlist.findIndex(x=>bookKey(x.t,x.a)===bookKey(w.t,w.a)); if(wi>-1) myWishlist.splice(wi,1);
@@ -3777,6 +3777,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   let bookInfoCache={}; try{ bookInfoCache=JSON.parse(localStorage.getItem("polka_bookinfo2")||"{}"); }catch(e){ bookInfoCache={}; }
   try{ localStorage.removeItem("polka_bookinfo"); }catch(e){}   // сброс старого кэша (там были украинские/английские описания)
   const GBOOKS_KEY = "AIzaSyAI8ETBvBRmjsgbSG_6Q5hPG1aNCp3nMRM";   // ключ Google Books (ограничен доменом veronicatd.github.io — работает только с сайта Polka)
+  const gbooksCache = new Map();   // кэш подсказок в памяти сессии: запрос → список (экономит квоту: стёр букву/вернул — без похода в сеть)
+  let gbooksBlockedUntil = 0;      // при 403/429 перестаём стучаться на 10 минут (чтобы не добивать квоту)
   const normTitle = s => String(s||"").toLowerCase().replace(/[ёэ]/g,"е").replace(/[^a-zа-я0-9 ]/gi," ").replace(/\s+/g," ").trim();   // ё,э→е (транслитерация: Гэтсби/Гетсби, Брэдбери/Бредбери)
   // «мягкий» ключ книги — по нормализованному НАЗВАНИЮ (автор у разных людей пишется по-разному:
   // «Ф.М.Достоевский» без пробелов, «Остен»/«Остин» — разная транслитерация; поэтому автора в ключ не берём).
@@ -3842,10 +3844,14 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       if(!info.img && v.imageLinks) info.img=v.imageLinks.thumbnail||v.imageLinks.smallThumbnail||"";
       if(info.desc && info.img) return true;
     } return false; };
-    const query=async(q)=>{ try{
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""));   // без langRestrict=ru — не терять книги; русское описание всё равно гарантирует фильтр isRu
-      if(r.ok){ const d=await r.json(); return scan(d.items); }
-    }catch(e){} return false; };
+    const query=async(q)=>{ const url=`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&country=RU`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:"");   // без langRestrict=ru — не терять книги; русское описание гарантирует фильтр isRu
+      for(let attempt=0; attempt<3; attempt++){ try{
+        const r=await fetch(url);
+        if(r.ok){ const d=await r.json(); return scan(d.items); }
+        if(r.status===403 || r.status===429) return false;   // квота — не ретраим
+        if(attempt<2) await new Promise(x=>setTimeout(x, 300*(attempt+1)));   // 5xx — перемежающийся сбой, ретрай
+      }catch(e){ return false; } }
+      return false; };
     // 1) Google Books — издательская аннотация = СЮЖЕТ книги без спойлеров (то, что нужно), а не «об авторе и годе»
     await query(`intitle:${t}`+(rawA?` inauthor:${rawA}`:""));   // точный поиск по названию+автору
     if(!info.desc) await query(`${t} ${rawA||""}`.trim());     // общий поиск, если описания ещё нет
@@ -4732,33 +4738,51 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
         return `<button type="button" class="bk-opt" data-i="${i}"><span class="bk-opt-t">${esc(v.title)}</span>${au?`<span class="bk-opt-a">${esc(au)}</span>`:""}</button>`; }).join("");
       box.hidden=false;
     };
-    const fetchVol=async(query, ac)=>{   // без langRestrict=ru (кривые языковые метки Google теряют книги); maxResults=30
-      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:""), ac?{signal:ac.signal}:undefined);
-      if(!r.ok) return null; const d=await r.json(); return (d.items||[]).map(it=>it.volumeInfo);
+    const UNAVAIL="Поиск книг временно недоступен. Впиши название и автора сама — книга добавится как надо ✍️";
+    const fetchVol=async(query, ac)=>{   // {ok,items} либо {ok:false,kind:'quota'|'server'|'net'}; ретрай на 5xx (у Google бывает перемежающийся 503 backendFailed)
+      const url=`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30&country=RU&orderBy=relevance`+(GBOOKS_KEY?`&key=${GBOOKS_KEY}`:"");
+      for(let attempt=0; attempt<4; attempt++){
+        let r;
+        try{ r=await fetch(url, ac?{signal:ac.signal}:undefined); }
+        catch(e){ if(e&&e.name==="AbortError") throw e; console.warn("GBooks network error", e); return {ok:false,kind:"net"}; }
+        if(r.ok){ let d; try{ d=await r.json(); }catch(e){ return {ok:false,kind:"server",status:r.status}; } return {ok:true, items:(d.items||[]).map(it=>it.volumeInfo)}; }
+        if(r.status===403 || r.status===429){ let t=""; try{ t=await r.text(); }catch(e){} console.warn("GBooks quota", r.status, t.slice(0,200)); return {ok:false,kind:"quota",status:r.status}; }
+        console.warn("GBooks server error", r.status);   // 5xx — перемежающийся сбой бэкенда, ретраим
+        if(ac && ac.signal.aborted) throw {name:"AbortError"};
+        if(attempt<3) await new Promise(x=>setTimeout(x, 300*(attempt+1)));
+      }
+      return {ok:false,kind:"server",status:503};
+    };
+    const handleErr=(res)=>{
+      if(res.kind==="quota"){ gbooksBlockedUntil=Date.now()+10*60*1000; if(!hasShown()) msg(UNAVAIL); }   // 403/429 → не стучимся 10 минут
+      else if(res.kind==="net"){ if(!hasShown()) msg("Нет связи — впиши название сама"); }
+      else { if(!hasShown()) msg(UNAVAIL); }   // 5xx после ретраев
     };
     // отмена устаревших запросов — ТОЛЬКО через AbortController. Поиск ДВУХСТУПЕНЧАТЫЙ.
     const search=async(q)=>{
+      const ck=q.toLowerCase();
+      if(gbooksCache.has(ck)){ const cached=gbooksCache.get(ck); if(cached.length) showList(cached); else if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }   // кэш сессии — без сети
+      if(Date.now() < gbooksBlockedUntil){ if(!hasShown()) msg(UNAVAIL); return; }   // бэкофф после квоты
       if(curAbort){ try{ curAbort.abort(); }catch(e){} }
       const ac=(typeof AbortController!=="undefined")?new AbortController():null; curAbort=ac;
-      if(!hasShown()) msg("Ищу…");                     // «Ищу…» только если на экране ещё нет результатов (не мигаем)
+      if(!hasShown()) msg("Ищу…");
       try{
-        // ступень 1 — строгий intitle:
-        let raw=await fetchVol("intitle:"+q, ac);
+        let res=await fetchVol("intitle:"+q, ac);     // ступень 1 — строгий intitle:
         if(ac && ac.signal.aborted) return;
-        let list=dedup(raw||[]).filter(v=>!BK_JUNK.test(v.title));
+        if(!res.ok){ handleErr(res); return; }        // ошибка сервера/квоты — честное сообщение, НЕ «ничего не нашли»
+        let list=dedup(res.items).filter(v=>!BK_JUNK.test(v.title));
         if(!list.length){
-          // ступень 2 — обычный запрос без intitle: (Google по классике так стабильнее, напр. «Отверженные»)
-          raw=await fetchVol(q, ac);
+          res=await fetchVol(q, ac);                  // ступень 2 — обычный запрос (по классике стабильнее)
           if(ac && ac.signal.aborted) return;
-          const all=dedup(raw||[]);
-          list=all.filter(v=>!BK_JUNK.test(v.title));
-          if(!list.length) list=all;                   // совсем ничего осмысленного → нефильтрованный (лучше пересказ, чем пустота)
+          if(!res.ok){ handleErr(res); return; }
+          const all=dedup(res.items); list=all.filter(v=>!BK_JUNK.test(v.title)); if(!list.length) list=all;
         }
+        gbooksCache.set(ck, list);                     // кэшируем результат (в т.ч. пустой = факт «не нашли»)
         if(!list.length){ if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); return; }
         showList(list);
-      }catch(e){ if(e && e.name==="AbortError") return; if(!hasShown()) msg("Ничего не нашли — впиши название сам ✍️"); }
+      }catch(e){ if(e && e.name==="AbortError") return; console.warn("GBooks search error", e); if(!hasShown()) msg("Нет связи — впиши название сама"); }
     };
-    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<2){ if(curAbort){ try{ curAbort.abort(); }catch(e){} } box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 400); });
+    input.addEventListener("input", ()=>{ const q=input.value.trim(); if(timer) clearTimeout(timer); if(q.length<3){ if(curAbort){ try{ curAbort.abort(); }catch(e){} } box.hidden=true; box.innerHTML=""; box._items=null; return; } timer=setTimeout(()=>search(q), 700); });
     box.addEventListener("click", e=>{ const opt=e.target.closest(".bk-opt"); if(!opt) return; const v=(box._items||[])[+opt.dataset.i]; if(!v) return; onPick(v); box.hidden=true; box.innerHTML=""; box._items=null; if(curAbort){ try{ curAbort.abort(); }catch(e){} } });
     input.addEventListener("blur", ()=>{ setTimeout(()=>{ box.hidden=true; }, 200); });
   }
@@ -4868,36 +4892,69 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function renderReadingNow(){
     const box=$("#readingNow"); if(!box) return;
     const me = isMe();
-    let src = [];
-    if(me){ src = myReading; }
-    else { const f=friend(); if(!f || !f.sp){ box.style.display="none"; box.innerHTML=""; return; } src = asReadingArr(f.reading); }   // друг без sp → блока нет (остаётся мини-полка «читает»)
-    const rows = src.map((b,i)=>({b,i})).filter(x=>!x.b.pz);
-    if(!rows.length){ box.style.display="none"; box.innerHTML=""; return; }   // нет активных книг → блока нет
-    box.style.display="";
-    box.innerHTML = rows.map(({b,i})=>`<div class="rn-row">
-        <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть книгу «${esc(b.t)}»">
-          <span class="rn-spine" style="background:${spineBg(b)}"></span>
-          <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${me?(progressHTML(b)+forecastHTML(b)):progressFriendHTML(b)}</div>
-        </div>
-        ${me?`<button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>`:""}
-      </div>`).join("") + (me?`<button type="button" class="rn-all" id="rnAll">все книги →</button>`:"");
-    // тап по строке: у себя → редактируемая карточка (openInfo), у друга → страница книги (openBookPage)
-    box.querySelectorAll("[data-openbook]").forEach(el=>{
-      const idx=+el.dataset.openbook;
-      const open = me ? (()=>openInfo(idx, true)) : (()=>{ const f=friend(); const b=f && asReadingArr(f.reading)[idx]; if(b) openBookPage(b.t, b.a); });
-      el.addEventListener("click", open);
-      el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
-    });
-    if(me){
-      box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));   // отметка — только модалка (stopPropagation)
-      { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }
+    if(!me){   // ДРУГ: блок только если делится прогрессом (sp=1) и есть активные книги; иначе блока нет (остаётся мини-полка «читает»)
+      const f=friend();
+      const rows = (f && f.sp) ? asReadingArr(f.reading).map((b,i)=>({b,i})).filter(x=>!x.b.pz) : [];
+      if(!rows.length){ box.style.display="none"; box.innerHTML=""; return; }
+      box.style.display="";
+      box.innerHTML = rows.map(({b,i})=>`<div class="rn-row">
+          <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть книгу «${esc(b.t)}»">
+            <span class="rn-spine" style="background:${spineBg(b)}"></span>
+            <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressFriendHTML(b)}</div>
+          </div>
+        </div>`).join("");
+      box.querySelectorAll("[data-openbook]").forEach(el=>{ const idx=+el.dataset.openbook; const open=()=>{ const ff=friend(); const b=ff && asReadingArr(ff.reading)[idx]; if(b) openBookPage(b.t, b.a); };
+        el.addEventListener("click", open); el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } }); });
+      return;
     }
+    // СВОЯ полка: блок НЕ скрываем никогда — всегда есть вход в «Сейчас читаю»
+    const active = myReading.map((b,i)=>({b,i})).filter(x=>!x.b.pz);
+    const deferred = myReading.filter(b=>b.pz).length;
+    box.style.display="";
+    if(active.length){
+      box.innerHTML = active.map(({b,i})=>`<div class="rn-row">
+          <div class="rn-tap" data-openbook="${i}" role="button" tabindex="0" aria-label="Открыть книгу «${esc(b.t)}»">
+            <span class="rn-spine" style="background:${spineBg(b)}"></span>
+            <div class="rn-body"><div class="rn-title">${esc(b.t)}</div>${progressHTML(b)+forecastHTML(b)}</div>
+          </div>
+          <button type="button" class="btn rn-mark" data-rnmark="${i}">📖 отметить</button>
+        </div>`).join("") + `<button type="button" class="rn-all" id="rnAll">все книги →</button>`;
+    } else if(deferred){   // активных нет, но есть отложенные — строка со входом
+      box.innerHTML = `<div class="rn-row"><div class="rn-tap" id="rnEmptyTap" role="button" tabindex="0" style="flex:1"><div class="rn-body"><div class="rn-title" style="font-weight:600;white-space:normal">📖 Ничего не читаешь сейчас</div><div style="color:var(--ink-soft);font-size:12px;margin-top:2px">Отложено: ${deferred}</div></div></div><button type="button" class="btn rn-mark" id="rnStartBtn">＋ начать книгу</button></div>`;
+    } else {   // совсем ничего — ненавязчивая кнопка без рамки
+      box.innerHTML = `<button type="button" class="rn-all" id="rnStartBtn" style="align-self:flex-start">＋ что читаешь сейчас?</button>`;
+    }
+    // тап по строке → редактируемая карточка (openInfo)
+    box.querySelectorAll("[data-openbook]").forEach(el=>{
+      const idx=+el.dataset.openbook; const open=()=>openInfo(idx, true);
+      el.addEventListener("click", open); el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+    });
+    box.querySelectorAll("[data-rnmark]").forEach(btn=>btn.addEventListener("click",(e)=>{ e.stopPropagation(); const b=myReading[+btn.dataset.rnmark]; if(b) markPageFlow(b, renderReadingNow); }));
+    { const a=$("#rnAll"); if(a) a.addEventListener("click", ()=>showReadingList(true)); }
+    { const s=$("#rnStartBtn"); if(s) s.addEventListener("click", ()=>showReadingList(true)); }                 // ＋ начать / что читаешь → список с полем добавления
+    { const et=$("#rnEmptyTap"); if(et){ const op=()=>showReadingList(true); et.addEventListener("click", op); et.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); op(); } }); } }
+  }
+  // собрать книгу для полки из источника — СО ВСЕМ (цитаты копией, оценка/любимое/заметка); поля чтения (pg/cur/lg/pz/sd) НЕ переносим
+  function shelfBookFrom(src){ return { t:src.t, a:src.a||"неизвестный автор", g:src.g||"Проза", c:src.c||COLORS[myBooks.length%COLORS.length], cover:src.cover||"", fav:!!src.fav, r:src.r||0, note:src.note||"", qt:Array.isArray(src.qt)?src.qt.slice():[], d:curYM() }; }
+  // перенести на полку новую книгу ИЛИ долить в уже существующую (цитаты без дублей; оценку/любимое/заметку — если там пусто)
+  function putOnShelf(src){
+    let nb = myBooks.find(x=>bookKey(x.t,x.a)===bookKey(src.t, src.a||""));
+    if(!nb){ nb = shelfBookFrom(src); myBooks.push(nb); }
+    else {
+      if(!Array.isArray(nb.qt)) nb.qt=[];
+      const have=new Set(nb.qt.map(q=>String(q).trim()));
+      (src.qt||[]).forEach(q=>{ const s=String(q).trim(); if(s && !have.has(s)){ nb.qt.push(q); have.add(s); } });   // долить новые цитаты без дублей
+      if(!nb.r && src.r) nb.r=src.r;
+      if(!nb.fav && src.fav) nb.fav=true;
+      if(!nb.note && src.note) nb.note=src.note;
+      if(!nb.d) nb.d=curYM();
+    }
+    return nb;
   }
   // перенос читаемой книги на полку — та же ветка, что у кнопки «✓ прочитал» (одна функция для кнопки и автофиниша)
   function finishReading(i){
     const b=myReading[i]; if(!b) return;
-    if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(b.t,b.a))){
-      myBooks.push({t:b.t, a:b.a||"неизвестный автор", g:b.g||"Проза", c:b.c||COLORS[myBooks.length%COLORS.length], cover:b.cover||"", fav:false, r:0, note:"", qt:[], d:curYM()}); saveMine(); }
+    putOnShelf(b); saveMine();   // СО ВСЕМ: цитаты/оценка/любимое/заметка (баг потери цитат)
     myReading.splice(i,1); saveReadingLS(); syncUp(); renderReadingEditor(); renderAll(); toast("Перенёс на полку 📚");
   }
   // спросить/поменять число страниц в издании (не обязательно — есть «Пропустить»)
@@ -5105,9 +5162,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   $("#infoToShelf").addEventListener("click", ()=>{
     if(infoReadingIdx==null || !infoBook) return;
     applyInfoEdits(); const rb=infoBook;
-    let nb = myBooks.find(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a));
-    if(!nb){ nb={t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:!!rb.fav,r:rb.r||0,note:rb.note||"",qt:(rb.qt||[]).slice(),d:rb.d||curYM()}; myBooks.push(nb); }
-    else { nb.qt=(nb.qt||[]).concat(rb.qt||[]); if(rb.r) nb.r=rb.r; if(rb.fav) nb.fav=true; if(!nb.d) nb.d=rb.d||curYM(); }   // уже на полке — доливаем цитаты/оценку
+    putOnShelf(rb);   // новая книга ИЛИ долив цитат без дублей + оценка/любимое/заметка
     const ri=myReading.indexOf(rb); if(ri>-1) myReading.splice(ri,1);
     saveMine(); saveReadingLS(); syncUp(); closeModals(); renderAll(); toast("На полке 📚");
   });
@@ -5281,7 +5336,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       box.querySelectorAll("[data-c]").forEach(sw=>sw.addEventListener("click", ()=>{ if(myReading[i]){ myReading[i].c=sw.dataset.c; saveReadingLS(); syncUp(); renderAll(); render(); } }));
       box.querySelector("#rdlToShelf").addEventListener("click", ()=>{
         const rb=myReading[i]; if(!rb) return;
-        if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(rb.t,rb.a))){ myBooks.push({t:rb.t,a:rb.a||"неизвестный автор",g:rb.g||"Проза",c:rb.c||COLORS[myBooks.length%COLORS.length],cover:rb.cover||"",fav:false,r:0,note:"",qt:[],d:curYM()}); saveMine(); }
+        putOnShelf(rb); saveMine();   // СО ВСЕМ: цитаты/оценка/любимое/заметка
         myReading.splice(i,1); saveReadingLS(); syncUp(); renderAll(); toast("На полке 📚"); editIdx=null; render();
       });
       box.querySelector("#rdlBookPage").addEventListener("click", ()=>{ done(); openBookPage(b.t, b.a); });
@@ -6157,7 +6212,8 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(!crdCur) return;
     if(!(await askConfirm("Завершить совместное чтение «"+crdCur.title+"»? Книга переедет на твою полку.", "Завершить"))) return;
     const st=await crFinish(crdCur.id);
-    if(!myBooks.some(x=>bookKey(x.t,x.a)===bookKey(crdCur.title,crdCur.author||""))){ myBooks.push({t:crdCur.title, a:crdCur.author||"неизвестный автор", g:"Проза", c:COLORS[myBooks.length%COLORS.length], cover:"", fav:false, r:0, note:"", qt:[], d:curYM()}); saveMine(); syncUp(); }
+    { const meBy=crdCur.is_initiator?"a":"b"; const myQ=Array.isArray(crdCur.quotes)?crdCur.quotes.filter(q=>q&&q.by===meBy).map(q=>q.text).filter(Boolean):[];
+      putOnShelf({t:crdCur.title, a:crdCur.author, qt:myQ}); saveMine(); syncUp(); }   // переносим со своими цитатами из совместного чтения (без дублей)
     crdCur.my_finished=true; if(st==="done") crdCur.status="done";
     toast(st==="done"?"Дочитали вместе! 🎉 Книга на полке":"Ты дочитал(а) — ждём друга 📖");
     $("#coreadDetail").classList.remove("open"); renderCoread();
