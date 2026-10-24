@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="344" />
+<meta name="app-version" content="345" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -2406,6 +2406,28 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   function savePagesLS(){ try{ if(myPages.length>400) myPages=myPages.slice(-400); localStorage.setItem("polka_pages", JSON.stringify(myPages)); }catch(e){} }
   // слить два журнала по МАКСИМУМУ на каждый день (замена стёрла бы сегодняшние локальные страницы при пулле)
   function mergePagesMax(a, b){ const m={}; (a||[]).forEach(e=>{ if(Array.isArray(e)) m[e[0]]=Math.max(m[e[0]]||0, e[1]||0); }); (b||[]).forEach(e=>{ if(Array.isArray(e)) m[e[0]]=Math.max(m[e[0]]||0, e[1]||0); }); return Object.keys(m).map(d=>[+d, m[d]]).sort((x,y)=>x[0]-y[0]).slice(-400); }
+  // слияние «сейчас читаю» из облака с локальным: прогресс (cur/pg/lg) и цитаты/оценка НЕ откатываются стейлом; книги, не доехавшие в облако (пуш моргнул), не теряются.
+  // Так лечится откат номера страницы (53→29) от второго устройства/вкладки и от молчаливо провалившейся отправки — по аналогии с dp (журнал страниц).
+  function mergeReadingFromCloud(cloudRd, localRd){
+    cloudRd = Array.isArray(cloudRd)?cloudRd:[]; localRd = Array.isArray(localRd)?localRd:[];
+    const mergeLg=(a,b)=>{ const m={}; (a||[]).forEach(e=>{if(Array.isArray(e))m[e[0]]=Math.max(m[e[0]]||0,e[1]||0)}); (b||[]).forEach(e=>{if(Array.isArray(e))m[e[0]]=Math.max(m[e[0]]||0,e[1]||0)}); return Object.keys(m).map(d=>[+d,m[d]]).sort((x,y)=>x[0]-y[0]).slice(-180); };
+    const mergeQt=(a,b)=>{ const out=[], seen=new Set(); (Array.isArray(a)?a:[]).concat(Array.isArray(b)?b:[]).forEach(q=>{ const s=String(q||"").trim(); if(s&&!seen.has(s)){ seen.add(s); out.push(q); } }); return out; };
+    const out = cloudRd.map(cb=>{
+      const lb = localRd.find(x=>x&&x.t&&bookKey(x.t,x.a)===bookKey(cb.t,cb.a));
+      if(!lb) return cb;
+      return Object.assign({}, cb, {
+        cur: Math.max(cb.cur||0, lb.cur||0),   // страница вперёд — не откатываем
+        pg:  Math.max(cb.pg||0,  lb.pg||0),
+        lg:  mergeLg(cb.lg, lb.lg),
+        qt:  mergeQt(cb.qt, lb.qt),
+        r:   Math.max(cb.r||0,   lb.r||0),
+        fav: !!(cb.fav || lb.fav),
+        note: cb.note || lb.note || ""
+      });
+    });
+    localRd.forEach(lb=>{ if(lb && lb.t && !cloudRd.some(cb=>bookKey(cb.t,cb.a)===bookKey(lb.t,lb.a))) out.push(lb); });   // локальные, не доехавшие в облако — не теряем
+    return out.slice(0, READING_MAX);
+  }
   // прибавить прочитанные страницы за сегодня в общий журнал (только положительную дельту)
   function addPagesToday(delta){ if(!(delta>0)) return; const d=dayNum(); const i=myPages.findIndex(e=>Array.isArray(e)&&e[0]===d); if(i>-1) myPages[i][1]+=delta; else myPages.push([d,delta]); savePagesLS(); }
   // РАЗОВЫЙ перенос журнала из lg читаемых книг (при первом запуске v337; книги, уехавшие на полку, не вернуть — их логи утеряны, это норма)
@@ -5653,7 +5675,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[]; loadStreakFrom(p);
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=(used===(localStorage.getItem("polka_code")||"")) ? mergeReadingFromCloud(asReadingArr(p&&p.rd), myReading) : asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[]; loadStreakFrom(p);   // своя полка (тот же код/перезаход по ?login) — сливаем прогресс; чужой код — заменяем
     myEmail="";   // почта не хранится в blob и не читается обратно (приватность) — на новом устройстве вводится заново; сбрасываем, чтобы не утекла из прежнего аккаунта
     loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
     loadQuoteFavFrom(p);   // любимые цитаты
@@ -5763,7 +5785,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
         if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
         myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
         if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-        myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp);
+        myReading = mergeReadingFromCloud(asReadingArr(cp.rd), myReading); saveReadingLS(); loadStreakFrom(cp);   // слияние: cur/прогресс не откатывается стейлом
         setPaidCache(!!row.paid);   // оплата — из колонки на сервере (авторитетно): если сервер говорит «не оплачено», кэш сбрасывается (подделка в консоли не переживёт перезагрузку)
         bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
         migratePagesFromLg();   // разовый перенос журнала из lg — ПОСЛЕ bootLoaded, чтобы syncUp записал в облако
@@ -5829,7 +5851,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
     myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
     if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-    myReading = asReadingArr(cp.rd); saveReadingLS(); loadStreakFrom(cp); migratePagesFromLg();
+    myReading = mergeReadingFromCloud(asReadingArr(cp.rd), myReading); saveReadingLS(); loadStreakFrom(cp); migratePagesFromLg();   // слияние: cur не откатывается
     if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
     setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
