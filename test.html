@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-version" content="345" />
+<meta name="app-version" content="346" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -1265,7 +1265,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
 
 </main>
 
-<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙</div></footer>
+<footer><div class="wrap">Polka · место, где живут прочитанные истории 🌙</div></footer><!-- v346: стрик — слияние (не откатывается); блоб v-версия (идекс 15) против стейл-пулла; закрыта дыра save_shelf (только save_shelf_secure + флаг unsynced с ретраем) -->
 
 <!-- модалки -->
 <div class="overlay" id="overlay"></div>
@@ -1832,15 +1832,10 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     return t ? JSON.parse(t) : null;
   }
   async function sbUpsert(row){
-    // запись полки через ЗАЩИЩЁННУЮ обёртку: полка с паролем пишется только с верным паролем.
-    try{
-      await sbRpc("save_shelf_secure", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||""), p_password:(myPass||"")});
-    }catch(e){
-      const m=String((e&&e.message)||"");
-      if(/bad password/i.test(m)) throw e;   // неверный пароль → НЕ откатываемся на незащищённую запись
-      // функции ещё нет (до запуска SQL) или иная причина → мягкий откат на старую save_shelf, чтобы сохранение не ломалось
-      await sbRpc("save_shelf", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||"")});
-    }
+    // запись полки ТОЛЬКО через ЗАЩИЩЁННУЮ обёртку: полка с паролем пишется лишь с верным паролем.
+    // Небезопасной save_shelf больше НЕТ (дыра: любой мог писать в чужую полку без пароля). При любой ошибке
+    // бросаем наверх — syncUp пометит «не синхронизировано» и повторит, чтобы отметка не потерялась.
+    await sbRpc("save_shelf_secure", {p_code:row.code, p_name:row.name, p_data:row.data, p_email:(row.email||""), p_password:(myPass||"")});
   }
   async function sbSetPassword(code, newPass, oldPass){
     try{ return (await sbRpc("set_password", {p_code:code, p_new:newPass, p_old:oldPass||null}))===true; }catch(e){ return false; }
@@ -2190,10 +2185,20 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   let myStreak=0, myTotal=0, myLastMark="", myPause=false;
   try{ const s=JSON.parse(localStorage.getItem("polka_streak")||"null"); if(s){ myStreak=s.s||0; myTotal=s.t||0; myLastMark=s.l||""; myPause=!!s.p; } }catch(e){}
   function saveStreakLS(){ try{ localStorage.setItem("polka_streak", JSON.stringify({s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0})); }catch(e){} }
-  function loadStreakFrom(cp){ if(cp && cp.st){ myStreak=cp.st.s||0; myTotal=cp.st.t||0; myLastMark=cp.st.l||""; myPause=!!cp.st.p; saveStreakLS(); }
+  function loadStreakFrom(cp, merge){ if(cp && cp.st){
+      const cs=cp.st.s||0, ct=cp.st.t||0, cl=cp.st.l||"", cpa=!!cp.st.p;
+      if(merge){   // своя полка: стрик/рекорд НЕ откатываются стейлом (как dp и rd)
+        const orig=myLastMark||"";
+        myTotal = Math.max(myTotal||0, ct);
+        myStreak = Math.max(myStreak||0, cs);
+        if(cl >= orig) myPause = cpa;              // пауза из облака только если облачная дата не старше локальной
+        myLastMark = (cl > orig) ? cl : orig;      // более поздняя дата (строки ГГГГ-ММ-ДД сравниваются лексически)
+      } else { myStreak=cs; myTotal=ct; myLastMark=cl; myPause=cpa; }   // чужой код / сброс — замена (не унести чужой стрик)
+      saveStreakLS(); }
     if(cp && typeof cp.public!=="undefined"){ myPublic=!!cp.public; try{ localStorage.setItem("polka_public", myPublic?"1":"0"); }catch(e){} }   // флаг «Читатели» — облако источник истины
     if(cp && typeof cp.sp!=="undefined"){ myShareProgress=!!cp.sp; try{ localStorage.setItem("polka_shareprogress", myShareProgress?"1":"0"); }catch(e){} }   // флаг «прогресс друзьям» — облако источник истины
-    if(cp && Array.isArray(cp.dp)){ myPages = mergePagesMax(myPages, cp.dp); savePagesLS(); } }   // журнал страниц — СЛИЯНИЕ по максимуму (замена стёрла бы сегодняшние локальные страницы при пулле)
+    if(cp && Array.isArray(cp.dp)){ myPages = mergePagesMax(myPages, cp.dp); savePagesLS(); }   // журнал страниц — СЛИЯНИЕ по максимуму (замена стёрла бы сегодняшние локальные страницы при пулле)
+    if(cp){ const cv=+cp.v||0; myVer = merge ? Math.max(myVer||0, cv) : cv; saveVerLS(); } }   // версия: своя полка — макс; чужой код/сброс — берём облачную
   function ymd(d){ d=d||new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function daysBetween(a,b){ try{ return Math.round((new Date(a+"T00:00:00") - new Date(b+"T00:00:00"))/86400000); }catch(e){ return 999; } }
   function streakState(){
@@ -2484,13 +2489,13 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     const ci = c => { const k = COLORS.indexOf(c); return k<0?0:k; };
     const cb = (p.b||[]).map(bk=>[bk.t, bk.a, gi(bk.g), ci(bk.c||PALETTE[bk.g]), isFav(bk)?1:0, bk.r||0, bk.note||"", bk.cover||"", quotesOf(bk), bk.unread?1:0, bk.d||""]);   // 9=«не прочитано», 10=месяц прочтения «ГГГГ-ММ»
     const sArr = (p.s||[]).filter(id=>STK[id]);   // в код идут только встроенные стикеры
-    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null, p.public?1:0, (typeof p.sp==="undefined")?1:(p.sp?1:0), (Array.isArray(p.dp)?p.dp:[])]));   // st(11)=стрик; public(12)=«Читатели»; sp(13)=прогресс друзьям; dp(14)=журнал страниц по дням [[день,страниц]]
+    return "PLK2" + b64e(JSON.stringify([p.n||"", p.q||"", sArr, cb, p.ph||"", asReadingArr(p.rd), p.fr||[], p.pd?1:0, p.wl||[], p.pm||[], p.qf||[], p.st||null, p.public?1:0, (typeof p.sp==="undefined")?1:(p.sp?1:0), (Array.isArray(p.dp)?p.dp:[]), (p.v||0)]));   // st(11); public(12); sp(13); dp(14)=журнал; v(15)=версия блоба (+1 на каждый syncUp; при пулле младшую версию игнорируем — мы впереди)
   }
   function decodeCode(code){
     let raw = String(code).trim().replace(/\s+/g,"");
     if(raw.startsWith("PLK2")){
       const a = JSON.parse(b64d(raw.slice(4)));
-      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null, public:!!a[12], sp:(typeof a[13]==="undefined")?1:(a[13]?1:0), dp:(Array.isArray(a[14])?a[14]:[]),
+      return { n:a[0]||"", q:a[1]||"", s:a[2]||[], ph:a[4]||"", rd:asReadingArr(a[5]), fr:a[6]||[], pd:a[7]||0, wl:a[8]||[], pm:Array.isArray(a[9])?a[9]:[], qf:Array.isArray(a[10])?a[10]:[], st:(a[11]&&typeof a[11]==="object")?a[11]:null, public:!!a[12], sp:(typeof a[13]==="undefined")?1:(a[13]?1:0), dp:(Array.isArray(a[14])?a[14]:[]), v:(+a[15]||0),
         b:(a[3]||[]).map(x=>{ const r5=x[5]; const isNum=(typeof r5==="number");
           return { t:x[0], a:x[1], g:GENRES[x[2]]||GENRES[0], c:COLORS[x[3]]||COLORS[0], fav:!!x[4],
             r:isNum?r5:0, note:isNum?(x[6]||""):(r5||""), cover:isNum?(x[7]||""):"", qt:isNum?(Array.isArray(x[8])?x[8]:(x[8]?[x[8]]:[])):[], unread:isNum?!!x[9]:false, d:isNum?(x[10]||""):"" }; }) };
@@ -2504,7 +2509,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
       if(!myCode){ myCode = genCode(); try{ localStorage.setItem("polka_code", myCode); }catch(e){} syncUp(); }
       return myCode;
     }
-    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0, dp:myPages});
+    return encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0, dp:myPages, v:myVer});
   }
   function friendCodes(){ return [...new Set(savedFriends.map(f=>f.code).filter(Boolean))]; }
   function loginLink(){ return location.origin + location.pathname + "?login=" + encodeURIComponent(myShareCode()); }
@@ -2523,10 +2528,11 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   async function syncUp(){
     if(!CLOUD() || !myCode) return true;
     if(!bootLoaded) return false;   // ЗАЩИТА: не перезаписывать облако, пока не подтянули реальные данные полки — иначе можно затереть чужой аккаунт
-    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0, dp:myPages});
+    myVer=(myVer||0)+1; saveVerLS();   // версия вперёд на каждый push (даже если push упадёт — pullCloud тогда проигнорирует стейл-облако: мы впереди)
+    const data = encodeCode({n:myName, q:myQuote, b:myBooks, s:myStickers, ph:myPhoto, rd:myReading, fr:friendCodes(), pd:isPaid()?1:0, wl:myWishlist, pm:[...poemBM], qf:[...quoteFav], st:{s:myStreak,t:myTotal,l:myLastMark,p:myPause?1:0}, public:myPublic, sp:myShareProgress?1:0, dp:myPages, v:myVer});
     syncing=true;   // замок 1: пока идёт отправка — pullCloud не трогает myReading (иначе вернёт старую копию)
-    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; lastPushAt=Date.now(); syncActivity(); return true; }   // замок 3: lastCloudData=отправленное → пулл с теми же данными — пустое действие; замок 2: lastPushAt для карантина
-    catch(e){ console.warn("syncUp error", e); return false; }
+    try{ await sbUpsert({code:myCode, name:myName, data, email:myEmail}); lastCloudData = data; lastPushAt=Date.now(); clearUnsynced(); syncActivity(); return true; }   // замок 3: lastCloudData=отправленное → пулл с теми же данными — пустое действие; замок 2: lastPushAt для карантина
+    catch(e){ console.warn("syncUp error", e); if(!/bad password/i.test(String((e&&e.message)||""))) markUnsynced(); return false; }   // не долетело (сеть/сервер) → пометить и повторить позже; неверный пароль не ретраим
     finally{ syncing=false; }
   }
 
@@ -2534,6 +2540,11 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
   let view = "me";
   let lastCloudData = null;
   let syncing = false, lastPushAt = 0;   // замки от отката отметки: syncing — идёт push; lastPushAt — карантин пулла после push
+  let myVer = (()=>{ try{ return +localStorage.getItem("polka_ver")||0; }catch(e){ return 0; } })();   // версия блоба — растёт на каждый syncUp; при пулле младшую версию игнорируем
+  function saveVerLS(){ try{ localStorage.setItem("polka_ver", String(myVer||0)); }catch(e){} }
+  let unsynced = (()=>{ try{ return localStorage.getItem("polka_unsynced")==="1"; }catch(e){ return false; } })();   // push в облако не долетел → локально храним, повторяем; откат невозможен (myVer уже впереди)
+  function markUnsynced(){ unsynced=true; try{ localStorage.setItem("polka_unsynced","1"); }catch(e){} }
+  function clearUnsynced(){ unsynced=false; try{ localStorage.removeItem("polka_unsynced"); }catch(e){} }
   let casePage = 0;
   let slideDir = 0;
   const SHELVES_PER_CASE = 4;
@@ -5675,7 +5686,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     } else { return toast("Короткие коды работают только с облаком"); }
     const books = Array.isArray(p)?p:(p&&p.b);
     if(!Array.isArray(books)) return toast("Это не похоже на полку");
-    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; myReading=(used===(localStorage.getItem("polka_code")||"")) ? mergeReadingFromCloud(asReadingArr(p&&p.rd), myReading) : asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[]; loadStreakFrom(p);   // своя полка (тот же код/перезаход по ?login) — сливаем прогресс; чужой код — заменяем
+    myName=(p&&p.n)||"Моя полка"; myQuote=(p&&p.q)||""; myStickers=(p&&p.s)||[]; myBooks=books; myCode=used; myPhoto=(p&&p.ph)||""; { const _same=(used===(localStorage.getItem("polka_code")||"")); myReading=_same ? mergeReadingFromCloud(asReadingArr(p&&p.rd), myReading) : asReadingArr(p&&p.rd); myWishlist=(p&&Array.isArray(p.wl))?p.wl:[]; loadStreakFrom(p, _same); }   // своя полка (тот же код/перезаход по ?login) — сливаем прогресс+стрик; чужой код — заменяем
     myEmail="";   // почта не хранится в blob и не читается обратно (приватность) — на новом устройстве вводится заново; сбрасываем, чтобы не утекла из прежнего аккаунта
     loadPoemBmFrom(p);   // закладки стихов из облака при входе по коду
     loadQuoteFavFrom(p);   // любимые цитаты
@@ -5785,7 +5796,7 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
         if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
         myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
         if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-        myReading = mergeReadingFromCloud(asReadingArr(cp.rd), myReading); saveReadingLS(); loadStreakFrom(cp);   // слияние: cur/прогресс не откатывается стейлом
+        myReading = mergeReadingFromCloud(asReadingArr(cp.rd), myReading); saveReadingLS(); loadStreakFrom(cp, true);   // слияние: cur/прогресс/стрик не откатывается стейлом
         setPaidCache(!!row.paid);   // оплата — из колонки на сервере (авторитетно): если сервер говорит «не оплачено», кэш сбрасывается (подделка в консоли не переживёт перезагрузку)
         bootLoaded=true;   // реальные данные полки загружены — теперь запись в облако разрешена
         migratePagesFromLg();   // разовый перенос журнала из lg — ПОСЛЕ bootLoaded, чтобы syncUp записал в облако
@@ -5847,17 +5858,19 @@ body[data-theme="twilight"] .menu-btn, body[data-theme="twilight"] .bell{ backgr
     if(!row || !row.data || row.data === lastCloudData) return;   // нет изменений
     lastCloudData = row.data;
     let cp; try{ cp = decodeCode(row.data); }catch(e){ return; }
+    if((+cp.v||0) > 0 && (myVer||0) > 0 && (+cp.v||0) < (myVer||0)) return;   // версия: облако СТАРШЕ нашей → мы впереди (наш push ещё не долетел) → игнорируем весь стейл целиком
     if(Array.isArray(cp.b)){ myBooks = cp.b; try{ localStorage.setItem("polka_books", JSON.stringify(myBooks)); }catch(e){} }
     if(cp.n){ myName = cp.n; try{ localStorage.setItem("polka_name", myName); }catch(e){} }
     myQuote = cp.q || ""; try{ localStorage.setItem("polka_quote", myQuote); }catch(e){}
     if(Array.isArray(cp.s)){ myStickers = cp.s; try{ localStorage.setItem("polka_stickers", JSON.stringify(myStickers)); }catch(e){} }
-    myReading = mergeReadingFromCloud(asReadingArr(cp.rd), myReading); saveReadingLS(); loadStreakFrom(cp); migratePagesFromLg();   // слияние: cur не откатывается
+    myReading = mergeReadingFromCloud(asReadingArr(cp.rd), myReading); saveReadingLS(); loadStreakFrom(cp, true); migratePagesFromLg();   // слияние: cur/стрик не откатывается
     if(Array.isArray(cp.wl)){ myWishlist = cp.wl; try{ localStorage.setItem("polka_wishlist", JSON.stringify(myWishlist)); }catch(e){} }
     if(!myPhoto && cp.ph){ myPhoto = cp.ph; try{ localStorage.setItem("polka_photo", myPhoto); }catch(e){} }
     setPaidCache(!!row.paid);   // оплата из колонки на сервере (авторитетно)
     renderAll();
   }
   async function livePoll(){                               // тянем и полку, и уведомления, пока страница открыта
+    if(unsynced && CLOUD() && myCode && bootLoaded && !syncing){ try{ await syncUp(); }catch(e){} }   // прошлый push не долетел — повторяем (отметка не теряется)
     pullCloud();
     try{ await refreshReqBadge(); }catch(e){}
     if(typeof reqModal!=="undefined" && reqModal && reqModal.classList.contains("open")) showRequests();  // открытый колокольчик обновляем на месте
